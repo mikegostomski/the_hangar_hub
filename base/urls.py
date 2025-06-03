@@ -11,6 +11,7 @@ urlpatterns = [
 
     # Authentication
     path('router', views.post_login_handler, name='post_login_handler'),
+    path('login/then', views.login_then_next, name='login_then'),
 
     # Authorization
     path('auth/authorities', views.manage_authorities, name='manage_authorities'),

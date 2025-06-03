@@ -1,0 +1,87 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar Hub{%endblock%}
+
+{% block main_content %}
+    <h1>Hangar Management for GA Airports</h1>
+    <em>Simplify operations, reduce paperwork, and enhance tenant satisfaction</em><br />
+    <br />
+
+    <p>
+        <b>Why Choose The Hangar Hub?</b><br />
+        Managing hangar space shouldn’t feel like flying blind. Our all-in-one platform puts you in control of your
+        airport's hangar operations, delivering the tools you need to streamline workflows and deliver a seamless
+        experience to your tenants.
+    </p>
+
+    <p>
+        <b>Designed for Airport Operators</b><br />
+        From municipal fields to private strips, our platform is built with airport managers in mind. It’s intuitive,
+        secure, and backed by real-world aviation expertise.
+    </p>
+
+    <p>
+        <b>Key Features</b><br />
+        <div class="list-group">
+            <div class="list-group-item">
+                <b>Waitlist Management</b><br />
+                Track hangar availability and manage waitlists with ease. Self-service features allow applicants to
+                view their status, or remove their name if they are no longer in need of hangar space.
+            </div>
+            <div class="list-group-item">
+                <b>Tenant Account Status</b><br />
+                Give your team and tenants full visibility. See rent status, lease terms, and communication history in
+                seconds. Automated billing and reminders ensure nothing slips through the cracks.
+            </div>
+            <div class="list-group-item">
+                <b>Maintenance Request Tracking</b><br />
+                Simplify upkeep and repairs with a built-in request and work order system. Tenants can submit issues
+                directly, and you can assign tasks, track progress, and log completions — all in one place.
+            </div>
+        </div>
+    </p>
+
+    <p>
+        <b>Ready to take your hangar operations to cruising altitude?</b><br />
+        <div class="list-group">
+            <div class="list-group-item">
+                <b>Test Flight</b><br />
+                Try it free for 30 days.
+            </div>
+            <div class="list-group-item">
+                <b>Pricing</b><br />
+                You don't expect this to be free, do you?
+            </div>
+            <div class="list-group-item">
+                <b>Get Started</b><br />
+                {%if is_authenticated%}
+                    Create your airport and begin managing your hangars.<br />
+                <br />
+                    <a class="btn btn-info btn-sm" href="{% url 'hub:welcome' %}">Create Airport</a>
+
+                {%else%}
+                    Log in or create an account to create your airport and begin managing your hangars.
+                    <br />
+                    <br />
+                    <div class="text-left">
+                        <a class="btn btn-info btn-sm" href="{% url 'base:login_then' %}?next=hub:welcome">{%icon bi-box-arrow-in-right%} Log In</a>
+                        <span>&nbsp; &nbsp;</span>
+                        <a class="btn btn-success btn-sm" href="{% url 'base:login_then' %}?next=hub:welcome">{%icon bi-person-plus%} Sign Up</a>
+                    </div>
+                {%endif%}
+                <br />
+
+
+            </div>
+        </div>
+
+    </p>
+
+    <style>
+        .list-group{
+            max-width: 800px;
+        }
+    </style>
+
+{%endblock%}

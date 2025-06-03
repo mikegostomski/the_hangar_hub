@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from the_hangar_hub.views import public_views
+from the_hangar_hub.views import *
 
 app_paths = [
-    path('', public_views.home, name='home'),
+    path('', home, name='home'),
+
+    path('airport', welcome, name='welcome'),
 ]
 
 urlpatterns = [

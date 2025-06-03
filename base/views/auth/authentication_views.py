@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 from django.http import HttpResponseForbidden, HttpResponse
-from ...services import auth_service, error_service
-from ...decorators import require_impersonation_authority, require_authentication
+from base.services import auth_service, error_service
+from base.decorators import require_impersonation_authority, require_authentication
 from base.classes.util.env_helper import Log, EnvHelper
 
 
@@ -66,3 +66,8 @@ def post_login_handler(request):
     next_url = env.get_session_variable("after_auth_url", "/")
     env.set_session_variable("after_auth_url", None)
     return redirect(next_url)
+
+def login_then_next(request):
+    next_url = request.GET.get("next") or "/"
+    env.set_session_variable("after_auth_url", next_url)
+    return redirect("account_signup")
