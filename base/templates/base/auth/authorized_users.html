@@ -1,0 +1,55 @@
+{% load base_taglib %}
+
+<div id="authorized_user_container">
+    <div class="float-right">
+        {%icon bi-x-square bi-2x  onclick="$('#authorized_user_container').remove();"%}
+    </div>
+    <h1 class="float-left">{%icon bi-people%} {{authority.title}}</h1>
+    <br style="clear:both;" />
+    <table class="table table-condensed">
+        <tr>
+            <th scope="col">First Name</th>
+            <th scope="col">Last Name</th>
+            <th scope="col">Email</th>
+            <th>Revoke</th>
+        </tr>
+
+    {%for pp in permissions%}
+        <tr>
+            <td>{{pp.user.first_name}}</td>
+            <td>{{pp.user.last_name}}</td>
+            <td>{{pp.user.email}}</td>
+            <td>
+                <a href="{%url 'base:delete_permission' pp.id%}">
+                    {%icon bi-lock text-danger title="Revoke Permission"%}
+                </a>
+            </td>
+        </tr>
+    {%empty%}
+        <tr>
+            <td colspan="5" style="text-align:center">
+                <em>No users have this authority</em>
+            </td>
+        </tr>
+    {%endfor%}
+    </table>
+
+</div>
+<style>
+    #authorized_user_container{
+        position:absolute;
+        display: block;
+        top:0;
+        bottom:0;
+        left:0;
+        right:0;
+        width:800px;
+        max-width:95%;
+        margin:50px auto;
+        background-color: white;
+        padding: 20px;
+        border: 1px solid #333;
+        border-radius: 5px;
+        z-index:999999;
+    }
+</style>

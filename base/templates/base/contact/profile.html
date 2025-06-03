@@ -1,0 +1,74 @@
+{% extends 'base/template/800.html' %}
+{% load base_taglib %}
+
+{%block title%}User Profile{%endblock%}
+{%block scripts%}{%jquery_confirm%}{%endblock%}
+
+{% block content %}
+    <h1>
+        {%if avatar_url%}
+            <img src="{{avatar_url}}" alt="Profile Image" class="profile_thumbnail" style="width:75px;height:75px;border-radius:15%;" />
+        {%endif%}
+        {{contact.display_name}}
+    </h1>
+    <br />
+
+    <h2>Bio Data</h2>
+        {% csrf_token %}
+        <fieldset>
+            <label for="first_name">First Name</label>
+            <input type="text" name="first_name" id="first_name" value="{{contact.first_name|default:''}}" class="form-control" maxlength="60" onchange="update_contact($(this));" />
+        </fieldset>
+        <fieldset>
+            <label for="last_name">Last Name</label>
+            <input type="text" name="last_name" id="last_name" value="{{contact.last_name|default:''}}" class="form-control" maxlength="60" onchange="update_contact($(this));" />
+        </fieldset>
+    <br />
+    <h2>Addresses</h2>
+    {%include 'base/contact/_addresses.html'%}
+
+    <br />
+    <h2>Phone Numbers</h2>
+    {%include 'base/contact/_phones.html'%}
+
+
+
+    <style>
+        #profile_form label{
+            font-weight: bold;
+        }
+        #profile_form fieldset{
+            margin-bottom: 20px;
+        }
+    </style>
+
+
+    {%if current_user.email%}
+        <form method="POST" action="{% url 'account_reset_password' %}" class="password_reset">
+            {% csrf_token %}
+            <input type="hidden" name="email" id="email" value="{{current_user.email}}" />
+            <input type="submit" class="btn btn-default" value="Reset Password" />
+        </form>
+    {%endif%}
+
+
+    <a class="login" href="{% url 'account_email' %}">Change E-mail</a><br />
+    <a href="{%url 'socialaccount_connections'%}">socialaccount_connections</a><br />
+
+    Email: {{user.email}}<br />
+
+
+    {%if authorities%}
+        You have the following authorities:
+        <ul>
+        {%for code, title in authorities.items%}
+            <li>{{title}}</li>
+        {%endfor%}
+        </ul>
+    {%endif%}
+
+<script type="text/javascript">
+    {%include "base/contact/contact.js"%}
+</script>
+
+{%endblock%}

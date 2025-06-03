@@ -1,0 +1,10 @@
+{% load base_taglib %}
+
+<div class="dropdown" id="hamburger-menu">
+    <a class="dropdown-toggle" id="nav-menu-button" data-bs-toggle="dropdown" aria-expanded="false">
+        {%icon bi-list title="Navigation Menu"%}
+    </a>
+    <ul class="dropdown-menu dropdown-menu" aria-labelledby="nav-menu-button">
+        {%include "base/template/standard/navbar/_nav_contents.html"%}
+    </ul>
+</div>

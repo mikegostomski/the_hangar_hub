@@ -1,0 +1,65 @@
+
+/** Navbar (side) **/
+$navbar-bg-color: get-color(NAV_BAR_BG_COLOR, #1f242e);
+$navbar-fg-color: get-color(NAV_BAR_FG_COLOR, #CCC);
+$navbar-font: get-string(NAVBAR_FONT, '"LatoBold", Lato, "Times New Roman", Times, serif');
+
+/** Header **/
+$header-bg-color: get-color(HEADER_BG_COLOR, green);
+$header-fg-color: get-color(HEADER_FG_COLOR, green);
+$header-font: get-string(HEADER_FONT, '"LatoBold", Lato, "Times New Roman", Times, serif');
+
+/** Footer **/
+$footer-bg-color: get-color(FOOTER_BG_COLOR, green);
+$footer-fg-color: get-color(FOOTER_FG_COLOR, green);
+$footer-font: get-string(FOOTER-FONT, '"LatoBold", Lato, "Times New Roman", Times, serif');
+
+
+
+
+
+
+/** Primary background and foreground colors **/
+$primary-bg-color: get-color(PRIMARY_BG_COLOR, green);
+$primary-fg-color: get-color(PRIMARY_FG_COLOR, white);
+
+/** Header Navigation: Active Tab **/
+$active-tab-bg-color: get-color(ACTIVE_TAB_BG_COLOR, white);
+$active-tab-fg-color: get-color(ACTIVE_TAB_FG_COLOR, $primary-bg-color);
+
+/** Body Padding **/
+$body-padding-normal: 25px;
+$body-padding-min: 10px;
+
+/** Headings **/
+$heading-font: get-string(HEADING_FONT, '"LatoBold", Lato, "Times New Roman", Times, serif');
+$heading-color: get-color(HEADING_COLOR, darken($primary-bg-color, 10%));
+
+/** Regular Text **/
+$text-font: get-string(TEXT_FONT, 'Lato, Arial, Helvetica, sans-serif');
+$text-color: get-color(TEXT_COLOR, #000);
+
+/** Code Blocks **/
+$code-font: get-string(CODE_FONT, '"Lucida Console", Monaco, monospace');
+$code-color: get-color(CODE_COLOR, #333);
+
+/** Bootstrap Colors **/
+$primary: get-color(BOOTSTRAP_PRIMARY, $primary-bg-color);
+$primary-compliment: get-color(BOOTSTRAP_PRIMARY_COMPLIMENT, $primary-fg-color);
+$default: get-color(BOOTSTRAP_DEFAULT, gray);
+$default-compliment: get-color(BOOTSTRAP_DEFAULT_COMPLIMENT, white);
+$danger: get-color(BOOTSTRAP_DANGER, #972B11);
+$danger-compliment: get-color(BOOTSTRAP_DANGER_COMPLIMENT, white);
+$warning: get-color(BOOTSTRAP_WARNING, orange);
+$warning-compliment: get-color(BOOTSTRAP_WARNING_COMPLIMENT, brown);
+$info: get-color(BOOTSTRAP_INFO, blue);
+$info-compliment: get-color(BOOTSTRAP_INFO_COMPLIMENT, white);
+$success: get-color(BOOTSTRAP_SUCCESS, '#556B2F');
+$success-compliment: get-color(BOOTSTRAP_SUCCESS_COMPLIMENT, white);
+
+@mixin heading() {
+    font-family: $heading-font;
+    color: $heading-color;
+    font-weight: bold;
+    font-size: 1.1em;
+}

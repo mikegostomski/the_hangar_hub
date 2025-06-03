@@ -1,0 +1,50 @@
+{% load base_taglib %}
+<div class="popup" style="top: 15%;transform: translateY(-15%);">
+    <h1 class="float-left">{{contact.display_name}}</h1>
+    {%icon bi-x-square class="float-right" onclick="close_contact_form();"%}
+    <br style="clear:both;" />
+    <table class="table table-condensed">
+        <tr>
+            <th scope="row"><label for="pu-first_name">First Name</label></th>
+            <td>
+                <input type="text" id="pu-first_name" name="first_name" value="{{contact.first_name|default:''}}" class="form-control" onchange="update_contact($(this));" />
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="pu-last_name">Last Name</label></th>
+            <td>
+                <input type="text" id="pu-last_name" name="last_name" value="{{contact.last_name|default:''}}" class="form-control" onchange="update_contact($(this));" />
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="pu-email">Email</label></th>
+            <td>
+                <input type="email" id="pu-email" name="email" value="{{contact.email|default:''}}" class="form-control" onchange="update_contact($(this));" />
+            </td>
+        </tr>
+    </table>
+    <br />
+    <br />
+
+        <b>Phone Numbers</b>
+        {%include 'base/contact/_phones.html' with contact_id=contact.id%}
+    <br />
+    <br />
+
+        <b>Addresses</b>
+        {%include 'base/contact/_addresses.html' with contact_id=contact.id%}
+
+
+    <br />
+    <br />
+    <div style="text-align:center">
+        <button type="button" class="btn" onclick="close_contact_form();">{%icon bi-x-square%} Close</button>
+    </div>
+    <br />
+    <br />
+
+
+</div>
+<script type="text/javascript">
+    {%include "base/contact/contact.js"%}
+</script>

@@ -1,0 +1,58 @@
+{% load base_taglib %}
+{% load sass_tags %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {%if is_development%}
+            DEV:
+        {%elif is_non_production%}
+            STAGE:
+        {%endif%}
+        {% block title %}{%app_name%}{% endblock %}
+    </title>
+    {% block favicon %}
+        <link rel="shortcut icon" href="{%static_content_url%}/images/favicon.ico" type="image/x-icon">
+    {% endblock %}
+    {% block head %}{% endblock %}
+
+    {%jquery%}
+    {%bootstrap%}
+    {%icon_library%}
+
+
+    {%cdn_js 'utils.js' 'ajax.js'%}
+    {%cdn_css 'legacy.css' 'main.css' 'ajax.css'%}
+    {%if is_development%}
+        <link href="{%sass_src 'css/template.scss'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+    {%else%}
+
+    {%endif%}
+
+    <script src="{%sass_src 'js/posted-messages.js'%}?v={%app_version%}"></script>
+    <link href="{%sass_src 'css/template.scss'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+
+    {% block scripts %}{% endblock %}
+</head>
+<body>
+    <div class="template-container">
+        <div class="navbar-container">{%include "base/template/standard/navbar/container.html"%}</div>
+        <div class="content-container">
+            <div class="header-container">{%include "base/template/standard/header/container.html"%}</div>
+            <div class="breadcrumb-container">{%include "base/template/standard/breadcrumbs/container.html"%}</div>
+            <div class="message-container" id="message-container">{% include 'base/template/standard/messages/messages.html' %}</div>
+            <div class="body-container">
+                {%block main_content %}
+                    Here's some standard content
+                {%endblock %}
+            </div>
+            <div class="footer-container">{%include "base/template/standard/footer/container.html"%}</div>
+        </div>
+    </div>
+    {%include "base/components/loading_indicator.html"%}
+</body>
+</html>
+

@@ -1,0 +1,16 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Possible Compromised Account{%endblock%}
+
+{% block main_content %}
+<div class="page-alert">
+    {%icon bi-incognito%}
+    <h1>Your account may have been compromised</h1>
+    <div>
+        Suspicious activity from your account has lead us to believe that your account may have been compromised.
+        The activity will be reviewed, and you will be contacted via email with further instructions.<br />
+        <br />
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% load base_taglib %}
+{%if breadcrumbs%}
+    <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+    {%for bc in breadcrumbs%}
+        {%if bc.is_active%}
+            <li class="breadcrumb-item active" aria-current="page">
+                {%if bc.icon%}{%icon icon_class=bc.icon%}{%else%}{%icon bi-geo-fill%}{%endif%}{{bc.label}}
+            </li>
+        {%elif not bc.url%}
+            <li class="breadcrumb-item">
+                {%if bc.icon%}{%icon icon_class=bc.icon%}{%elif bc.is_active%}{%icon bi-geo-fill%}{%endif%}{{bc.label}}
+            </li>
+        {%else%}
+            <li class="breadcrumb-item">
+                <a href="{{bc.url}}">
+                    {%if bc.icon%}{%icon icon_class=bc.icon%}{%elif bc.is_active%}{%icon bi-geo-fill%}{%endif%}{{bc.label}}
+                </a>
+            </li>
+        {%endif%}
+        {## forloop.counter < breadcrumbs|length ##}
+        {%endfor%}
+    </ol>
+    </nav>
+{%endif%}

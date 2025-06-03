@@ -1,0 +1,161 @@
+{% load base_taglib %}
+<table class="table table-condensed" id="address-container">
+    {%for address in contact.addresses.all%}
+        {%include 'base/contact/_address.html' with address=address%}
+    {%empty%}
+    <tr class="empty">
+        <td colspan="3">
+            <em class="text-muted">No addresses</em><br />
+        </td>
+    </tr>
+    {%endfor%}
+</table>
+<table class="table table-condensed" id="address-form">
+    <tr>
+        <td>
+            <label for="address_type" class="sr-only">Address Type</label>
+            {%select_menu options=address_options nullable=False name="address_type" id="address_type"%}
+        </td>
+        <td>
+            <label for="street_1" class="sr-only">Street Line 1</label>
+            <input type="text" name="street_1" id="street_1" placeholder="Street Line 1" /><br />
+
+            <label for="street_2" class="sr-only">Street Line 2</label>
+            <input type="text" name="street_2" id="street_2" placeholder="Street Line 2" /><br />
+
+            <label for="street_3" class="sr-only">Street Line 3</label>
+            <input type="text" name="street_3" id="street_3" placeholder="Street Line 3" /><br />
+        </td>
+        <td>
+            <label for="city" class="sr-only">City</label>
+            <input type="text" name="city" id="city" placeholder="City" /><br />
+
+            <label for="state" class="sr-only">State</label>
+            <input type="text" name="state" id="state" placeholder="State" /><br />
+
+            <label for="zip_code" class="sr-only">Zip Code</label>
+            <input type="text" name="zip_code" id="zip_code" placeholder="Zip Code" /><br />
+        </td>
+        <td>
+            <button type="button" class="btn btn-success btn-sm" id="address_save" onclick="save_address()">
+                {%icon bi-plus%} Add
+            </button>
+        </td>
+    </tr>
+</table>
+<script type="text/javascript">
+    function save_address(){
+        let container = $('#address-container');
+        let form = $('#address-form');
+        let at = form.find('#address_type');
+        let s1 = form.find('#street_1');
+        let s2 = form.find('#street_2');
+        let s3 = form.find('#street_3');
+        let c = form.find('#city');
+        let s = form.find('#state');
+        let z = form.find('#zip_code');
+        let btn = form.find('#address_save');
+        let btn_b4 = btn.html();
+
+        $.ajax({
+            type:   "POST",
+            url:    '{%url 'base:update_address'%}',
+            data:   {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                address_type: at.val(),
+                street_1: s1.val(),
+                street_2: s2.val(),
+                street_3: s3.val(),
+                city: c.val(),
+                state: s.val(),
+                zip_code: z.val(),
+                {%if contact_id%}contact_id: {{contact_id}},{%endif%}
+            },
+            beforeSend:function(){
+                btn.html(getAjaxLoadImage());
+                form.find('input').removeClass('ajax-error');
+            },
+            success:function(data){
+                container.find('.empty').remove();
+                container.append(data);
+                form.find('input').val('');
+                $('.last-edited-contact').addClass('outdated');
+            },
+            error:function(){
+                form.find('input').addClass('ajax-error');
+            },
+            complete:function(){
+                btn.html(btn_b4);
+            }
+        });
+    }
+
+
+    function update_address_type(el){
+        let tr = el.closest('tr');
+        let address_id = tr.attr('id').replace('address-row-', '');
+        let address_type = el.val();
+
+        $.ajax({
+            type:   "POST",
+            url:    '{%url 'base:update_address'%}',
+            data:   {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                address_id: address_id,
+                address_type: address_type,
+                {%if contact_id%}contact_id: {{contact_id}},{%endif%}
+            },
+            beforeSend:function(){
+                el.after(getAjaxLoadImage());
+                el.removeClass('ajax-error');
+            },
+            success:function(data){
+                el.after(getAjaxSavedIcon());
+                $('.last-edited-contact').addClass('outdated');
+            },
+            error:function(){
+                el.addClass('ajax-error');
+            },
+            complete:function(){
+                clearAjaxLoadImage(el.parent())
+            }
+        });
+    }
+
+
+    function confirm_delete_address(el){
+        {%js_confirm icon="bi-trash" title="Delete Address" onconfirm="delete_address(el);"%}
+        Are you sure you want to delete this address?
+        {%end_js_confirm%}
+    }
+
+    function delete_address(el){
+        let tr = el.closest('tr');
+        let address_id = tr.attr('id').replace('address-row-', '');
+
+        $.ajax({
+            type:   "POST",
+            url:    '{%url 'base:update_address'%}',
+            data:   {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                address_id: address_id,
+                address_delete: 'Y',
+                {%if contact_id%}contact_id: {{contact_id}},{%endif%}
+            },
+            beforeSend:function(){
+                el.after(getAjaxLoadImage());
+            },
+            success:function(data){
+                tr.remove();
+                $('.last-edited-contact').addClass('outdated');
+            },
+            error:function(){
+                el.addClass('ajax-error');
+            },
+            complete:function(){
+                clearAjaxLoadImage(el.parent())
+            }
+        });
+    }
+</script>
+

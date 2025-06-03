@@ -1,0 +1,14 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Suspicious Input Detected{%endblock%}
+
+{% block main_content %}
+<div class="page-alert">
+    {%icon bi-incognito%}
+    <h1>Suspicious Input Detected</h1>
+    <div>
+        Suspicious input was detected in your request.  A record of this request has been logged for review.<br />
+    </div>
+</div>
+{% endblock %}

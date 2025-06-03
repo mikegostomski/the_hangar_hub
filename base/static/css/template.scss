@@ -1,0 +1,34 @@
+* {
+    box-sizing: border-box;
+}
+@import 'main-styles';
+@import 'components';
+@import 'standard-template';
+
+// @import 'template-legacy';
+// @import 'template-text';
+// @import 'template-components';
+// @import 'template-header';
+// @import 'template-footer';
+// @import 'template-ajax';
+// @import 'application';
+
+
+
+
+
+/** Posted Messages **/
+
+
+.profile_thumbnail {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: blue;
+  display:inline-block;
+  vertical-align:middle;
+}
+.profile_thumbnail img{
+  width:100%;
+}

@@ -1,0 +1,109 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Status Page{%endblock%}
+
+{% block main_content %}
+    <h1>Application Status</h1>
+
+    <table class="table table-condensed table-striped">
+        {%if is_development and dev_test_content%}
+        <tr>
+            <th align="right">
+                Development<br />
+                Test Content
+            </th>
+            <td>
+                {{ dev_test_content }}
+            </td>
+        </tr>
+        {%endif%}
+        <tr>
+            <th align="right">
+                Site Name/Code:<br />
+                URL:
+            </th>
+            <td>
+                {%app_name%} ({%app_code%})<br />
+                {%absolute_url%}
+            </td>
+        </tr>
+        <tr>
+            <th align="right">Site Version:</th>
+            <td>{%app_version%}</td>
+        </tr>
+        <tr>
+            <th align="right">Server Time:</th>
+            <td>
+                {{ server_time|date:'DATETIME_FORMAT' }}<br />
+                {{ server_time.timestamp }}<br />
+            </td>
+        </tr>
+        <tr>
+            <th align="right">Environment:</th>
+            <td>{%setting_value 'ENVIRONMENT' %}</td>
+        </tr>
+        <tr>
+            <th align="right">Debug Mode:</th>
+            <td>{%setting_value 'DEBUG'%}</td>
+        </tr>
+        <tr>
+            <th align="right">Static Content URL:</th>
+            <td>{%static_content_url%}</td>
+        </tr>
+        <tr>
+            <th align="right">Session Duration:</th>
+            <td>
+                {{session_data.expiry_seconds}} seconds<br />
+                <em>{{session_data.expiry_description}} of inactivity</em><br />
+            </td>
+        </tr>
+
+        <tr>
+            <th align="right">Identity:</th>
+            <td>
+                <b>{{current_user.contact.display_name}}</b><br />
+                {%if request.user.is_authenticated%}
+                    <em>Authorities:</em><br />
+                    <ul>
+                        {%for code, desc in current_user.authorities.items%}
+                            <li>{{desc}}</li>
+                        {% empty %}
+                            <li><em class="text-muted">None</em></li>
+                        {%endfor%}
+                    </ul>
+                    <em>Permissions:</em><br />
+                    <ul>
+                        {%for pp in current_user.permissions.all%}
+                            <li><span class="code">{{pp.authority.code}}</span>: {{pp.authority.title}}</li>
+                        {% empty %}
+                            <li><em class="text-muted">None</em></li>
+                        {%endfor%}
+                    </ul>
+
+                    {%if is_proxying%}
+                        Proxying<br />
+                    {%endif%}
+
+                {%else%}
+                    Not logged in.
+                {%endif%}
+                <br />
+            </td>
+        </tr>
+
+        <tr>
+            <th>Custom Plugins:</th>
+            <td>
+                The following custom apps have been installed:<br />
+                <ul>
+                    {%for pp in installed_plugins%}
+                        <li>{{pp}}</li>
+                    {%endfor%}
+                </ul>
+            </td>
+        </tr>
+    </table>
+
+
+{%endblock%}

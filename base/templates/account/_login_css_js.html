@@ -1,0 +1,59 @@
+
+<script type="text/javascript">
+    let container = $('.login-errors');
+    let errors = container.find('li');
+    if(errors.length > 0){
+        container.addClass('list-group');
+        errors.addClass('hidden');
+        errors.each(function(){
+            let msg = $(this).html();
+            container.append(`<div class="list-group-item list-group-item-danger">${msg}</div>`);
+        });
+        container.find('ul').remove();
+    }
+    if(container.children().length > 0){
+        container.css('margin-bottom', '25px');
+    }
+</script>
+
+<style>
+    a.tag, span.tag{
+        display:inline-block;
+        border: 1px solid #AAA;
+        border-radius: 5px;
+        width: 100%;
+        text-decoration: none;
+        padding: 7px;
+        margin-top: 10px;
+        text-align: center;
+        cursor: pointer;
+        color: Blue;
+    }
+    a.tag img, span.tag img{
+        height: 30px;
+    }
+    a.tag span, span.tag span{
+        font-size: 1.3em;
+        display:inline-block;
+        margin-left: 10px;
+
+    }
+    a.tag:hover span, span.tag:hover span{
+        text-decoration: underline;
+    }
+
+    a.secondary{
+        color: #555;
+    }
+
+    .login-or{
+        font-size: 1.5em;
+        color: #555;
+        text-align: center;
+        margin: 15px 0 10px 0;
+    }
+    .form-control{
+    margin-bottom: 7px;
+    }
+
+</style>

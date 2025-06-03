@@ -1,0 +1,28 @@
+{% load base_taglib %}
+<tr id="row-contact-{{contact.id}}">
+    <td>{{contact.first_name}}</td>
+    <td>{{contact.last_name}}</td>
+    <td>{{contact.email}}</td>
+    <td>
+        {%for pp in contact.phones.all%}
+        <b class="sm">{{pp.phone_type}}</b> {{pp.formatted_number}}<br />
+        {%empty%}
+            <em class="text-muted">None</em>
+        {%endfor%}
+    </td>
+    <td>
+        {%for aa in contact.addresses.all%}
+            <table class="address-card">
+                <tr valign="middle">
+                    <td class="address-type">{%icon icon_class=aa.address_type_icon title=aa.address_type%}</td>
+                    <td class="address-content">{%include 'base/contact/_address_only.html' with address=aa%}</td>
+                </tr>
+            </table>
+        {%empty%}
+            <em class="text-muted">None</em>
+        {%endfor%}
+    </td>
+    <td>
+        {%icon bi-pencil-square onclick="edit_contact($(this));"%}
+    </td>
+</tr>

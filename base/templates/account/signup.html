@@ -1,0 +1,62 @@
+{% extends "account/base.html" %}
+
+{% load i18n %}
+{% load base_taglib %}
+
+{% block head_title %}{% trans "Signup" %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px;margin:0 auto;">
+
+
+    <div style="text-align:center;">
+        {%icon bi-person-plus bi-6x%}
+        <h1 class="h3 mb-3 font-weight-normal">Create an Account</h1>
+    </div>
+
+    <br />
+    {%include "base/components/google_login_button.html"%}
+
+    <div class="login-or">OR</div>
+
+    <span class="tag" onclick="$('#signup_form').removeClass('hidden');$(this).remove();$('#inputEmail').focus();">
+        {%icon bi-key style="color: black;"%}
+        <span>Create Username & Password</span>
+    </span>
+
+
+<form class="signup hidden" id="signup_form" method="post" action="{% url 'account_signup' %}">
+  {% csrf_token %}
+  {% if redirect_field_value %}
+  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+  {% endif %}
+
+
+    <div class="login-errors">
+        {% for  ee in form.non_field_errors %}
+            <div class="list-group-item list-group-item-danger">{{ee}}</div>
+        {% endfor %}
+        {% for field in form %}
+            {%for ee in field.errors %}
+                <div class="list-group-item list-group-item-danger">{{ ee }}</div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <label for="inputEmail" class="sr-only">Email address</label>
+    <input type="email" name="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
+    <label for="inputPassword" class="sr-only">Password</label>
+    <input type="password" name="password1" id="inputPassword" class="form-control" placeholder="Password" required>
+    <label for="inputPassword2" class="sr-only">Password (again)</label>
+    <input type="password" name="password2" id="inputPassword2" class="form-control" placeholder="Password (again)" required>
+    <button class="btn btn-primary btn-block" type="submit">Sign Up</button>
+
+</form>
+<div>
+        <a class="secondary float-left" href="{% url 'account_login' %}">{% trans "Log In" %}</a>
+        <a class="secondary float-right" href="{% url 'account_reset_password' %}">{% trans "Forgot Password" %}</a>
+    </div><br style="clear:both;" />
+
+</div>
+{%include 'account/_login_css_js.html'%}
+{% endblock %}

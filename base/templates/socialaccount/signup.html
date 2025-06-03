@@ -1,0 +1,56 @@
+{% extends "base/template/standard/template.html" %}
+
+{% load i18n %}
+{% load base_taglib %}
+
+{% block head_title %}{% trans "Signup" %}{% endblock %}
+
+{% block main_content %}
+<div style="max-width: 400px;margin:0 auto;">
+
+    <div style="text-align:center;">
+        {%icon bi-user-plus bi-6x%}
+        <h1 class="h3 mb-3 font-weight-normal">Create an Account</h1>
+    </div>
+
+    <div class="login-errors">
+        {% for  ee in form.non_field_errors %}
+            <div class="list-group-item list-group-item-danger">{{ee}}</div>
+        {% endfor %}
+        {% for field in form %}
+            {{ field.errors }}
+        {% endfor %}
+    </div>
+
+    <p>
+      {% blocktrans with provider_name=account.get_provider.name site_name=site.name %}
+      You are about to use your {{provider_name}} account to login.
+      As a final step, please complete the following form:
+      {% endblocktrans %}
+    </p>
+
+    <form class="signup" id="signup_form" method="post" action="{% url 'socialaccount_signup' %}">
+        {% csrf_token %}
+        {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        {% for field in form %}
+            <input name="{{ field.html_name }}"
+                   {%if 'email' in field.html_name %}
+                        type="email" placeholder="E-mail address"
+                   {%else%}
+                        type="text"
+                   {%endif%}
+                   value="{{ field.value }}"
+                   autocomplete="email"
+                   required=""
+                   id="{{field.id_for_label}}"
+                   class="form-control"
+            /><br />
+        {% endfor %}
+
+        <button class="btn btn-primary btn-block" type="submit">Sign Up</button>
+
+    </form>
+</div>
+{% endblock %}

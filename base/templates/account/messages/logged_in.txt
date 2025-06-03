@@ -1,0 +1,5 @@
+{% load account %}
+{% load base_taglib %}
+
+{% user_display user as name %}
+{%icon bi-person-circle%} Successfully signed in as {{name}}.

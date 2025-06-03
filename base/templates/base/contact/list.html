@@ -1,0 +1,177 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Contact List{%endblock%}
+{%block scripts%}{%jquery_confirm%}{%endblock%}
+
+{% block main_content %}
+
+    <form method="get" class="float-right" >
+        <div class="input-group mb-3">
+            <label for="keywords" class="sr-only">Search Contacts</label>
+            <input type="text" name="keywords" id="keywords" value="{{keywords|default:''}}" class="form-control initial-focus" placeholder="Search Contacts" />
+            <div class="input-group-append">
+                <button class="btn btn-success" type="submit">
+                    {%icon bi-search title="Search"%}
+                </button>
+            </div>
+        </div>
+    </form><br style="clear:both" />
+    <h1>Contacts</h1>
+    {%if keywords%}
+        <span class="code">
+            {%icon bi-search text-muted%} {{keywords}}
+            <a href="?keywords=" style="color: black;">{%icon bi-x-octagon style="font-size:.8em;" title="Clear Filters"%}</a>
+        </span><br />
+        <br />
+    {%endif%}
+
+
+    <table class="table table-striped table-hover table-condensed" id="contacts-table">
+        <tr>
+            {%sortable_th col="first_name"%}
+            {%sortable_th col="last_name"%}
+            {%sortable_th col="email"%}
+            <th scope="col">Phone Number</th>
+            <th scope="col">Address</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+        </tr>
+    {%for contact in contacts%}
+        {%include 'base/contact/_contact_line.html'%}
+    {%endfor%}
+
+        <tr id="row-contact-new" valign="bottom">
+            <td>
+                <label for="new-first_name" class="sr-only">First Name</label>
+                <input type="text" id="new-first_name" name="first_name" class="form-control" placeholder="First Name" />
+            </td>
+            <td>
+                <label for="new-last_name" class="sr-only">Last Name</label>
+                <input type="text" id="new-last_name" name="last_name" class="form-control" placeholder="Last Name" />
+            </td>
+            <td>
+                <label for="new-email" class="sr-only">Email</label>
+                <input type="email" id="new-email" name="email" class="form-control" placeholder="Email Address" />
+            </td>
+            <td>
+                <button type="button" onclick="edit_contact($(this));" class="btn btn-success">
+                    {%icon bi-person-plus%} Create Contact
+                </button>
+            </td>
+            <td>
+
+            </td>
+            <td>
+
+            </td>
+        </tr>
+
+    </table>
+    <style>
+        .address-card{
+            border: 1px solid #b5cbdf;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 3px;
+        }
+        .address-card .address-type{
+            background-color: #b5cbdf;
+            text-align:center;
+            vertical-align: middle;
+            height: 100%;
+            width: 60px;
+            overflow: hidden;
+            font-size: 1.3em;
+        }
+        .address-card .address-content{
+            background-color: white;
+            padding: 5px;
+        }
+        .outdated, .outdated:hover{
+            color: #CCC;
+            text-decoration: underline wavy orange;
+        }
+    </style>
+
+    <script type="text/javascript">
+        function edit_contact(el){
+            let tr = el.closest('tr');
+            let contact_id = tr.attr('id').replace('row-contact-', '');
+            let el_b4 = el.html();
+            let first_name = '';
+            let last_name = '';
+            let email = '';
+            let method = "GET";
+            if(contact_id == "new"){
+                console.log("New Contact")
+                first_name = $('#new-first_name').val();
+                last_name = $('#new-last_name').val();
+                email = $('#new-email').val();
+                method = "POST";
+            }
+            $.ajax({
+                type:   method,
+                url:    '{%url 'base:contact_form'%}',
+                data:   {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    ts: new Date().getTime(),
+                    contact_id: contact_id,
+                    first_name: first_name,
+                    last_name: last_name,
+                    email: email,
+                },
+                beforeSend:function(){
+                    $('.popup').remove();
+                    el.removeClass('ajax-error');
+                    el.html(getAjaxLoadImage());
+                    $('.last-edited-contact').removeClass('last-edited-contact');
+                },
+                success:function(data){
+                    $('body').append(data);
+                    if(contact_id == "new"){
+                        $('#new-first_name').val('');
+                        $('#new-last_name').val('');
+                        $('#new-email').val('');
+                    }
+                    else{
+                        tr.addClass('last-edited-contact');
+                    }
+                },
+                error:function(){
+                    el.html(el_b4);
+                    el.addClass('ajax-error');
+                },
+                complete:function(){
+                    el.html(el_b4);
+                }
+            });
+        }
+
+        function refresh_contact(contact_id){
+            console.log('Refresh contact ' + contact_id);
+            let tr = $('#row-contact-' + contact_id);
+
+            $.ajax({
+                type:   "GET",
+                url:    '{%url 'base:refresh_contact'%}',
+                data:   {
+                    ts: new Date().getTime(),
+                    contact_id: contact_id,
+                },
+                beforeSend:function(){
+                },
+                success:function(data){
+                    tr.after(data);
+                    tr.remove();
+                },
+                error:function(){
+                },
+                complete:function(){
+                }
+            });
+        }
+
+    </script>
+
+
+{%endblock%}

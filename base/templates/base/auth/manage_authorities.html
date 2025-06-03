@@ -1,0 +1,75 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Manage Authorities{%endblock%}
+{%block scripts%}{%jquery_confirm%}{%endblock%}
+
+{% block main_content %}
+    <h1>Manage Authorities</h1>
+
+
+    <form method="post" action="{%url 'base:add_authority'%}">
+        {%csrf_token%}
+        <table class="table table-condensed">
+            <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Title</th>
+                <th scope="col">Description</th>
+                <th scope="col">
+                    <span class="sr-only">Authorized Users</span>
+                </th>
+            </tr>
+
+        {%for aa in authorities%}
+            <tr id="row-{{aa.id}}">
+                <td>{{aa.code}}</td>
+                <td>{{aa.title}}</td>
+                <td>{{aa.description}}</td>
+                <td>
+                    {%icon bi-people text-info onclick="load_authorized_users($(this));" title="Authorized Users"%}
+                </td>
+            </tr>
+        {%empty%}
+            <tr>
+                <td colspan="4"></td>
+            </tr>
+        {%endfor%}
+
+            <tr>
+                <td><input type="text" name="code" value="{{prefill.code}}" maxlength="30" class="form-control" /></td>
+                <td><input type="text" name="title" value="{{prefill.title}}" maxlength="60" class="form-control" /></td>
+                <td><input type="text" name="description" value="{{prefill.description}}" maxlength="80" class="form-control" /></td>
+                <td>{%icon bi-send aria-label="Submit" onclick="this.form.submit();" title="Submit"%}</td>
+            </tr>
+        </table>
+    </form>
+
+    <script type="text/javascript">
+        function load_authorized_users(icon){
+            $('#authorized_user_container').remove();
+
+            let tr = icon.closest('tr')
+            let authority_id = tr.attr('id').replace('row-', '')
+
+            $.ajax({
+                type:   "GET",
+                url:    '{%url 'base:authorized_users_tbd'%}' + '/' + authority_id,
+                data:   { ts: new Date().getTime() },
+                beforeSend:function(){
+                    setAjaxLoadDiv();
+                },
+                success:function(data){
+                    $('body').append(data);
+                },
+                error:function(){
+                    {%js_alert icon="bi-exclamation-triangle" title="Error"%}
+                    Unable to retrieve authorized users.
+                    {%end_js_alert%}
+                },
+                complete:function(){
+                    clearAjaxLoadDiv();
+                }
+            });
+        }
+    </script>
+{%endblock%}

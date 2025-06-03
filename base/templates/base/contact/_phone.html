@@ -1,0 +1,18 @@
+{## Model: phone: Phone ##}
+{% load base_taglib %}
+<tr id="phone-row-{{phone.id}}">
+    <td>
+        <b>
+            {%select_menu value=phone.ptype options=phone.phone_types nullable=False onchange="update_phone_type($(this));" %}
+        </b>
+    </td>
+    <td>{{phone.formatted_number}}</td>
+    <td>
+        {%if phone.preferred == 'Y'%}
+            {%icon bi-patch-check text-success title="Preferred Number"%}
+        {%else%}
+            {%icon bi-patch-check title="Make preferred number" onclick="prefer_phone($(this))"%}
+        {%endif%}
+        {%icon bi-trash text-danger title="Delete this number" onclick="confirm_delete_phone($(this))"%}
+    </td>
+</tr>

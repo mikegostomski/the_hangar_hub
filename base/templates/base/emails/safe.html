@@ -1,0 +1,25 @@
+{% load base_taglib %}
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>{{subject|default:"Message from Website"}}</title>
+    </head>
+    <body>
+
+        <div style="background-color: White;padding: 10px;color: Black;">
+            <div style="float:left;">
+                Logo
+            </div>
+            <div style="float:right;font-size:16pt;font-weight:bold;font-variant:small-caps;color: #6A7F10;padding-top:5px;">
+                App
+            </div>
+            <hr style="clear:both;" />
+            <div style="padding: 20px;">
+                <p>{{content|safe}}</p>
+                <br />
+                <br style="clear:both;" />
+            </div>
+            <br />
+        </div>
+    </body>
+</html>

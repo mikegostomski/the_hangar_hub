@@ -1,0 +1,6 @@
+{## Model: address: Address ##}
+{{address.street_1}}<br />
+{%if address.street_2%}{{address.street_2}}<br />{%endif%}
+{%if address.street_3%}{{address.street_3}}<br />{%endif%}
+{{address.city}}, {{address.state}} {{address.zip_code}}<br />
+{%if address.country%}{{address.country}}<br />{%endif%}

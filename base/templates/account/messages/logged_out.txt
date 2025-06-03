@@ -1,0 +1,4 @@
+{% load base_taglib %}
+{%icon bi-box-arrow-right%}
+You have been logged out.
+

@@ -1,0 +1,11 @@
+{% load account base_taglib %}
+<form method="post" action="/accounts/google/login/?process=login">
+    {% csrf_token %}
+    <div style="text-align:center;">
+        <button type="submit" class="google-login-button">
+            {%image src="logos/google.png" style="height: 25px;"%}
+            &nbsp;
+            Sign in with Google
+        </button>
+    </div>
+</form>

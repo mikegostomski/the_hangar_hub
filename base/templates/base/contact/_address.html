@@ -1,0 +1,20 @@
+{## Model: address: Address ##}
+{% load base_taglib %}
+
+<tr id="address-row-{{address.id}}">
+    <td>
+        <b>
+            {%select_menu value=address.atype options=address.address_types nullable=False onchange="update_address_type($(this));" %}
+        </b>
+    </td>
+    <td>
+        {{address.street_1}}<br />
+        {%if address.street_2%}{{address.street_2}}<br />{%endif%}
+        {%if address.street_3%}{{address.street_3}}<br />{%endif%}
+        {{address.city}}, {{address.state}} {{address.zip_code}}<br />
+        {%if address.country%}{{address.country}}<br />{%endif%}
+    </td>
+    <td>
+        {%icon bi-trash text-danger title="Delete this address" onclick="confirm_delete_address($(this))"%}
+    </td>
+</tr>

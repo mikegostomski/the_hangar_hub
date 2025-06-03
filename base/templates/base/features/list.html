@@ -1,0 +1,171 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Manage Users{%endblock%}
+
+{% block main_content %}
+    <h1>Features</h1>
+    <table class="table table-condensed table-striped" id="feature_table">
+        <tr>
+            <th scope="col">Group</th>
+            <th scope="col">Feature Code</th>
+            <th scope="col">Feature Title</th>
+            <th scope="col">Description</th>
+            <th scope="col">Status</th>
+            <th scope="col">Activation Date<sup>*</sup></th>
+            <th scope="col">Termination Date<sup>*</sup></th>
+            <th scope="col"><span class="bi bi-trash" aria-hidden="true"></span></th>
+        </tr>
+
+        {### FEATURES ###}
+        {% for ff in features%}
+        <tr>
+            <td>
+                <input type="text" id="group_code-{{ff.id}}" value="{{ff.group_code|default:''}}" onchange="update_feature($(this));" />
+            </td>
+            <td><span class="code">{{ff.feature_code}}</span></td>
+            <td>
+                <input type="text" id="title-{{ff.id}}" value="{{ff.feature_title}}" onchange="update_feature($(this));" />
+            </td>
+            <td>
+                <input type="text" id="description-{{ff.id}}" value="{{ff.feature_description|default:''}}" onchange="update_feature($(this));" />
+            </td>
+            <td>
+                {%select_menu id=ff.id value=ff.status options=status_options onchange="update_feature($(this));" %}
+            </td>
+            <td>
+                <input type="text" id="enable_date-{{ff.id}}" value="{%format_datetime ff.enable_date%}" onchange="update_feature($(this));" />
+            </td>
+            <td>
+                <input type="text" id="disable_date-{{ff.id}}" value="{%format_datetime ff.disable_date%}" onchange="update_feature($(this));" />
+            </td>
+            <td class="date"><span class="bi bi-trash text-danger" title="Delete this feature" onclick="delete_feature($(this), {{ff.id}});"></span></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
+<form action="{% url 'base:add_feature' %}" method="post" id="feature-form">
+    {%csrf_token%}
+    <table class="table table-condensed table-striped">
+        <tr>
+            <th scope="col">Group</th>
+            <th scope="col">Feature Code</th>
+            <th scope="col">Feature Title</th>
+            <th scope="col">Description</th>
+            <th scope="col">Status</th>
+            <th scope="col">Activation Date<sup>*</sup></th>
+            <th scope="col">Termination Date<sup>*</sup></th>
+            <th scope="col"></th>
+        </tr>
+        <tr>
+            <td><input type="text" name="group_code" placeholder="Group Code" class="form-control" /></td>
+            <td class="code"><input type="text" name="feature_code" class="form-control" /></td>
+            <td><input type="text" name="feature_title" class="form-control" /></td>
+            <td><input type="text" name="feature_description" class="form-control" /></td>
+            <td>
+                {%select_menu id="new-status" value="L" name="status" options=status_options class="form-select" %}
+            </td>
+            <td><input type="text" name="enable_date" placeholder="DD-MON-YYYY HH:MM" class="form-control" /></td>
+            <td><input type="text" name="disable_date" placeholder="DD-MON-YYYY HH:MM" class="form-control" /></td>
+            <td>
+                <button type="submit" class="btn btn-success btn-sm">
+                    {%icon bi-plus title="Add"%}
+                </button>
+            </td>
+        </tr>
+    </table>
+</form>
+    <br />
+
+    <sup>*</sup> If an activation date is provided, the feature will be switched to active on the specified date and time.<br />
+    <sup>*</sup> If a termination date is specified, the feature will be set to inactive at the specified date and time.
+    <br /><br />
+    <p>
+        You may specify the date/time in any reasonable format.  If only a date is given, the time will default to 00:00<br />
+        Examples:
+        <ul>
+            <li>{%format_datetime now%}</li>
+            <li>{%format_date now%}</li>
+            <li>{%format_timestamp now%}</li>
+        </ul>
+    </p>
+
+    <style>
+        #feature_table input{
+            width: 100%;
+        }
+        .text-muted input, .text-muted select{
+            color: #777;
+        }
+        .text-danger input, .text-danger select{
+            color: red;
+        }
+        .date{
+            font-size: .75em;
+            cursor: default;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+
+
+        function update_feature(element){
+            var html_id = element.attr('id');
+            if(element.is('select')){
+                var prop = "status";
+                var id = element.attr('id');
+                var value = element.val();
+            }
+            else{
+                var pieces = html_id.split('-');
+                var prop = pieces[0];
+                var id = pieces[1];
+                var value = element.val();
+            }
+
+            $.ajax({
+                type:   "POST",
+                url:    "{% url 'base:modify_feature' %}",
+                data:   {
+                    id: id, prop: prop, value: value,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                beforeSend:function(){
+                    element.css('border-color', 'orange');
+                },
+                success:function(data){
+                    element.css('border-color', 'green');
+                    element.val(data)
+                },
+                error:function(){
+                    element.css('border-color', 'red');
+                },
+                complete:function(){}
+            });
+        }
+
+        function delete_feature(element, id){
+
+            $.ajax({
+                type:   "POST",
+                url:    "{% url 'base:delete_feature' %}",
+                data:   {
+                    id: id, csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                beforeSend:function(){
+                    element.after(getAjaxLoadImage());
+                },
+                success:function(data){
+                    element.closest('tr').remove();
+                },
+                error:function(){
+                    element.addClass('ajax-error');
+                },
+                complete:function(){}
+            });
+        }
+    </script>
+
+    {% endblock %}

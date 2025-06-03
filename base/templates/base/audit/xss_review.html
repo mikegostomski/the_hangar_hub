@@ -1,0 +1,49 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Review XSS Attempts{%endblock%}
+
+{% block main_content %}
+    <h1>XSS Attempts</h1>
+    <table class="table table-condensed table-striped">
+        <tr>
+            <th scope="col">Path</th>
+            <th scope="col">User</th>
+            <th scope="col">Parameter</th>
+            <th scope="col">Value</th>
+            <th scope="col">Timestamp</th>
+            <th scope="col">Reviewed</th>
+        </tr>
+
+        {% for xx in xss%}
+        <tr>
+            <td>{{xx.path|default_if_none:""}}</td>
+            <td>{{xx.user.email|default_if_none:""}}</td>
+            <td>{{xx.parameter_name|default_if_none:""}}</td>
+            <td>{{xx.parameter_value|default_if_none:""}}</td>
+            <td>{{xx.date_created}}</td>
+            <td>
+                <button type="button" class="btn btn-xs btn-info" onclick="review_xss({{xx.id}}, $(this));">OK</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {%pagination xss%}
+
+    <script type="text/javascript">
+        function review_xss(xss_id, btn){
+            $.ajax({
+                type:   "POST",
+                url:    '{%url 'base:xss_dismiss'%}',
+                data:   { id: xss_id, csrfmiddlewaretoken: '{{ csrf_token }}' },
+                beforeSend:function(){ btn.addClass('btn-warn');btn.removeClass('btn-info'); },
+                success:function(infotext){
+                    btn.closest('tr').remove();
+                },
+                error:function(ee){btn.addClass('btn-danger');btn.removeClass('btn-warn');},
+                complete:function(){}
+            });
+        }
+    </script>
+    {% endblock %}

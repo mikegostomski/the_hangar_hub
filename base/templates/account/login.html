@@ -1,0 +1,66 @@
+{% extends "account/base.html" %}
+
+{% load i18n %}
+{% load account socialaccount %}
+{% load account base_taglib %}
+
+{% block title %}{% trans "Sign In" %}{% endblock %}
+
+{% block main_content %}
+
+<div style="max-width: 400px;margin:0 auto;">
+
+    <div style="text-align:center;">
+        {%icon bi-person-bounding-box bi-6x%}
+        <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+    </div>
+
+    <br />
+    {%include "base/components/google_login_button.html"%}
+
+    <div class="login-or">OR</div>
+
+
+<form class="login" method="POST" action="{% url 'account_login' %}">
+    {% csrf_token %}
+    {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+    {% endif %}
+
+
+    <div class="login-errors">
+        {% for  ee in form.non_field_errors %}
+            <div class="list-group-item list-group-item-danger">{{ee}}</div>
+        {% endfor %}
+        {% for field in form %}
+            {%for ee in field.errors %}
+                <div class="list-group-item list-group-item-danger">{{ ee }}</div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <label for="inputEmail" class="sr-only">Email address</label>
+    <input type="email" name="login" id="inputEmail" email="{{form.login.data}}" class="form-control" placeholder="Email address" required autofocus>
+    <label for="inputPassword" class="sr-only">Password</label>
+    <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+    <div class="checkbox mb-3">
+        <label>
+            <input type="checkbox" value="remember-me" name="remember" /> Remember me
+        </label>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+
+
+
+</form>
+
+    <div>
+        <a class="secondary float-left" href="{% url 'account_signup' %}">{% trans "Sign Up" %}</a>
+        <a class="secondary float-right" href="{% url 'account_reset_password' %}">{% trans "Forgot Password" %}</a>
+    </div><br style="clear:both;" />
+</div>
+
+{%include 'account/_login_css_js.html'%}
+
+
+{% endblock %}

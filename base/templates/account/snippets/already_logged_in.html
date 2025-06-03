@@ -1,0 +1,7 @@
+{% load i18n %}
+{% load account %}
+
+{% user_display user as user_display %}
+<p style="text-align:center;">
+    {% blocktrans %}You are currently logged in as {{ user_display }}.{% endblocktrans %}
+</p>

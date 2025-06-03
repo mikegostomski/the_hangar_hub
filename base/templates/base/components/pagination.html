@@ -1,0 +1,47 @@
+{% load base_taglib %}
+
+<div style="margin:10px 0;" class="text-muted">
+    Showing {{start_item}} - {{end_item}} of {{num_items}}
+</div>
+
+{%if max_page > 1%}
+<div class="pagination">
+
+    {## IF PREVIOUS PAGES EXIST ##}
+    {%if paginated_results.has_previous%}
+        {% if paginated_results.previous_page_number != 1 %}
+            <a class="pagination-page" href="?page=1">{%icon bi-chevron-double-left title="First Page"%}</a>
+        {%endif%}
+
+        <a class="pagination-page" href="?page={{ paginated_results.previous_page_number }}">{%icon bi-chevron-left title="Previous Page"%}</a>
+    {%endif%}
+
+    {%if dots_before%}. . .{%endif%}
+
+    {## FOR EACH PAGE NUMBER ##}
+    {% for num in paginated_results.paginator.page_range %}
+
+        {## CURRENT PAGE ##}
+        {%if paginated_results.number == num%}
+            <span class="pagination-page pagination-page-current">{{num}}</span>
+
+        {## WITHIN THREE PAGES OF THE CURRENT PAGE ##}
+        {%elif num >= min_page and num <= max_page%}
+            <a class="pagination-page" href="?page={{ num }}">{{num}}</a>
+
+        {%endif%}
+    {% endfor %}
+
+    {%if dots_after%}. . .{%endif%}
+
+    {## IF NEXT PAGES EXIST ##}
+    {%if paginated_results.has_next%}
+        <a class="pagination-page" href="?page={{ paginated_results.next_page_number }}">{%icon bi-chevron-right title="Next Page"%}</a>
+        {% if paginated_results.next_page_number != paginated_results.paginator.num_pages %}
+            <a class="pagination-page" href="?page={{paginated_results.paginator.num_pages}}">{%icon bi-chevron-double-right title="Last Page"%}</a>
+        {%endif%}
+    {%endif%}
+</div><br />
+{%else%}
+
+{%endif%}

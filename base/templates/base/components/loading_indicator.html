@@ -1,0 +1,10 @@
+{% load base_taglib %}
+{%page_load_ind id="generic-loading-indicator"%}
+<script type="text/javascript">
+    function load_indicator(text){
+        if(typeof text === "undefined"){
+            text = "Loading...";
+        }
+        $("#generic-loading-indicator").removeClass("hidden").find(".loading-text").html(text);
+    }
+</script>

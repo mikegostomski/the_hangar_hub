@@ -1,0 +1,23 @@
+{% load base_taglib %}
+{# Requires: spinner_name, spinner_message#}
+
+<div id="sss-{{spinner_name}}" class="smokescreen hidden"></div>
+<div id="sss-{{spinner_name}}-message" class="smokescreen-spinner {{spinner_class}} hidden" style="{{spinner_style}}">
+    {%icon bi-gear bi-3x bi-spin%}<br />
+    {{spinner_message}}
+</div>
+<script type="text/javascript">
+    function show_{{spinner_name}}(){
+        $("#sss-{{spinner_name}}").removeClass('hidden');
+        $("#sss-{{spinner_name}}-message").removeClass('hidden');
+    }
+    function hide_{{spinner_name}}(){
+        $("#sss-{{spinner_name}}").addClass('hidden');
+        $("#sss-{{spinner_name}}-message").addClass('hidden');
+    }
+    {%if spinner_show%}
+        $(document).ready(function(){
+            show_{{spinner_name}}();
+        });
+    {%endif%}
+</script>

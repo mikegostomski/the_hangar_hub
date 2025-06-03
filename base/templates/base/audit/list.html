@@ -1,0 +1,202 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}{%app_name%} - Audit Console{%endblock%}
+{% block main_content %}
+    <h1>Filters</h1>
+    <form method="get" id="filter-form">
+        <input type="hidden" name="filter_submission" value="Y" />
+        <div id="audit_search-container">
+
+            <div class="audit_search-section">
+                <b>User Filter</b><br />
+                <br />
+                <label for="audit_search-username" class="sr-only">Username</label>
+                <input type="text" id="audit_search-username" name="username" value="{{ff.username|default:''}}" placeholder="Username" class="form-control" />
+                <div class="sm" style="text-align:center;">
+                    <label>
+                        <input type="checkbox" name="user_type" value="S" {%if ff.sso%}checked{%endif%} /> Authenticated
+                    </label> &nbsp;
+                    <label>
+                        <input type="checkbox" name="user_type" value="I" {%if ff.impersonated%}checked{%endif%} /> Impersonated
+                    </label> &nbsp;
+                    <label>
+                        <input type="checkbox" name="user_type" value="P" {%if ff.proxied%}checked{%endif%} /> Proxied
+                    </label>
+                </div>
+            </div>
+
+            <div class="audit_search-section">
+                <b>Date Filter</b><br />
+                <div>
+                    <label>
+                        <b class="sm">From Date</b>
+                        <input type="date"
+                               max="{% now 'Y-m-d' %}"
+                               min="2019-08-01"
+                               id="audit_search-from_date"
+                               name="from_date"
+                               value="{{from_date_instance.date_field}}"
+                               placeholder="Today" class="form-control"
+                        />
+                    </label>
+                    &nbsp;
+                    <label>
+                        <b class="sm">To Date</b>
+                        <input type="date"
+                               max="{% now 'Y-m-d' %}"
+                               min="2019-08-01"
+                               id="audit_search-to_date"
+                               name="to_date"
+                               value="{{to_date_instance.date_field}}"
+                               placeholder="Today" class="form-control"
+                        />
+                    </label>
+                </div>
+            </div>
+
+             <div class="audit_search-section">
+                <b>Action Type</b><br />
+                 <br />
+                 {%select_menu name="crud_code" options=crud_options values=ff.crud_code multiple null_label="All Actions"%}
+             </div>
+
+             <div class="audit_search-section">
+                <b>Event Filter</b><br />
+                 <br />
+                 {%select_menu name="event_code" options=event_codes values=ff.event_code multiple null_label="All Events"%}
+             </div>
+
+             <div class="audit_search-section">
+                <b>Reference Filter</b><br />
+                 <br />
+                 <input type="text" name="reference" value="{{ff.reference|default:''}}" class="form-control" />
+             </div>
+
+             <div class="audit_search-section">
+                <b>Comment Filter</b><br />
+                 <br />
+                 <input type="text" name="comment" value="{{ff.comment|default:''}}" class="form-control" />
+             </div>
+
+            <br style="clear:both;" />
+            <br />
+            <div style="text-align:center;">
+                <button type="submit" class="btn btn-info">Apply Filters</button>
+            </div>
+        </div>
+    </form>
+
+    <h2>Current Filters</h2>
+    <span class="indented">
+        {## USER ##}
+        {%if user_instance%}
+            <div style="display: inline-block;text-align:center; border: 1px solid #333;border-radius: 3px;font-size: .8em;padding: 3px;">
+                User:<br />
+                {{user_instance.display_name}}
+            </div>
+        {%endif%}
+
+        {## DATE RANGE ##}
+        {%if ff.from_date and ff.to_date%}
+            <div style="display: inline-block;text-align:center; border: 1px solid #333;border-radius: 3px;font-size: .8em;padding: 3px;">
+                {{from_date_instance.banner_date}}<br />
+                <em style="font-size: .9em;">through</em><br />
+                {{to_date_instance.banner_date}}
+            </div>
+        {%elif ff.from_date%}
+            <div style="display: inline-block;text-align:center; border: 1px solid #333;border-radius: 3px;font-size: .8em;padding: 3px;">
+                <em style="font-size: .9em;">Since</em><br />
+                {{from_date_instance.banner_date}}
+            </div>
+        {%elif ff.to_date%}
+            <div style="display: inline-block;text-align:center; border: 1px solid #333;border-radius: 3px;font-size: .8em;padding: 3px;">
+                <em style="font-size: .9em;">Before</em><br />
+                {{to_date_instance.banner_date}}
+            </div>
+        {%endif%}
+
+        {## EVENT CODES ##}
+        {%if ff.event_code%}
+            <div style="display: inline-block;text-align:center; border: 1px solid #333;border-radius: 3px;font-size: .8em;padding: 3px;">
+                Codes:<br />
+                {%for ee in ff.event_code%}
+                    {{ee}},
+                {%endfor%}
+            </div>
+        {%endif%}
+
+        {## Reference ##}
+        {%if ff.reference%}
+            <div style="display: inline-block;text-align:center; border: 1px solid #333;border-radius: 3px;font-size: .8em;padding: 3px;">
+                Reference:<br />
+                {{ff.reference}}
+            </div>
+        {%endif%}
+
+        {## Comment ##}
+        {%if ff.comment%}
+            <div style="display: inline-block;text-align:center; border: 1px solid #333;border-radius: 3px;font-size: .8em;padding: 3px;">
+                Comment:<br />
+                {{ff.comment}}
+            </div>
+        {%endif%}
+
+    </span>
+
+    <h1>Audits</h1>
+    <table class="table table-condensed table-striped">
+        <tr>
+            <th scope="col">Application</th>
+            {%sortable_th column="username" heading="User"%}
+            {%sortable_th column="impersonated_username" heading="Impersonating"%}
+            {%sortable_th column="proxied_username" heading="Proxying"%}
+            {%sortable_th column="date_created" heading="Activity Date"%}
+            {%sortable_th column="event_code" heading="Event Code"%}
+            {%sortable_th column="reference_code,reference_id" heading="Reference"%}
+            <th scope="col">Previous Value</th>
+            <th scope="col">New Value</th>
+            <th scope="col">Comments</th>
+        </tr>
+
+        {% for aa in audits%}
+        <tr>
+            <td>{{aa.app_code}}</td>
+            <td>{{aa.user.username}}</td>
+            <td>{{aa.impersonated_user.username|default_if_none:""}}</td>
+            <td>{{aa.proxied_user.username|default_if_none:""}}</td>
+            <td>{{aa.date_created}}</td>
+            <td>{{aa.event_code}}</td>
+            <td>
+                {{aa.reference_code|default_if_none:""}}{%if aa.reference_code and aa.reference_id%}:{%endif%}
+                {{aa.reference_id|default_if_none:""}}
+            </td>
+            <td>{{aa.previous_value|default_if_none:""}}</td>
+            <td>{{aa.new_value|default_if_none:""}}</td>
+            <td>{{aa.comments|default_if_none:""}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {%pagination audits%}
+
+    <style>
+        #audit_search-container{
+
+        }
+
+        .audit_search-section{
+            display: inline-block;
+            float: left;
+            padding: 10px;
+        }
+    </style>
+
+    <script type="text/javascript">
+        function clear_filters(){
+            let form = $('#filter-form');
+            form.find('input').not('input[type=checkbox]').add('select').add('textarea').val('');
+        }
+    </script>
+
+{% endblock %}

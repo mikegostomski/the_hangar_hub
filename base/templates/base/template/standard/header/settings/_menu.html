@@ -1,0 +1,19 @@
+{% load base_taglib %}
+
+{% if user.is_authenticated %}
+    {%check_admin_menu %}
+    {% if has_admin_menu %}
+        <div class="dropdown">
+            <a class="dropdown-toggle" id="admin-menu-button" data-bs-toggle="dropdown" aria-expanded="false">
+                {%icon bi-gear title="Settings"%}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="admin-menu-button">
+                {# Plugin Items #}
+                {% for plugin_link in plugin_admin_links %}
+                    {% header_nav_menu_item attributes=plugin_link %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endif %}
+{## <li><a class="dropdown-item" href="{% url 'base:profile' %}"></a></li> ##}

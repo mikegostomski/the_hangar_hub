@@ -1,0 +1,59 @@
+@import 'variables';
+
+/* Ajax status colors */
+.ajax-pending{
+    border-color:   $info;
+    color:          $info;
+}
+.ajax-error{
+    border-color:   $danger !important;
+    color:          $danger !important;
+}
+.ajax-success{
+    border-color:   $success;
+    color:          $success;
+}
+
+.ajax-save-result{
+    margin-left:5px;
+    font-size: 10pt;
+    cursor:default;
+}
+.ajax-status-result{
+    margin-left:5px;
+    font-size: 12pt;
+    cursor:default;
+}
+
+/** Ajax status indicators **/
+.ajaxLoadImage{
+    margin-left:5px;
+    margin-right:5px;
+    cursor:default;
+}
+div.ajaxLoading{
+    display:inline;
+    position:absolute;
+    position:fixed;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    width:100px;
+    height:100px;
+    z-index:1000;
+    border:1px solid $primary-bg-color;
+    border-radius:5px;
+    background-color:linen;
+    margin: auto;
+    padding: 25px;
+    text-align: center;
+    vertical-align: middle;
+    cursor:default;
+}
+span.ajaxLoading{
+    display:inline;
+    z-index: 2147483646;
+    font-size: xx-large;
+    cursor:default;
+}

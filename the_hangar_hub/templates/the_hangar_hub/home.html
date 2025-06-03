@@ -1,0 +1,39 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar Hub{%endblock%}
+
+{% block main_content %}
+    {%if is_logged_in%}
+        <h1>Welcome, {{current_user.first_name}}</h1>
+    {%else%}
+        <h1>Welcome</h1>
+    {%endif%}
+    <br />
+    <p>
+        Welcome to The Hangar Hub: Your Premier Destination for ... purposes!
+    </p>
+    <p>
+        At The Hangar Hub Site, we understand the critical importance of reliable and trustworthy maintenance services for
+        aircraft owners and operators. Whether you're a seasoned pilot, aircraft enthusiast, or a fleet manager,
+        finding the right maintenance shop is paramount to ensuring the safety and efficiency of your aircraft.
+    </p>
+    <p>
+        Our platform serves as your comprehensive guide to navigating the vast landscape of aviation maintenance shops.
+        From small independent operations to large-scale maintenance facilities, we provide detailed reviews, ratings,
+        and insights to help you make informed decisions.
+    </p>
+    <p>
+        Discover top-rated shops with stellar reputations for quality workmanship, adherence to safety standards,
+        and exceptional customer service. With our user-friendly interface, you can easily search, compare, and review
+        maintenance shops based on location, services offered, customer feedback, and more.
+    </p>
+    <p>
+        Join our community of aviation enthusiasts and professionals who rely on AirWrench to find the best maintenance
+        solutions for their aircraft. Whether you're in need of routine inspections, repairs, or major overhauls, trust
+        AirWrench to connect you with the right maintenance shop for your needs.
+    </p>
+    <p>
+        Start your search today and elevate your aviation maintenance experience with AirWrench!
+    </p>
+{%endblock%}
