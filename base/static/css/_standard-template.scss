@@ -260,6 +260,21 @@
     padding: 10px;
 }
 
+/* variations for page dimension and justification */
+.content-full{
+    /* for future use? */
+}
+.content-800{
+    max-width: 800px;
+}
+.content-1024{
+    max-width: 1024px;
+}
+.content-center{
+    margin: 0 auto;
+}
+
+
 /**
   * FOOTER
   *********************************************************/

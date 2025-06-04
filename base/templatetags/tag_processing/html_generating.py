@@ -333,7 +333,13 @@ class SelectNode(template.Node):
 
         pieces = ["<select"]
         for attr_key, attr_val in attrs.items():
-            pieces.append(f'{attr_key}="{attr_val}"')
+            # Data attributes need the '_' converted to '-'
+            if attr_key.startswith("data_"):
+                pieces.append(f'{attr_key.replace("data_", "data-")}="{attr_val}"')
+            elif attr_key.startswith("aria_"):
+                pieces.append(f'{attr_key.replace("aria_", "aria-")}="{attr_val}"')
+            else:
+                pieces.append(f'{attr_key}="{attr_val}"')
         if multiple:
             pieces.append("multiple")
         pieces.append(">")

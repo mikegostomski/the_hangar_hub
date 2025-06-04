@@ -14,7 +14,7 @@ class Airport(models.Model):
     state = models.CharField(max_length=3)
 
     # Email displayed to users/tenants who need to contact the airport
-    info_email = models.CharField(max_length=150, blank=False, null=False, db_index=True, unique=True)
+    info_email = models.CharField(max_length=150, blank=True, null=True)
 
 
     @classmethod
