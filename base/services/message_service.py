@@ -68,7 +68,6 @@ def post_message(msg, msg_type, add_icon=True):
                     "warning": "bi bi-bell",
                     "error": "bi bi-exclamation-triangle",
                 }
-                log.debug(f"Level: {msg_type} Gets icon: {std_icons.get(msg_type)}")
                 message = f"""<i class="bi {std_icons.get(msg_type)}" aria-hidden="true"></i> {message}"""
 
             messages.add_message(request, msg_level, message)

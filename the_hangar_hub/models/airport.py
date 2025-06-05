@@ -21,6 +21,7 @@ class Airport(models.Model):
     def get(cls, id_or_ident):
         try:
             if str(id_or_ident).isnumeric():
+                log.debug(f"Get by ID: {id_or_ident}")
                 return cls.objects.get(pk=id_or_ident)
             else:
                 return cls.objects.get(identifier=id_or_ident)

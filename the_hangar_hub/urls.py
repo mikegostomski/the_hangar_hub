@@ -22,7 +22,7 @@ app_paths = [
     path('', home, name='home'),
 
     path('airport', welcome, name='welcome'),
-    path('airport/select', welcome, name='select_airport'),
+    path('airport/select', select_airport, name='select_airport'),
 ]
 
 urlpatterns = [
