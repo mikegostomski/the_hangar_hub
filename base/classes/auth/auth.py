@@ -172,21 +172,31 @@ class Auth:
 
         lookup_key = str(user_data)
         user_map = env.recall() or {}
-        cached_user_instance = user_map.get(lookup_key)
+        found_user = user_map.get(lookup_key)
 
-        if not cached_user_instance:
+        if not found_user:
             # Perform lookup
             log.trace([lookup_key])
             user_instance = AuthUser(user_data=user_data, get_contact=get_contact, get_authorities=get_authorities)
             # Add user_instance to dict
             if user_instance and user_instance.id:
                 user_map[lookup_key] = user_instance
+                found_user = user_map.get(lookup_key)
                 # Store updated dict for duration of request
                 env.store(user_map)
+
             log.debug(f"Cached Users: {user_map.keys()}")
 
+        # If getting contact or authorities, lookup could have been previously cached without that data.
+        # Calling the functions to get that data will not re-query if the data is already present
+        if found_user:
+            if get_authorities:
+                found_user.populate_authorities()
+            if get_contact:
+                found_user.get_contact_instance()
+
         # Return AuthUser object (or None)
-        return user_map.get(lookup_key)
+        return found_user
 
     @classmethod
     def audit(

@@ -71,7 +71,7 @@ class AuthUser:
         return self._cached_django_user
 
     def contact(self):
-        self._get_contact_instance()
+        self.get_contact_instance()
         return self._cached_contact
 
     def has_authority(self, authority_list):
@@ -137,9 +137,9 @@ class AuthUser:
             for attr in self.attrs_from_django():
                 setattr(self, attr, getattr(self._cached_django_user, attr))
             if get_authorities:
-                self._populate_authorities()
+                self.populate_authorities()
             if get_contact:
-                self._get_contact_instance()
+                self.get_contact_instance()
 
     def __init__(self, user_data, get_contact=True, get_authorities=True):
         # If anonymous
@@ -187,6 +187,7 @@ class AuthUser:
 
     def _query_django_user(self):
         if not self._cached_django_user:
+            log.trace([self])
             try:
                 # This may be a search/lookup based on id, email, or username
                 if self.id:
@@ -200,7 +201,7 @@ class AuthUser:
             except Exception as ee:
                 error_service.record(ee, self)
 
-    def _populate_authorities(self, force=False):
+    def populate_authorities(self, force=False):
         if force or self.authorities is None:
             self.authorities = {}
             if self.is_valid():
@@ -220,7 +221,7 @@ class AuthUser:
                 except Exception as ee:
                     error_service.record(ee, f"Error retrieving permissions for {self.email}")
 
-    def _get_contact_instance(self):
+    def get_contact_instance(self):
         if self._cached_contact:
             return
 
