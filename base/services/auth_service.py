@@ -3,6 +3,7 @@ from base.classes.auth.auth import Auth
 
 log = Log()
 
+# ToDo: This can probably be deprecated and just use Auth() instead
 
 def get_auth_instance():
     return Auth()
@@ -30,6 +31,14 @@ def get_user_or_proxy():
 
 def get_authenticated_user():
     return get_auth_instance().authenticated_user
+
+
+def lookup_user(user_data, get_contact=False, get_authorities=False):
+    """
+    Get an AuthUser object for specified user.
+    Lookups are cached for the duration of the request.
+    """
+    return Auth.lookup_user(user_data, get_contact, get_authorities)
 
 
 def has_authority(authority_list, use_impersonated=True):

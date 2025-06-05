@@ -50,7 +50,7 @@ class Auth:
             self.reset_session()
             if user_data is None:
                 return True
-            iu = AuthUser(user_data)
+            iu = self.lookup_user(user_data, get_authorities=True, get_contact=True)
             if iu and iu.is_valid():
                 self.impersonated_user = iu
                 self.save()
@@ -74,7 +74,7 @@ class Auth:
                 self.save()
                 return True
 
-            pu = AuthUser(user_data)
+            pu = self.lookup_user(user_data, get_authorities=True, get_contact=True)
             if pu and pu.is_valid():
                 pu.is_proxied = True
                 self.proxied_user = pu
@@ -100,7 +100,7 @@ class Auth:
 
         # If user is not authenticated, there is nothing to process
         if not user_instance.is_authenticated:
-            self.authenticated_user = AuthUser(None)
+            self.authenticated_user = self.lookup_user(None)
             self._clean_users()
             return
 
@@ -112,19 +112,19 @@ class Auth:
             # Has user authentication changed?
             user_unchanged = self.authenticated_user and user_instance.username == self.authenticated_user.username
 
-            # If user did not change, check for name or email changes (stored in session)
-            for u_type in ['authenticated_user', 'impersonated_user', 'proxied_user']:
-                user_class = getattr(self, u_type)
-                if user_class:
-                    user_django = user_class.django_user()
-                    if user_django:
-                        save_changes = False
-                        for attr in ["first_name", "last_name", "email"]:
-                            if getattr(user_django, attr) != getattr(user_class, attr):
-                                setattr(user_class, attr, getattr(user_django, attr))
-                                save_changes = True
-                        if save_changes:
-                            self.save()
+            # # If user did not change, check for name or email changes (stored in session)
+            # for u_type in ['authenticated_user', 'impersonated_user', 'proxied_user']:
+            #     user_class = getattr(self, u_type)
+            #     if user_class:
+            #         user_django = user_class.django_user()
+            #         if user_django:
+            #             save_changes = False
+            #             for attr in ["first_name", "last_name", "email"]:
+            #                 if getattr(user_django, attr) != getattr(user_class, attr):
+            #                     setattr(user_class, attr, getattr(user_django, attr))
+            #                     save_changes = True
+            #             if save_changes:
+            #                 self.save()
 
             # If authentication has not changed, no further processing required
             if user_unchanged:
@@ -133,7 +133,7 @@ class Auth:
 
         # Generate new auth data
         # ===============================================================
-        self.authenticated_user = AuthUser(user_instance)
+        self.authenticated_user = self.lookup_user(user_instance, get_authorities=True, get_contact=True)
         self.impersonated_user = None
         self.proxied_user = None
         self.save()
@@ -142,19 +142,20 @@ class Auth:
         data = env.get_session_variable(session_var)
         if data:
             for au in ['authenticated_user', 'impersonated_user', 'proxied_user']:
-                if data.get(au):
-                    setattr(self, au, AuthUser(data.get(au)))
+                user_id = data.get(au)
+                if user_id:
+                    setattr(self, au, self.lookup_user(user_id, get_authorities=True, get_contact=True))
 
     def _to_dict(self):
         return {
-            'authenticated_user': self.authenticated_user.to_dict() if self.authenticated_user else None,
-            'impersonated_user': self.impersonated_user.to_dict() if self.impersonated_user else None,
-            'proxied_user': self.proxied_user.to_dict() if self.proxied_user else None,
+            'authenticated_user': self.authenticated_user.id if self.authenticated_user else None,
+            'impersonated_user': self.impersonated_user.id if self.impersonated_user else None,
+            'proxied_user': self.proxied_user.id if self.proxied_user else None,
         }
 
     def _clean_users(self):
         if (not self.authenticated_user) or (not self.authenticated_user.is_valid()):
-            self.authenticated_user = AuthUser(None)
+            self.authenticated_user = self.lookup_user(None)
         if self.impersonated_user and not self.impersonated_user.is_valid():
             self.impersonated_user = None
         if self.proxied_user and not self.proxied_user.is_valid():
@@ -163,6 +164,29 @@ class Auth:
     @classmethod
     def get(cls):
         return Auth(resume=True)
+
+    @classmethod
+    def lookup_user(cls, user_data, get_contact=False, get_authorities=False):
+        if user_data is None:
+            return AuthUser(None)
+
+        lookup_key = str(user_data)
+        user_map = env.recall() or {}
+        cached_user_instance = user_map.get(lookup_key)
+
+        if not cached_user_instance:
+            # Perform lookup
+            log.trace([lookup_key])
+            user_instance = AuthUser(user_data=user_data, get_contact=get_contact, get_authorities=get_authorities)
+            # Add user_instance to dict
+            if user_instance and user_instance.id:
+                user_map[lookup_key] = user_instance
+                # Store updated dict for duration of request
+                env.store(user_map)
+            log.debug(f"Cached Users: {user_map.keys()}")
+
+        # Return AuthUser object (or None)
+        return user_map.get(lookup_key)
 
     @classmethod
     def audit(

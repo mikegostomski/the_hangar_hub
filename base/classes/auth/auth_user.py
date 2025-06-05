@@ -129,6 +129,18 @@ class AuthUser:
     def to_dict(self):
         return {attr: getattr(self, attr) for attr in self.attrs_in_session_dict()}
 
+    def populate_from_user(self, get_contact=True, get_authorities=True):
+        if not self._cached_django_user:
+            self._query_django_user()
+
+        if self._cached_django_user and self._cached_django_user.id:
+            for attr in self.attrs_from_django():
+                setattr(self, attr, getattr(self._cached_django_user, attr))
+            if get_authorities:
+                self._populate_authorities()
+            if get_contact:
+                self._get_contact_instance()
+
     def __init__(self, user_data, get_contact=True, get_authorities=True):
         # If anonymous
         if user_data is None:
@@ -139,11 +151,10 @@ class AuthUser:
         elif type(user_data) is dict:
             for attr in self.attrs_in_session_dict():
                 setattr(self, attr, user_data.get(attr))
-            # Do not need to populate from user object
-            return
+            self._query_django_user()
 
         # New from Django User
-        elif type(user_data) is User or 'django' in str(type(user_data)):
+        elif type(user_data) is User:
             log.trace([user_data])
             self._cached_django_user = user_data
 
@@ -162,7 +173,7 @@ class AuthUser:
             if not self._cached_django_user:
                 self._make_anonymous()
 
-        self._populate_from_user(get_contact, get_authorities)
+        self.populate_from_user(get_contact, get_authorities)
 
     def _make_anonymous(self):
         for attr in self.attrs_in_session_dict():
@@ -173,18 +184,6 @@ class AuthUser:
         self.is_authenticated = False
         self._cached_django_user = None
         self._cached_contact = None
-
-    def _populate_from_user(self, get_contact=True, get_authorities=True):
-        if not self._cached_django_user:
-            self._query_django_user()
-
-        if self._cached_django_user and self._cached_django_user.id:
-            for attr in self.attrs_from_django():
-                setattr(self, attr, getattr(self._cached_django_user, attr))
-            if get_authorities:
-                self._populate_authorities()
-            if get_contact:
-                self._get_contact_instance()
 
     def _query_django_user(self):
         if not self._cached_django_user:
@@ -247,7 +246,7 @@ class AuthUser:
                 self._cached_contact.user = self._cached_django_user
                 self._cached_contact.save()
                 # Refresh self with updated info
-                self._populate_from_user(get_contact=False, get_authorities=False)
+                self.populate_from_user(get_contact=False, get_authorities=False)
                 return
     
         # Create a new contact if needed
