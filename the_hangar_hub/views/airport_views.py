@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.util.log import Log
+from base.classes.auth.auth import Auth
 from the_hangar_hub.models.airport import Airport
 from base.services import message_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service
+
 log = Log()
 
 @require_authentication()
@@ -26,13 +28,12 @@ def welcome(request):
 @require_authentication()
 def select_airport(request):
     airport_id = request.POST.get("airport_id")
-    log.debug(f"ID: {airport_id}")
     airport = Airport.get(airport_id)
     if not airport:
         message_service.post_error("Airport not found")
         return redirect("hub:welcome")
 
-    # Get existing airport managers
+    # Get existing airport managers (including inactive ones)
     managers = airport_service.get_managers(airport)
     is_manager = is_inactive = False
 
@@ -49,29 +50,89 @@ def select_airport(request):
                     log.warning(f"Is a manager, but a non-active user")
                     is_inactive = True
                 break
+
+        # Since managers exist for this airport, this user must be an active manager or ask an existing one for access
         if is_inactive or not is_manager:
-            if is_inactive:
-                message_service.post_error("Your airport management status is inactive. You'll need to request access from existing management.")
+            if not is_manager:
+                message_service.post_error(
+                    "This airport already has a manager. You'll need to request access from existing management."
+                )
             else:
-                message_service.post_error("This airport already has a manager. You'll need to request access from existing management.")
+                message_service.post_error(
+                    "Your airport management status is inactive. You'll need to request access from existing management."
+                )
+
             return render(
                 request, "the_hangar_hub/airport/access_denied.html",
                 {"airport": airport}
             )
 
+    # Since no managers exist for this airport, auto-assign this user to be the manager for this airport
     else:
         log.info(f"No managers exist for {airport}")
         airport_service.set_airport_manager(airport, request.user)
 
 
-    return HttpResponse(f"You selected {airport.display_name}")
+    return redirect("hub:manage_airport", airport.identifier)
 
 
 @require_authentication()
-def manage_airport(request):
+def manage_airport(request, airport_identifier):
+    airport = Airport.get(airport_identifier)
+    if not airport:
+        message_service.post_error("The specified airport was not found.")
+        return redirect("hub:welcome")
+
+    # User must be an active manager for this airport
+    # Page will also list active managers, which is why I'm selecting all of them
+    managers = airport_service.get_managers(airport, status="A")
+    user_profile = Auth().get_user()
+
+    # Is this user an active manager?
+    is_manager = bool([x for x in managers if x.user == user_profile.django_user()])
+    if not is_manager:
+        message_service.post_error("Only airport managers may manage airport data.")
+        return  render(
+            request, "the_hangar_hub/airport/access_denied.html",
+            {"airport": airport}
+        )
+
+    return render(
+        request, "the_hangar_hub/airport/manage_airport/manage_airport.html",
+        {
+            "airport": airport,
+            "managers": managers,
+        }
+    )
+
+@require_authentication()
+def update_airport_data(request):
     airport_id = request.POST.get("airport_id")
-    log.debug(f"ID: {airport_id}")
+    attribute = request.POST.get("attribute")
+    value = request.POST.get("value")
     airport = Airport.get(airport_id)
     if not airport:
-        message_service.post_error("Airport not found")
-        return redirect("hub:welcome")
+        message_service.post_error("The specified airport was not found.")
+        return HttpResponseForbidden()
+
+    # User must be an active manager for this airport
+    if not airport_service.is_airport_manager():
+        message_service.post_error("Only airport managers may manage airport data.")
+        return  HttpResponseForbidden()
+
+    try:
+        prev_value = getattr(airport, attribute)
+        setattr(airport, attribute, value)
+        airport.save()
+        message_service.post_success("Airport data updated")
+
+        Auth.audit(
+            "U", "AIRPORT",
+            f"Updated airport data: {attribute}",
+            reference_code="Airport", reference_id=airport.id,
+            previous_value=prev_value, new_value=value
+        )
+    except Exception as ee:
+        message_service.post_error(f"Could not update airport data: {ee}")
+
+    return HttpResponse("ok")

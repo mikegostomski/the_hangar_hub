@@ -1,0 +1,75 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar Hub: Manage Airport - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+    <h1>Manage Airport: {{airport.identifier}}</h1>
+    <br />
+
+    <h2>Airport Data</h2>
+    <table class="table">
+        <tr>
+            <th scope="row">Airport Name</th>
+            <td><input type="text" class="form-control" name="display_name" value="{{airport.display_name}}" onchange="update_airport_data($(this));" /></td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
+        <tr>
+            <th scope="row">Airport Identifier</th>
+            <td><input type="text" class="form-control" name="identifier" value="{{airport.identifier}}" onchange="update_airport_data($(this));" /></td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
+        <tr>
+            <th scope="row">City</th>
+            <td><input type="text" class="form-control" name="city" value="{{airport.city}}" onchange="update_airport_data($(this));" /></td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
+        <tr>
+            <th scope="row">State</th>
+            <td><input type="text" class="form-control" name="state" value="{{airport.state}}" onchange="update_airport_data($(this));" /></td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
+        <tr>
+            <th scope="row">Public Email Address</th>
+            <td><input type="text" class="form-control" name="info_email" value="{{airport.info_email}}" onchange="update_airport_data($(this));" /></td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
+    </table>
+</div>
+
+<br />
+<br />
+
+<div class="content-1024">
+    <h2>Airport Managers</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Username</th>
+            <th scope="col">Email</th>
+            <th scope="col">Status</th>
+            <th scope="col">Date Added</th>
+            <th scope="col">Last Status Change</th>
+        </tr>
+        {%for manager in managers%}
+        <tr>
+            <td>
+                {{manager.user.first_name}} {{manager.user.last_name}}
+            </td>
+            <td>{{manager.user.username}}</td>
+            <td>{{manager.user.email}}</td>
+            <td>{{manager.status_description}}</td>
+            <td>{{manager.date_created}}</td>
+            <td>{{manager.status_change_date}}</td>
+        </tr>
+        {%endfor%}
+    </table>
+    <br />
+</div>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/manage_airport/manage_airport.js" %}
+</script>
+
+{%endblock%}

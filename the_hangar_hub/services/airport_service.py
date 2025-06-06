@@ -9,16 +9,19 @@ env = EnvHelper()
 def get_managers(airport=None, status=None):
     managers = AirportManager.objects.filter(airport=airport)
     if status:
-        managers = managers.filter(status=status)
+        managers = managers.filter(status_code=status)
     managers = managers.select_related("airport", "user")
     return managers
 
 def is_airport_manager(user=None, airport=None):
     user_profile = Auth().lookup_user(user_data=user, get_authorities=True) if user else Auth().get_user()
-    manages = AirportManager.objects.filter(user=user_profile.django_user(), status="A")
+    manages = AirportManager.objects.filter(user=user_profile.django_user(), status_code="A")
     if airport:
         manages = manages.filter(airport=airport)
-    return manages.exists()
+
+    # Status may differ from status_code if User is inactive
+    return manages and len(manages) == 1 and manages[0].status == "A"
+
 
 def set_airport_manager(airport, user=None):
     user_profile = Auth().lookup_user(user_data=user, get_authorities=True) if user else Auth().get_user()
@@ -33,7 +36,7 @@ def set_airport_manager(airport, user=None):
         existing = None
 
     if existing:
-        existing.status = "A"
+        existing.status_code = "A"
         existing.save()
         Auth.audit(
             "U", "MANAGEMENT",
@@ -41,11 +44,11 @@ def set_airport_manager(airport, user=None):
             reference_code="AirportManager", reference_id=existing.id
         )
     else:
-        airport.management.create(user=user_profile.django_user(), airport=airport)
+        new_manager = airport.management.create(user=user_profile.django_user(), airport=airport)
         Auth.audit(
             "C", "MANAGEMENT",
             "Created airport manager relationship",
-            reference_code="AirportManager", reference_id=existing.id
+            reference_code="AirportManager", reference_id=new_manager.id
         )
 
 def deactivate_airport_manager(airport, user):
@@ -53,7 +56,7 @@ def deactivate_airport_manager(airport, user):
     try:
         user_profile = Auth().lookup_user(user_data=user)
         manager = AirportManager.objects.get(user=user_profile.django_user(), airport=airport)
-        manager.status = "I"
+        manager.status_code = "I"
         manager.save()
         Auth.audit(
             "U", "MANAGEMENT",

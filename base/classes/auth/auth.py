@@ -176,7 +176,7 @@ class Auth:
 
         if not found_user:
             # Perform lookup
-            log.trace([lookup_key])
+            log.debug(f"Performing lookup for {lookup_key}")  # ToDo: Remove this line
             user_instance = AuthUser(user_data=user_data, get_contact=get_contact, get_authorities=get_authorities)
             # Add user_instance to dict
             if user_instance and user_instance.id:
@@ -209,20 +209,39 @@ class Auth:
         previous_value=None,
         new_value=None,
     ):
-        auth = Auth.get()
-        audit = Audit()
-        audit.app_code = app.get_app_code()
-        audit.user = auth.authenticated_user.django_user()
-        if auth.is_impersonating():
-            audit.impersonated_user = auth.impersonated_user.django_user()
-        if auth.is_proxying():
-            audit.proxied_user = auth.proxied_user.django_user()
-        audit.crud_code = crud_code
-        audit.event_code = event_code
-        audit.comments = str(comments) if comments is not None else None
-        audit.reference_code = reference_code
-        audit.reference_id = reference_id
-        audit.previous_value = previous_value
-        audit.new_value = new_value
-        audit.save()
-        return audit
+        log.trace(locals())
+        try:
+            auth = Auth.get()
+            audit = Audit()
+            audit.app_code = app.get_app_code()
+            audit.user = auth.authenticated_user.django_user()
+            if auth.is_impersonating():
+                audit.impersonated_user = auth.impersonated_user.django_user()
+            if auth.is_proxying():
+                audit.proxied_user = auth.proxied_user.django_user()
+            audit.crud_code = crud_code
+            audit.event_code = event_code
+            audit.comments = str(comments) if comments is not None else None
+            audit.reference_code = reference_code
+            audit.reference_id = reference_id
+            audit.previous_value = previous_value
+            audit.new_value = new_value
+            audit.save()
+            return audit
+        except Exception as ee:
+            log.error(f"Could not audit: {ee}")
+            return None
+
+    def __str__(self):
+        if not self.is_logged_in():
+            return "Anonymous"
+        else:
+            s = [self.authenticated_user.username]
+            if self.is_impersonating():
+                s.append(f"as {self.impersonated_user}")
+            if self.is_proxying():
+                s.append(f"proxying {self.proxied_user}")
+            return " ".join(s)
+
+    def __repr__(self):
+        return str(self)

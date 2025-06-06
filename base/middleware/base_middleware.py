@@ -28,10 +28,10 @@ class BaseMiddleware:
 
         # In non-prod, make the start of a new request more visible in the log (console)
         if not silence_logs:
-            if env.is_nonprod:
-                w = 80
-                log.debug(f"\n{'='.ljust(w, '=')}\n{'New Request'.center(w)}\n{'='.ljust(w, '=')}")
-            log.trace([request.path, auth_service.get_user()], request.method)
+            w = 80
+            sep = '='.ljust(w, '=')
+            msg = f"{request.method} {request.path} @{auth_service.get_auth_instance()}"
+            log.debug(f"\n{sep}\n{msg.center(w)}\n{sep}")
             if auth_service.has_authority('~power_user'):
                 env.set_session_variable('allow_limited_features', True)
 

@@ -1,3 +1,5 @@
+from django.utils.functional import SimpleLazyObject
+
 from base.classes.util.log import Log
 from base.services import utility_service, error_service
 from base.classes.auth.dynamic_role import DynamicRole
@@ -154,13 +156,11 @@ class AuthUser:
             self._query_django_user()
 
         # New from Django User
-        elif type(user_data) is User:
-            log.trace([user_data])
+        elif type(user_data) is User or type(user_data) is SimpleLazyObject:
             self._cached_django_user = user_data
 
         # New from ID, username or email
         else:
-            log.trace([user_data])
             if str(user_data).isnumeric():
                 self.id = int(user_data)
             elif '@' in user_data:
@@ -187,7 +187,7 @@ class AuthUser:
 
     def _query_django_user(self):
         if not self._cached_django_user:
-            log.trace([self])
+            log.debug(f"Performing Django User query for {self}")
             try:
                 # This may be a search/lookup based on id, email, or username
                 if self.id:
@@ -205,7 +205,6 @@ class AuthUser:
         if force or self.authorities is None:
             self.authorities = {}
             if self.is_valid():
-                log.trace()
 
                 # SuperUsers get the developer role
                 if self.is_superuser:
@@ -230,7 +229,6 @@ class AuthUser:
             return
 
         # Get contact from User
-        log.trace()
         try:
             self._cached_contact = self._cached_django_user.contact
         except:
@@ -265,7 +263,16 @@ class AuthUser:
             return
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} <{self.email}>".strip()
+        if (self.first_name or self.last_name) and self.email:
+            return f"{self.first_name} {self.last_name} <{self.email}>".strip()
+        elif self.username and self.email:
+            return f"{self.username} <{self.email}>"
+        elif self.username:
+            return self.username
+        elif self.email:
+            return self.email
+        else:
+            return str(f"<User: {self.id}>")
 
     def __repr__(self):
         return str(self)

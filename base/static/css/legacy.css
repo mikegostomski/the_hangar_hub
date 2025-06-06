@@ -1,0 +1,85 @@
+/** Class names carried over from years of Grails development **/
+
+.hidden{
+    display: none;
+}
+
+.float-left{
+    display: inline;
+    float: left;
+}
+
+.float-right{
+    display: inline;
+    float: right;
+}
+
+.number {
+    font-family: courier, fixed-width, sans-serif;
+    text-align:  right;
+}
+
+.code {
+    font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
+}
+
+.btn-icon{
+    padding: 0px;
+    border: 0px;
+    color: inherit;
+    background-color: inherit;
+}
+
+.underscore{
+    padding-bottom: 2px;
+    border-bottom:  1px solid #CCC;
+    margin-top: 0;
+}
+
+.overscore{
+    padding-top: 2px;
+    border-top:  1px solid #CCC;
+    margin-bottom: 0;
+}
+
+.dotted{
+    border: 1px dotted #777;
+}
+.dotted-top{
+    border-top: 1px dotted #777;
+}
+.dotted-bottom{
+    border-bottom: 1px dotted #777;
+}
+.dotted-left{
+    border-left: 1px dotted #777;
+}
+.dotted-right{
+    border-right: 1px dotted #777;
+}
+
+.indent{
+    padding-left: 20px;
+}
+.disabled{
+    color: #AAA;
+}
+
+.xxsm{
+    font-size: xx-small;
+}
+.xsm{
+    font-size: x-small;
+}
+.sm{
+    font-size: small;
+}
+.lg{
+    font-size: large;
+}
+.xlg{
+    font-size: x-large;
+}
+.xxl{
+    font-size: xx-large;
+}

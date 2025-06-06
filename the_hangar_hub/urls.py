@@ -23,6 +23,8 @@ app_paths = [
 
     path('airport', welcome, name='welcome'),
     path('airport/select', select_airport, name='select_airport'),
+    path('airport/manage/<airport_identifier>', manage_airport, name='manage_airport'),
+    path('airport/update', update_airport_data, name='update_airport_data'),
 ]
 
 urlpatterns = [

@@ -147,9 +147,3 @@ var postedSeq = 0;
 $(document).ready(function(){
     autoHideMessages();
 });
-
-$(document).ajaxComplete(function(e, xhr, settings){
-    if (!settings.bypassGlobalComplete){
-        posted_messages("{% url 'base:messages' %}");
-    }
-});

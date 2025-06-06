@@ -24,16 +24,32 @@
     {%icon_library%}
 
 
-    {%cdn_js 'utils.js' 'ajax.js'%}
-    {%cdn_css 'legacy.css' 'main.css' 'ajax.css'%}
+    {## cdn_js 'utils.js' 'ajax.js' ##}
+    {## cdn_css 'legacy.css' 'main.css' 'ajax.css' ##}
+
+
     {%if is_development%}
         <link href="{%sass_src 'css/template.scss'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
     {%else%}
 
     {%endif%}
 
+    <script src="{%static 'js/utils.js'%}?v={%app_version%}"></script>
+    <script src="{%static 'js/ajax.js'%}?v={%app_version%}"></script>
+
+    <link href="{%static 'css/ajax.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+    <link href="{%static 'css/legacy.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+    <link href="{%static 'css/main.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+
     <script src="{%sass_src 'js/posted-messages.js'%}?v={%app_version%}"></script>
     <link href="{%sass_src 'css/template.scss'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+    <script type="text/javascript">
+    $(document).ajaxComplete(function(e, xhr, settings){
+        if (!settings.bypassGlobalComplete){
+            posted_messages("{% url 'base:messages' %}");
+        }
+    });
+    </script>
 
     {% block scripts %}{% endblock %}
 </head>
