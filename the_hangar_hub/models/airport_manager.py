@@ -22,7 +22,6 @@ class AirportManager(models.Model):
             return "I"
         return self.status_code
 
-
     @property
     def status_description(self):
         if self.status == "A":
@@ -32,6 +31,9 @@ class AirportManager(models.Model):
         else:
             return self.status
 
+    @property
+    def is_active(self):
+        return self.status == "A"
 
     @classmethod
     def get(cls, rel_id):

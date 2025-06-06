@@ -5,7 +5,7 @@ This is the definitive source of all authenticated user data
     - Proxied User: Authenticated user can act on behalf of this user for specific actions
 """
 from base.services import message_service
-from .auth_user import AuthUser
+from base.classes.auth.user_profile import UserProfile
 from base.classes.util.app_data import EnvHelper, Log, AppData
 from base.models.utility.audit import Audit
 
@@ -168,7 +168,7 @@ class Auth:
     @classmethod
     def lookup_user(cls, user_data, get_contact=False, get_authorities=False):
         if user_data is None:
-            return AuthUser(None)
+            return UserProfile(None)
 
         lookup_key = str(user_data)
         user_map = env.recall() or {}
@@ -177,7 +177,7 @@ class Auth:
         if not found_user:
             # Perform lookup
             log.debug(f"Performing lookup for {lookup_key}")  # ToDo: Remove this line
-            user_instance = AuthUser(user_data=user_data, get_contact=get_contact, get_authorities=get_authorities)
+            user_instance = UserProfile(user_data=user_data, get_contact=get_contact, get_authorities=get_authorities)
             # Add user_instance to dict
             if user_instance and user_instance.id:
                 user_map[lookup_key] = user_instance
@@ -195,7 +195,7 @@ class Auth:
             if get_contact:
                 found_user.get_contact_instance()
 
-        # Return AuthUser object (or None)
+        # Return UserProfile object (or None)
         return found_user
 
     @classmethod

@@ -1,10 +1,9 @@
-from django.utils.functional import SimpleLazyObject
-
 from base.classes.util.log import Log
 from base.services import utility_service, error_service
 from base.classes.auth.dynamic_role import DynamicRole
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.utils.functional import SimpleLazyObject
 from base.models.contact.contact import Contact
 from django.db.models import Q
 from datetime import datetime
@@ -13,34 +12,49 @@ import pytz
 log = Log()
 
 
-class AuthUser:
+class UserProfile:
+
     # Properties matching the Django User model
     # ------------------------------------------------------
-    id = None
-    first_name = None
-    last_name = None
-    username = None
-    email = None
-    is_staff = None
-    is_active = None
-    is_superuser = None
-    is_authenticated = None
-    is_anonymous = None
+    @property
+    def id(self):
+        return self.django_user().id
 
-    @staticmethod
-    def attrs_from_django():
-        return [
-            "id",
-            "first_name",
-            "last_name",
-            "username",
-            "email",
-            "is_staff",
-            "is_active",
-            "is_superuser",
-            "is_anonymous",
-            "is_authenticated",
-        ]
+    @property
+    def first_name(self):
+        return self.django_user().first_name
+
+    @property
+    def last_name(self):
+        return self.django_user().last_name
+
+    @property
+    def username(self):
+        return self.django_user().username
+
+    @property
+    def email(self):
+        return self.django_user().email
+
+    @property
+    def is_staff(self):
+        return self.django_user().is_staff
+
+    @property
+    def is_active(self):
+        return self.django_user().is_active
+
+    @property
+    def is_superuser(self):
+        return self.django_user().is_superuser
+
+    @property
+    def is_authenticated(self):
+        return self.django_user().is_authenticated
+
+    @property
+    def is_anonymous(self):
+        return self.django_user().is_anonymous
     # ------------------------------------------------------
 
     # Authentication/Authorization Data
@@ -68,9 +82,7 @@ class AuthUser:
         return None
 
     def django_user(self):
-        if not self._cached_django_user:
-            self._query_django_user()
-        return self._cached_django_user
+        return self._cached_django_user or User()
 
     def contact(self):
         self.get_contact_instance()
@@ -122,22 +134,8 @@ class AuthUser:
     def is_valid(self):
         return self.id and self.is_active
 
-    def attrs_in_session_dict(self):
-        return self.attrs_from_django() + [
-            'is_proxied',
-            'authorities',
-        ]
-
-    def to_dict(self):
-        return {attr: getattr(self, attr) for attr in self.attrs_in_session_dict()}
-
-    def populate_from_user(self, get_contact=True, get_authorities=True):
-        if not self._cached_django_user:
-            self._query_django_user()
-
+    def populate_supplemental_data(self, get_contact=True, get_authorities=True):
         if self._cached_django_user and self._cached_django_user.id:
-            for attr in self.attrs_from_django():
-                setattr(self, attr, getattr(self._cached_django_user, attr))
             if get_authorities:
                 self.populate_authorities()
             if get_contact:
@@ -149,57 +147,32 @@ class AuthUser:
             self._make_anonymous()
             return
 
-        # If resuming from session dict
-        elif type(user_data) is dict:
-            for attr in self.attrs_in_session_dict():
-                setattr(self, attr, user_data.get(attr))
-            self._query_django_user()
-
         # New from Django User
-        elif type(user_data) is User or type(user_data) is SimpleLazyObject:
+        elif type(user_data) in [User, SimpleLazyObject]:
             self._cached_django_user = user_data
+
+        # If already a UserProfile
+        elif type(user_data) is UserProfile:
+            pass
 
         # New from ID, username or email
         else:
-            if str(user_data).isnumeric():
-                self.id = int(user_data)
-            elif '@' in user_data:
-                self.email = user_data
-            else:
-                self.username = user_data
-
-            # If not found, is not associated with an existing user
-            self._query_django_user()
-            if not self._cached_django_user:
+            try:
+                if str(user_data).isnumeric():
+                    self._cached_django_user = User.objects.get(pk=user_data)
+                elif '@' in user_data:
+                    self._cached_django_user = User.objects.get(email__iexact=user_data)
+                else:
+                    self._cached_django_user = User.objects.get(username__iexact=user_data)
+            except User.DoesNotExist:
                 self._make_anonymous()
 
-        self.populate_from_user(get_contact, get_authorities)
+        self.populate_supplemental_data(get_contact, get_authorities)
 
     def _make_anonymous(self):
-        for attr in self.attrs_in_session_dict():
-            setattr(self, attr, None)
-        self.first_name = 'Anonymous'
         self.authorities = []
-        self.is_anonymous = True
-        self.is_authenticated = False
         self._cached_django_user = None
         self._cached_contact = None
-
-    def _query_django_user(self):
-        if not self._cached_django_user:
-            log.debug(f"Performing Django User query for {self}")
-            try:
-                # This may be a search/lookup based on id, email, or username
-                if self.id:
-                    self._cached_django_user = User.objects.get(pk=self.id)
-                elif self.username:
-                    self._cached_django_user = User.objects.get(username__iexact=self.username)
-                elif self.email:
-                    self._cached_django_user = User.objects.get(email__iexact=self.email)
-            except User.DoesNotExist:
-                self._cached_django_user = None
-            except Exception as ee:
-                error_service.record(ee, self)
 
     def populate_authorities(self, force=False):
         if force or self.authorities is None:
@@ -245,7 +218,7 @@ class AuthUser:
                 self._cached_contact.user = self._cached_django_user
                 self._cached_contact.save()
                 # Refresh self with updated info
-                self.populate_from_user(get_contact=False, get_authorities=False)
+                self.populate_supplemental_data(get_contact=False, get_authorities=False)
                 return
     
         # Create a new contact if needed
@@ -271,8 +244,10 @@ class AuthUser:
             return self.username
         elif self.email:
             return self.email
-        else:
+        elif self.id:
             return str(f"<User: {self.id}>")
+        else:
+            return "Anonymous User"
 
     def __repr__(self):
         return str(self)

@@ -1,0 +1,39 @@
+{% load base_taglib %}
+<table class="table" id="managers-table">
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Username</th>
+        <th scope="col">Email</th>
+        <th scope="col">Status</th>
+        <th scope="col">Date Added</th>
+        <th scope="col">Last Status Change</th>
+    </tr>
+    {%for manager in managers%}
+    <tr>
+        <td>
+            {{manager.user.first_name}} {{manager.user.last_name}}
+        </td>
+        <td>{{manager.user.username}}</td>
+        <td>{{manager.user.email}}</td>
+        <td>
+            {%select_menu value=manager.status class="form-select" options="A:Active|I:Inactive" nullable=False%}
+        </td>
+        <td>{{manager.date_created}}</td>
+        <td>{{manager.status_change_date}}</td>
+    </tr>
+    {%endfor%}
+
+    {%for invite in invitations%}
+    <tr>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>{{invite.email}}</td>
+        <td>
+            <em class="text-muted">{{invite.status_description}}</em>
+        </td>
+        <td>{{invite.date_created}}</td>
+        <td>{{invite.status_change_date}}</td>
+    </tr>
+    {%endfor%}
+
+</table>

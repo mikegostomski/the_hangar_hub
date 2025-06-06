@@ -1,5 +1,7 @@
 from base.classes.util.log import Log
 from base.classes.auth.auth import Auth
+from django.contrib.auth.models import User
+from django.utils.functional import SimpleLazyObject
 
 log = Log()
 
@@ -35,7 +37,7 @@ def get_authenticated_user():
 
 def lookup_user(user_data, get_contact=False, get_authorities=False):
     """
-    Get an AuthUser object for specified user.
+    Get a UserProfile object for specified user.
     Lookups are cached for the duration of the request.
     """
     return Auth.lookup_user(user_data, get_contact, get_authorities)
@@ -66,3 +68,6 @@ def stop_impersonating():
 
 def is_impersonating():
     return get_auth_instance().is_impersonating()
+
+def is_django_user(object):
+    return type(object) in [User, SimpleLazyObject]

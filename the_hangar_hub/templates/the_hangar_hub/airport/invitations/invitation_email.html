@@ -1,0 +1,29 @@
+{% load base_taglib %}
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>{{subject|default:"Invitation from The Hangar Hub"}}</title>
+    </head>
+    <body>
+
+        <div style="background-color: White;padding: 10px;color: Black;">
+            <div style="float:left;">
+                {%include "base/template/standard/navbar/_nav_logo.html"%}
+            </div>
+            <div style="float:right;font-size:16pt;font-weight:bold;font-variant:small-caps;color: #6A7F10;padding-top:5px;">
+                The Hangar Hub
+            </div>
+            <hr style="clear:both;" />
+            <div style="padding: 20px;">
+                {{invite.invited_by.display_name}} has invited you to join The Hangar Hub!<br />
+                <br />
+                Airport: {{invite.airport.display_name}} ({{invite.airport.identifier}})<br />
+                Role: {{invite.role_description}}<br />
+                <br />
+                <a href="{%absolute_url 'accept_invitation' invite.verification_code%}">Accept Invitation</a>
+                <br style="clear:both;" />
+            </div>
+            <br />
+        </div>
+    </body>
+</html>

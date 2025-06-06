@@ -35,21 +35,6 @@ class BaseMiddleware:
             if auth_service.has_authority('~power_user'):
                 env.set_session_variable('allow_limited_features', True)
 
-            # ToDo: Remove debug logging
-            if request.path.startswith('/accounts'):
-                if request.method == 'POST' and 'email' in request.POST:
-                    log.info(f"Login Email: {request.POST.get('email')}")
-                elif request.method == 'GET' and 'email' in request.GET:
-                    log.info(f"Login Email: {request.GET.get('email')}")
-                elif request.method == 'GET' and 'authuser' in request.GET:
-                    log.info(f"Auth User: {request.GET.get('authuser')}")
-                else:
-                    log.debug(request.POST)
-                    log.debug(request.GET)
-            elif env.is_nonprod:
-                if request.method == "POST":
-                    log.debug(f"Parameters: { {k:v for k,v in request.POST.items() if k != 'csrfmiddlewaretoken'} }")
-
         # Remove flash variables from two requests ago. Shift flash variables from last request.
         # This happens for every request EXCEPT posting messages to the screen
         if not posted_messages:

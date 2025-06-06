@@ -10,10 +10,16 @@ from html.parser import HTMLParser
 from datetime import datetime
 from base.classes.util.app_data import Log, EnvHelper, AppData
 import pytz
+import string
+import secrets
 
 log = Log()
 env = EnvHelper()
 app = AppData()
+
+
+def generate_verification_code(length=30):
+    return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(length))
 
 
 def get_setting(property_name, default_value=None):

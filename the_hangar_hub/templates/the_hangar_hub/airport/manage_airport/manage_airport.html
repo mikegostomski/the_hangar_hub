@@ -43,29 +43,27 @@
 
 <div class="content-1024">
     <h2>Airport Managers</h2>
-    <table class="table">
-        <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Username</th>
-            <th scope="col">Email</th>
-            <th scope="col">Status</th>
-            <th scope="col">Date Added</th>
-            <th scope="col">Last Status Change</th>
-        </tr>
-        {%for manager in managers%}
-        <tr>
-            <td>
-                {{manager.user.first_name}} {{manager.user.last_name}}
-            </td>
-            <td>{{manager.user.username}}</td>
-            <td>{{manager.user.email}}</td>
-            <td>{{manager.status_description}}</td>
-            <td>{{manager.date_created}}</td>
-            <td>{{manager.status_change_date}}</td>
-        </tr>
-        {%endfor%}
-    </table>
+    <div id="managers-container">
+        {%include "the_hangar_hub/airport/manage_airport/_manager_table.html"%}
+    </div>
+
+    <h3>Add an Airport Manager</h3>
+    <em>
+        Enter the email address of the person you would like to invite to be an airport manager.
+        If the person you have in mind already has a HangerHub account, you may enter their username instead.
+    </em><br />
     <br />
+
+    <div class="content-800 content-center">
+        <div class="input-group mb-3">
+            <input type="text" id="invitee" name="invitee" class="form-control initial-focus" placeholder="Username or Email Address" maxlength="128" />
+            <button class="btn btn-success" type="button" onclick="invite_manager($(this));">
+                {%icon bi-send title="Submit"%}
+            </button>
+        </div>
+
+    </div>
+
 </div>
 
 <script type="text/javascript">

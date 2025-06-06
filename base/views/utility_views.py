@@ -13,7 +13,7 @@ app = AppData()
 def messages(request):
     return render(
         request,
-        'base/template/messages/messages.html',
+        'base/template/standard/messages/messages.html',
         {'message_birth_date': int(time.time())}
     )
 

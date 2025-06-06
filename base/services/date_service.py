@@ -1,9 +1,11 @@
 import re
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from base.services import error_service
+from base.classes.util.log import Log
 import pytz
 
+log = Log()
 
 def to_date_string(datetime_instance):
     # ToDo: Allow date format preference
@@ -50,18 +52,18 @@ def string_to_date(date_string):
         # NEW LOGIC FOR DATES CONTAINING MONTH NAMES  <----------------------------
         date_string = date_string.replace('a.m.', 'am').replace('p.m.', 'pm').upper()
         months = {
-            'JANUARY': 1,
-            'FEBRUARY': 2,
-            'MARCH': 3,
-            'APRIL': 4,
-            'MAY': 5,
-            'JUNE': 6,
-            'JULY': 7,
-            'AUGUST': 8,
-            'SEPTEMBER': 9,
-            'OCTOBER': 10,
-            'NOVEMBER': 11,
-            'DECEMBER': 12,
+            "JANUARY": 1,
+            "FEBRUARY": 2,
+            "MARCH": 3,
+            "APRIL": 4,
+            "MAY": 5,
+            "JUNE": 6,
+            "JULY": 7,
+            "AUGUST": 8,
+            "SEPTEMBER": 9,
+            "OCTOBER": 10,
+            "NOVEMBER": 11,
+            "DECEMBER": 12,
         }
         had_month_name = False
         for mmm, mm in months.items():
@@ -79,6 +81,16 @@ def string_to_date(date_string):
                 date_string = f"{date_str} {time_str}"
         # END LOGIC FOR DATES CONTAINING MONTH NAMES  <----------------------------
 
+        # Ignore timezone
+        timezone_offset = None
+        try:
+            if re.search(r"\d+[+-]\d{1,2}:\d{1,2}$", date_string, re.IGNORECASE):
+                log.info(f"Handling timezone info: {date_string}")
+                timezone_offset = date_string[-6:-3]
+                date_string = date_string[:-6]
+        except Exception as ee:
+            log.error(ee)
+            
         # Replace any date separators with forward slashes
         date_string = re.sub(r'[-.,;\\]', '/', date_string)
 
@@ -138,11 +150,23 @@ def string_to_date(date_string):
             date_format = "%Y/%m/%d {0}".format(date_format)
 
         if date_format and date_format != "":
-            return datetime.strptime(date_string, date_format)
-        else:
-            return None
+            dt = datetime.strptime(date_string, date_format)
+
+
+            # Convert time to UTC
+            utc = pytz.timezone("UTC")
+
+            # If timezone was specified in string, adjust it now
+            if timezone_offset:
+                try:
+                    dt = dt + timedelta(hours=int(timezone_offset) * -1)
+                except Exception as ee:
+                    log.error(ee)
+            return utc.localize(dt)
+        
     except Exception as ee:
         error_service.record(ee, date_string)
+    return None
 
 
 def seconds_to_duration_description(num_seconds):

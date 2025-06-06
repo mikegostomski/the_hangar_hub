@@ -342,7 +342,7 @@ def send(
     msg.append('<div style="padding-left: 20px;">')
 
     # Include the subject
-    msg.append('fal-envelope-o &nbsp;')
+    msg.append('bi-envelope-check &nbsp;')
     msg.append(f"{subject}<br />")
 
     # And the recipients (if not too many). Do not display Bcc

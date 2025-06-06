@@ -35,3 +35,39 @@ function update_airport_data(element) {
     });
 
 }
+
+
+function invite_manager() {
+    let input = $("#invitee")
+    let airport_id = {{airport.id}};
+    let invitee = input.val();
+    let container = input.closest(".input-group");
+    let submit_btn = container.find(".btn");
+    let btn_content = submit_btn.html()
+
+    $.ajax({
+        type:   "POST",
+        url:    "{%url 'hub:add_airport_manager'%}",
+        data:   {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            airport_id: airport_id,
+            invitee: invitee
+        },
+        beforeSend:function(){
+            clearAjaxStatusClasses(container);
+            submit_btn.prop("disabled", true);
+            submit_btn.html(getAjaxLoadImage());
+        },
+        success:function(data){
+            $("#managers-container").html(data);
+        },
+        error:function(){
+            input.addClass("ajax-error")
+        },
+        complete:function(){
+            submit_btn.prop("disabled", false);
+            submit_btn.html(btn_content);
+        }
+    });
+
+}

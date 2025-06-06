@@ -3,7 +3,8 @@ from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.util.log import Log
 from base.classes.auth.auth import Auth
 from the_hangar_hub.models.airport import Airport
-from base.services import message_service
+from the_hangar_hub.models.invitation import Invitation
+from base.services import message_service, utility_service, email_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service
 
@@ -70,8 +71,10 @@ def select_airport(request):
     # Since no managers exist for this airport, auto-assign this user to be the manager for this airport
     else:
         log.info(f"No managers exist for {airport}")
-        airport_service.set_airport_manager(airport, request.user)
-
+        if airport_service.set_airport_manager(airport, request.user):
+            message_service.post_success(f"You are now the airport manager for {airport.identifier}")
+        else:
+            message_service.post_error(f"Unable to record you as the manager for {airport.identifier}")
 
     return redirect("hub:manage_airport", airport.identifier)
 
@@ -84,12 +87,12 @@ def manage_airport(request, airport_identifier):
         return redirect("hub:welcome")
 
     # User must be an active manager for this airport
-    # Page will also list active managers, which is why I'm selecting all of them
-    managers = airport_service.get_managers(airport, status="A")
+    # Page will also list all managers, which is why I'm selecting all of them
+    managers = airport_service.get_managers(airport)
     user_profile = Auth().get_user()
 
     # Is this user an active manager?
-    is_manager = bool([x for x in managers if x.user == user_profile.django_user()])
+    is_manager = bool([mgmt.is_active for mgmt in managers if mgmt.user == user_profile.django_user()])
     if not is_manager:
         message_service.post_error("Only airport managers may manage airport data.")
         return  render(
@@ -102,6 +105,7 @@ def manage_airport(request, airport_identifier):
         {
             "airport": airport,
             "managers": managers,
+            "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
         }
     )
 
@@ -136,3 +140,56 @@ def update_airport_data(request):
         message_service.post_error(f"Could not update airport data: {ee}")
 
     return HttpResponse("ok")
+
+
+@require_authentication()
+def add_airport_manager(request):
+    airport_id = request.POST.get("airport_id")
+    invitee = request.POST.get("invitee")
+    log.trace([airport_id, invitee])
+
+    airport = Airport.get(airport_id)
+    if not airport:
+        message_service.post_error("The specified airport was not found.")
+        return HttpResponseForbidden()
+
+    # User must be an active manager for this airport
+    if not airport_service.is_airport_manager():
+        message_service.post_error("Only airport managers may invite other managers.")
+        return  HttpResponseForbidden()
+
+    # Check for existing user
+    existing_user = Auth.lookup_user(invitee)
+    # If user already has an account, just add them as a manager
+    if existing_user:
+        if airport_service.set_airport_manager(airport, existing_user):
+            message_service.post_success(f"Added airport manager: {invitee}")
+        else:
+            message_service.post_error(f"Could not add airport manager: {invitee}")
+        return render(
+            request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
+            {
+                "airport": airport,
+                "managers": airport_service.get_managers(airport=airport),
+                "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
+            }
+        )
+
+    # Since user did not have an account, an email is needed to invite them
+    if "@" not in invitee:
+        message_service.post_error("The given user information could not be found. Please enter an email address.")
+        return HttpResponseForbidden()
+
+    # Create and send an invitation
+    Invitation.invite(airport, invitee, "MANAGER").send()
+    return render(
+        request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
+        {
+            "airport": airport,
+            "managers": airport_service.get_managers(airport=airport)
+        }
+    )
+
+
+def accept_invitation(request, verification_code):
+    return HttpResponse("Accept Invitation...")
