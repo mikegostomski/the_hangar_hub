@@ -15,12 +15,12 @@
             </div>
             <hr style="clear:both;" />
             <div style="padding: 20px;">
-                {{invite.invited_by.display_name}} has invited you to join The Hangar Hub!<br />
+                {{invite.invited_by_user_profile.display_name}} has invited you to join The Hangar Hub!<br />
                 <br />
                 Airport: {{invite.airport.display_name}} ({{invite.airport.identifier}})<br />
                 Role: {{invite.role_description}}<br />
                 <br />
-                <a href="{%absolute_url 'accept_invitation' invite.verification_code%}">Accept Invitation</a>
+                <a href="{%absolute_url 'hub:accept_invitation' invite.verification_code%}">Accept Invitation</a>
                 <br style="clear:both;" />
             </div>
             <br />

@@ -4,6 +4,7 @@ from base.fixtures.timezones import timezones
 from base.classes.util.log import Log
 from zoneinfo import ZoneInfo
 import pandas
+import arrow
 
 log = Log()
 
@@ -40,6 +41,10 @@ def string_to_date(date_string, source_timezone=None):
         dt = dt.replace(tzinfo=tz)
 
     return dt.astimezone(timezone.utc) if dt else None
+
+
+def humanize(datetime_instance):
+    return arrow.get(datetime_instance).humanize()
 
 
 def seconds_to_duration_description(num_seconds):

@@ -27,6 +27,7 @@ app_paths = [
     path('airport/update', update_airport_data, name='update_airport_data'),
     path('airport/manager/add', add_airport_manager, name='add_airport_manager'),
     path('airport/invitation/accept/<verification_code>', accept_invitation, name='accept_invitation'),
+    path('airport/invitation/accept', accept_invitation, name='invitation_link'),
 ]
 
 urlpatterns = [

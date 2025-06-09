@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.util.log import Log
 from base.classes.auth.auth import Auth
+from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service, utility_service, email_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service
+from base.fixtures.timezones import timezones
 
 log = Log()
 
@@ -100,12 +102,15 @@ def manage_airport(request, airport_identifier):
             {"airport": airport}
         )
 
+    airport.activate_timezone()
+
     return render(
         request, "the_hangar_hub/airport/manage_airport/manage_airport.html",
         {
             "airport": airport,
             "managers": managers,
-            "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
+            "invitations": airport_service.get_pending_invitations(airport, "MANAGER"),
+            "timezone_options": timezones,
         }
     )
 
@@ -158,6 +163,8 @@ def add_airport_manager(request):
         message_service.post_error("Only airport managers may invite other managers.")
         return  HttpResponseForbidden()
 
+    airport.activate_timezone()
+
     # Check for existing user
     existing_user = Auth.lookup_user(invitee)
     # If user already has an account, just add them as a manager
@@ -186,10 +193,28 @@ def add_airport_manager(request):
         request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
         {
             "airport": airport,
-            "managers": airport_service.get_managers(airport=airport)
+            "managers": airport_service.get_managers(airport=airport),
+            "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
         }
     )
 
 
+@require_authentication()
 def accept_invitation(request, verification_code):
-    return HttpResponse("Accept Invitation...")
+    invite = Invitation.get(verification_code)
+    error_html = "the_hangar_hub/airport/invitations/invitation_error.html"
+
+    if not invite:
+        message_service.post_error("The specified invitation was not found.")
+        return render(request, error_html, {"invite": invite})
+    elif invite.is_invalid():
+        return render(request, error_html, {"invite": invite})
+
+    user_profile = Auth().get_user()
+    if user_profile.email.lower() != invite.email.lower():
+        return render(request, error_html, {"invite": invite})
+
+
+
+
+    return HttpResponse("Invalid Invitation...")

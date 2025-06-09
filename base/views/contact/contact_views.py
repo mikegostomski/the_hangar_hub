@@ -118,12 +118,16 @@ def profile(request):
 
     authorities = auth_service.get_user().authorities
 
+    from allauth.account.models import EmailAddress
+    emails = EmailAddress.objects.filter(user=auth_service.get_user().django_user())
+
     return render(request, 'base/contact/profile.html', {
         'contact': contact,
         'user': contact.user,
         'authorities': authorities,
         'address_options': Address.address_types(),
         'phone_options': Phone.phone_types(),
+        'emails': emails,
     })
 
 

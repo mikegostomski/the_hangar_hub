@@ -1,7 +1,6 @@
 from django.apps import AppConfig
 from django.conf import settings
 
-
 # Default settings
 _DEFAULTS = {
     'AUTHORIZE_GLOBAL': False,      # Allow authorizing for other apps?
@@ -25,7 +24,7 @@ _DEFAULTS = {
 }
 
 
-class MjgBaseConfig(AppConfig):
+class BaseConfig(AppConfig):
     name = 'base'
     verbose_name = "The Base Plugin"
 

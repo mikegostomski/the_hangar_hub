@@ -1,0 +1,51 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar Hub: Invitation Not Accepted{%endblock%}
+
+{% block main_content %}
+<div class="content-800">
+    <h1>{%icon bi-envelope-exclamation%} Invalid Invitation</h1>
+    <br />
+    {%if not invite%}
+        <div class="alert alert-danger">
+            <b>Invitation was not found</b><br />
+            If you copied and pasted the verification code from the email, please verify that you copied the entire code.
+        </div>
+    {%elif invite.is_invalid%}
+        <div class="alert alert-danger">
+            <b>Invitation is not valid</b><br />
+            {{invite.is_invalid}}
+        </div>
+    {%elif invite.email|lower != request.user.email|lower%}
+        <div class="alert alert-danger">
+            <b>Incorrect Email Address</b><br />
+            This invitation was intended for someone with a different email address.
+        </div>
+        If you signed up for The Hangar Hub with a different email address, you may:
+        <ul>
+            <li>
+                Add the invited email address to your <a href="{%url 'base:profile'%}">profile</a>
+            </li>
+            <li>
+                Ask the airport manager to invite you via your current email address ({{request.user.email}}).
+            </li>
+        </ul>
+    {%else%}
+        <div class="alert alert-danger">
+            <b>Unable to accept the invitation</b><br />
+            There was an error accepting this invitation. Please ask the airport manager to invite you again.
+        </div>
+    {%endif%}
+    <br />
+
+
+
+    <br />
+    <br />
+
+    <div class="alert alert-warning">
+        ToDo: Add a form to request access from existing management.
+    </div>
+</div>
+{%endblock%}

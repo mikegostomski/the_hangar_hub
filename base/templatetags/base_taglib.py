@@ -62,7 +62,7 @@ def absolute_url(context, *args, **kwargs):
         reverse_args = args[1:] if len(args) > 1 else None
         return f"{context['absolute_root_url']}{reverse(args[0], args=reverse_args)}"
     else:
-        return context['absolute_root_url']
+        return context["absolute_root_url"]
 
 
 @register.simple_tag()
@@ -135,6 +135,17 @@ def decode(context, *args):
     if value is None and len(args) == 3:
         return args[2]
     return value
+
+
+@register.simple_tag
+def humanize(*args):
+    # Humanize a datetime ("x seconds ago", "last week", "two years ago", ...)
+    return date_service.humanize(args[0])
+
+
+@register.inclusion_tag('base/components/humanized_date.html')
+def humanized_date(*args):
+    return {"dt": args[0]}
 
 
 @register.simple_tag

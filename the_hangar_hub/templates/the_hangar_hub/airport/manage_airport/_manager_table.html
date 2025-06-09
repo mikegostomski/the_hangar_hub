@@ -18,8 +18,8 @@
         <td>
             {%select_menu value=manager.status class="form-select" options="A:Active|I:Inactive" nullable=False%}
         </td>
-        <td>{{manager.date_created}}</td>
-        <td>{{manager.status_change_date}}</td>
+        <td>{%humanized_date manager.date_created%}</td>
+        <td>{%humanized_date manager.status_change_date%}</td>
     </tr>
     {%endfor%}
 
@@ -31,8 +31,8 @@
         <td>
             <em class="text-muted">{{invite.status_description}}</em>
         </td>
-        <td>{{invite.date_created}}</td>
-        <td>{{invite.status_change_date}}</td>
+        <td>{%humanized_date invite.date_created%}</td>
+        <td>{%humanized_date invite.status_change_date%}</td>
     </tr>
     {%endfor%}
 

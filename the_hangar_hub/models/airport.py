@@ -1,5 +1,7 @@
 from django.db import models
 from base.classes.util.log import Log
+from django.utils import timezone
+from zoneinfo import ZoneInfo
 
 log = Log()
 
@@ -16,6 +18,12 @@ class Airport(models.Model):
 
     # Email displayed to users/tenants who need to contact the airport
     info_email = models.CharField(max_length=150, blank=True, null=True)
+
+    def activate_timezone(self):
+        if self.timezone:
+            timezone.activate(ZoneInfo(self.timezone))
+        else:
+            timezone.deactivate()
 
 
     @classmethod

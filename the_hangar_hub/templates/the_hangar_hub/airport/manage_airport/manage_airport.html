@@ -31,6 +31,13 @@
             <td class="ajax-status-container">&nbsp;</td>
         </tr>
         <tr>
+            <th scope="row">Timezone</th>
+            <td>
+                {%select_menu options=timezone_options value=airport.timezone name="timezone" onchange="update_airport_data($(this));" class="form-select"%}
+            </td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
+        <tr>
             <th scope="row">Public Email Address</th>
             <td><input type="text" class="form-control" name="info_email" value="{{airport.info_email}}" onchange="update_airport_data($(this));" /></td>
             <td class="ajax-status-container">&nbsp;</td>

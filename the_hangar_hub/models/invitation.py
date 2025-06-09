@@ -1,6 +1,6 @@
 from django.db import models
 from base.classes.util.log import Log
-from base.services import utility_service, message_service, email_service
+from base.services import utility_service, message_service, email_service, auth_service
 from base.classes.auth.auth import Auth
 from the_hangar_hub.models.airport import Airport
 from django.contrib.auth.models import User
@@ -23,7 +23,52 @@ class Invitation(models.Model):
     status_code = models.CharField(max_length=1, blank=False, null=False, default="I")
     status_change_date = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def status_description(self):
+        return {
+            "I": "Invited (not sent)",
+            "S": "Invitation Sent",
+            "A": "Accepted",
+            "R": "Invitation Revoked",
+            "E": "Invitation Expired",
+        }.get(self.status_code) or self.status_code
+
+    @property
+    def role_description(self):
+        return {
+            "MANAGER": "Airport Manager",
+            "TENANT": "Hangar Tenant",
+        }.get(self.role) or self.role
+
+    @property
+    def invited_by_user_profile(self):
+        return auth_service.lookup_user(self.invited_by)
+
+    @property
+    def resulting_user_profile(self):
+        if self.resulting_user:
+            return auth_service.lookup_user(self.resulting_user)
+        else:
+            return None
+
+    def is_invalid(self, post_errors=False):
+        msg = None
+        if self.status_code in ["E", "R"]:
+            msg = "This invitation has expired"
+        elif self.status_code == "A":
+            msg = "This invitation has already been accepted"
+        if msg and post_errors:
+            message_service.post_error(msg)
+        return msg
+
+    def is_valid(self, post_errors=False):
+        return not self.is_invalid(post_errors)
+
+
     def send(self):
+        """
+        Send this invitation
+        """
         if not self.id:
             # Error would have already been posted (ie: invite().send() when invite() fails)
             pass
@@ -41,27 +86,20 @@ class Invitation(models.Model):
                 sender_display_name=inviter.display_name,
                 to=self.email,
                 email_template="the_hangar_hub/airport/invitations/invitation_email.html",
-                context={"invitation": self},
+                context={"invite": self},
                 max_recipients=1,
+                include_context=True
             ):
                 self.status_code = "S"
                 self.save()
                 return True
         return False
 
-
-    @property
-    def status_description(self):
-        return {
-            "I": "Invited (not sent)",
-            "S": "Invitation Sent",
-            "A": "Accepted",
-            "R": "Invitation Revoked",
-            "E": "Invitation Expired",
-        }.get(self.status_code) or self.status_code
-
     @classmethod
     def invite(cls, airport, email_address, role):
+        """
+        Invite someone to join specified airport via their email address
+        """
         inviter = Auth().get_user()
 
         try:
@@ -97,9 +135,12 @@ class Invitation(models.Model):
             return Invitation()  # Likely will be followed by .send()
 
     @classmethod
-    def get(cls, pk):
+    def get(cls, key):
         try:
-            return cls.objects.get(pk=pk)
+            if str(key).isnumeric():
+                return cls.objects.get(pk=key)
+            else:
+                return cls.objects.get(verification_code=key)
         except cls.DoesNotExist:
             return None
         except Exception as ee:
