@@ -22,3 +22,4 @@ django-sass-processor>=1.2.2
 asgiref>=3.6.0
 gunicorn>=20.0.4
 pyyaml>=6.0
+pandas

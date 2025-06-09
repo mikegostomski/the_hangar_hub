@@ -1,172 +1,45 @@
-import re
 import math
-from datetime import datetime, timedelta
-from base.services import error_service
+from datetime import datetime, timezone
+from base.fixtures.timezones import timezones
 from base.classes.util.log import Log
-import pytz
+from zoneinfo import ZoneInfo
+import pandas
 
 log = Log()
 
-def to_date_string(datetime_instance):
-    # ToDo: Allow date format preference
-    if datetime_instance:
-        preferred_format = '%d-%b-%Y'
-        return datetime_instance.strftime(preferred_format)
-    return ''
 
-
-def to_datetime_string(datetime_instance):
-    # ToDo: Allow date format preference
-    if datetime_instance:
-        preferred_format = '%d-%b-%Y %H:%M'
-        return datetime_instance.strftime(preferred_format)
-    return ''
-
-
-def to_time_string(datetime_instance):
-    # ToDo: Allow date format preference
-    if datetime_instance:
-        preferred_format = '%H:%M'
-        return datetime_instance.strftime(preferred_format)
-    return ''
-
-
-def to_timestamp_string(datetime_instance):
+def string_to_date(date_string, source_timezone=None):
     """
-    Format a datetime for non-user-facing dates
-    """
-    if datetime_instance:
-        preferred_format = "%Y-%m-%d %H:%M:%S"
-        return datetime_instance.strftime(preferred_format)
-    return ''
-
-
-def string_to_date(date_string):
-    """
-    Convert any reasonable date string into a date
+    Convert any reasonable date string into a date.
+    The resulting dates will be UTC
+    If no source timezone is given, and date string has no offset, assume New York
     """
     if date_string is None:
         return None
 
-    try:
-        # NEW LOGIC FOR DATES CONTAINING MONTH NAMES  <----------------------------
-        date_string = date_string.replace('a.m.', 'am').replace('p.m.', 'pm').upper()
-        months = {
-            "JANUARY": 1,
-            "FEBRUARY": 2,
-            "MARCH": 3,
-            "APRIL": 4,
-            "MAY": 5,
-            "JUNE": 6,
-            "JULY": 7,
-            "AUGUST": 8,
-            "SEPTEMBER": 9,
-            "OCTOBER": 10,
-            "NOVEMBER": 11,
-            "DECEMBER": 12,
-        }
-        had_month_name = False
-        for mmm, mm in months.items():
-            if mmm in date_string:
-                had_month_name = True
-                if f"{mmm} " in date_string:
-                    date_string = date_string.replace(f"{mmm} ", f"{mm}/")
-                else:
-                    date_string = date_string.replace(mmm, f"{mm}/")
-        if had_month_name:
-            time_str = re.search(r"(\d{1,2}:\d{1,2})", date_string, re.IGNORECASE)
-            if time_str:
-                date_str = date_string[:date_string.index(time_str.group(1))].replace(' ', '').strip().strip(',')
-                time_str = date_string[date_string.index(time_str.group(1)):].strip()
-                date_string = f"{date_str} {time_str}"
-        # END LOGIC FOR DATES CONTAINING MONTH NAMES  <----------------------------
+    if str(date_string).lower() == "now":
+        return datetime.now(timezone.utc)
 
-        # Ignore timezone
-        timezone_offset = None
+    dt = None
+
+    # Use pandas to convert date string
+    if isinstance(date_string, str):
         try:
-            if re.search(r"\d+[+-]\d{1,2}:\d{1,2}$", date_string, re.IGNORECASE):
-                log.info(f"Handling timezone info: {date_string}")
-                timezone_offset = date_string[-6:-3]
-                date_string = date_string[:-6]
+            dt = pandas.to_datetime(date_string).to_pydatetime()
         except Exception as ee:
-            log.error(ee)
-            
-        # Replace any date separators with forward slashes
-        date_string = re.sub(r'[-.,;\\]', '/', date_string)
+            log.warning(f"Pandas cannot convert string to date ({ee})")
 
-        # HTML "datetime-local" inputs use format: 2020-08-13T10:15
-        # Just replacing the T with a space will allow this to be recognized
-        if re.sub(r'[^a-zA-Z]', r'', date_string) == 'T':
-            date_string = date_string.replace('T', ' ')
+    elif isinstance(date_string, datetime):
+        dt = date_string
 
-        # Determine the date format
-        date_format = None
-        if re.match(r"\d{8,}", date_string, re.IGNORECASE):
-            date_format = "%Y%m%d"
+    else:
+        log.warning(f"String to date received a non-string: {type(date_string)}")
 
-        elif re.match(r"\d{4}/\d{1,2}/\d{1,2}", date_string, re.IGNORECASE):
-            date_format = "%Y/%m/%d"
+    if dt and dt.tzinfo is None:
+        tz = ZoneInfo(source_timezone or "America/New_York")
+        dt = dt.replace(tzinfo=tz)
 
-        elif re.match(r"\d{1,2}/\D{3}/\d{4}", date_string, re.IGNORECASE):
-            date_format = "%d/%b/%Y"
-        elif re.match(r"\d{1,2}/\D{3}/\d{2}", date_string, re.IGNORECASE):
-            date_format = "%d/%b/%y"
-
-        elif re.match(r"\d{1,2}/\d{1,2}/\d{4}", date_string, re.IGNORECASE):
-            date_format = "%m/%d/%Y"
-        elif re.match(r"\d{1,2}/\d{1,2}/\d{2}", date_string, re.IGNORECASE):
-            date_format = "%m/%d/%y"
-
-        # If only a time (no date) is given, assume today
-        today = date_format is None and ':' in date_string
-
-        # If adding time to today's date, need to start with an empty string
-        if today:
-            date_format = ""
-
-        # Look for time format
-        if re.match(r"\d{14}", date_string, re.IGNORECASE):
-            date_format += "%H%M%S"
-        elif re.match(r"\d{12}", date_string, re.IGNORECASE):
-            date_format += "%H%M"
-        elif re.match(r"\d{10}", date_string, re.IGNORECASE):
-            date_format += "%H"
-
-        elif re.match(r"\S+\s+\d{1,2}:\d{1,2}:\d{1,2}\s+[apm]{2}", date_string, re.IGNORECASE):
-            date_format += " %I:%M:%S %p"
-        elif re.match(r"\S+\s+\d{1,2}:\d{1,2}:\d{1,2}/\d{6}", date_string, re.IGNORECASE):
-            date_format += " %H:%M:%S/%f"
-        elif re.match(r"\S+\s+\d{1,2}:\d{1,2}:\d{1,2}", date_string, re.IGNORECASE):
-            date_format += " %H:%M:%S"
-
-        elif re.match(r"\S+\s+\d{1,2}:\d{1,2}\s+[apm]{2}", date_string, re.IGNORECASE):
-            date_format += " %I:%M %p"
-        elif re.match(r"\S+\s+\d{1,2}:\d{1,2}", date_string, re.IGNORECASE):
-            date_format += " %H:%M"
-
-        # If adding time to today, add today to the string
-        if today and len(date_format) > 0:
-            date_string = "{0} {1}".format(datetime.now(pytz.utc).strftime('%Y/%m/%d'), date_string)
-            date_format = "%Y/%m/%d {0}".format(date_format)
-
-        if date_format and date_format != "":
-            dt = datetime.strptime(date_string, date_format)
-
-
-            # Convert time to UTC
-            utc = pytz.timezone("UTC")
-
-            # If timezone was specified in string, adjust it now
-            if timezone_offset:
-                try:
-                    dt = dt + timedelta(hours=int(timezone_offset) * -1)
-                except Exception as ee:
-                    log.error(ee)
-            return utc.localize(dt)
-        
-    except Exception as ee:
-        error_service.record(ee, date_string)
-    return None
+    return dt.astimezone(timezone.utc) if dt else None
 
 
 def seconds_to_duration_description(num_seconds):
@@ -194,3 +67,6 @@ def seconds_to_duration_description(num_seconds):
             description.append("and")
         description.append(f"{num_seconds} second{'s' if num_seconds != 1 else ''}")
     return ' '.join(description).strip(' ,')
+
+def timezone_options():
+    return {x:x for x in timezones}

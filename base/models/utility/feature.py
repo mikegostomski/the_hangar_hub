@@ -1,8 +1,7 @@
 from django.db import models
-from datetime import datetime
+from datetime import datetime, timezone
 from base.services import utility_service
 from base.classes.util.env_helper import EnvHelper, Log
-import pytz
 
 log = Log()
 env = EnvHelper()
@@ -71,10 +70,10 @@ class Feature(models.Model):
                 self.disable_date = None
 
     def set_status_by_date(self):
-        if self.enable_date and self.enable_date <= datetime.now(pytz.utc):
+        if self.enable_date and self.enable_date <= datetime.now(timezone.utc):
             self.set_status('Y')
             self.save()
-        if self.disable_date and self.disable_date <= datetime.now(pytz.utc):
+        if self.disable_date and self.disable_date <= datetime.now(timezone.utc):
             self.set_status('N')
             self.save()
 

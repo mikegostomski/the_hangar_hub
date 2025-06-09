@@ -2,6 +2,7 @@ from .services import utility_service, auth_service
 from .classes.breadcrumb import Breadcrumb
 from django.conf import settings
 from base.classes.util.app_data import Log, EnvHelper, AppData
+from datetime import datetime, timezone
 
 log = Log()
 env = EnvHelper()
@@ -39,7 +40,9 @@ def util(request):
         'breadcrumbs': breadcrumbs,
 
         # Posted messages at top of page by default. Setting option allows moving them to the bottom
-        'posted_message_position': getattr(settings, 'POSTED_MESSAGE_POSITION', 'TOP').upper()
+        'posted_message_position': getattr(settings, 'POSTED_MESSAGE_POSITION', 'TOP').upper(),
+
+        "now": datetime.now(timezone.utc)
     }
 
     # Get admin links for any installed custom plugins, and the current app

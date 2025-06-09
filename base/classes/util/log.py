@@ -1,10 +1,9 @@
 import logging
-import datetime
+from datetime import datetime, timezone
 from inspect import getframeinfo, stack
 import os
 from io import StringIO
 from html.parser import HTMLParser
-import pytz
 
 
 class Log:
@@ -39,7 +38,7 @@ class Log:
         if function_name is None:
             function_name = self.get_calling_function()
 
-        self.fn_times[function_name] = {'start': datetime.datetime.now(pytz.utc)}
+        self.fn_times[function_name] = {'start': datetime.now(timezone.utc)}
 
         if type(parameters) is dict:
             ll = [f"{kk}='{vv}'" for kk, vv in parameters.items()]
@@ -59,7 +58,7 @@ class Log:
         # If start time is known, log a completion time
         metric_txt_add_on = ""
         if function_name in self.fn_times and 'start' in self.fn_times[function_name]:
-            self.fn_times[function_name]['stop'] = datetime.datetime.now(pytz.utc)
+            self.fn_times[function_name]['stop'] = datetime.now(timezone.utc)
             delta = self.fn_times[function_name]['stop'] - self.fn_times[function_name]['start']
             duration = str(int(delta.total_seconds() * 1000))
             metric_txt_add_on = f"-- completed in {duration} ms"

@@ -2,8 +2,7 @@ from django.db import models
 from base.classes.util.log import Log
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone
 
 log = Log()
 
@@ -62,7 +61,7 @@ class XssAttempt(models.Model):
 
     def session_status(self):
         ss = self.get_session()
-        if ss and ss.expire_date > datetime.now(pytz.utc):
+        if ss and ss.expire_date > datetime.now(timezone.utc):
             return "A"
 
         elif ss:

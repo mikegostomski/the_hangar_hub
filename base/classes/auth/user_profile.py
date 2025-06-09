@@ -6,8 +6,7 @@ from django.contrib.auth.models import User
 from django.utils.functional import SimpleLazyObject
 from base.models.contact.contact import Contact
 from django.db.models import Q
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone
 
 log = Log()
 
@@ -184,7 +183,7 @@ class UserProfile:
                     self.authorities["developer"] = "Developer"
 
                 try:
-                    now = datetime.now(pytz.utc)
+                    now = datetime.now(timezone.utc)
                     permissions = self._cached_django_user.permissions.filter(Q(effective_date__isnull=True) | Q(effective_date__lte=now))
                     permissions = permissions.filter(Q(end_date__isnull=True) | Q(end_date__gt=now))
                     if permissions:

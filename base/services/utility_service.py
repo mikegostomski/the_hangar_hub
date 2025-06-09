@@ -7,9 +7,8 @@ import requests
 import base64
 from io import StringIO
 from html.parser import HTMLParser
-from datetime import datetime
+from datetime import datetime, timezone
 from base.classes.util.app_data import Log, EnvHelper, AppData
-import pytz
 import string
 import secrets
 
@@ -540,7 +539,7 @@ def get_features(force_query=False):
                     feature_dict[ff.feature_code]["default"] = ff
 
             # Select the appropriate instance of each feature
-            now = datetime.now(pytz.utc)
+            now = datetime.now(timezone.utc)
             for feature_code, ff in feature_dict.items():
                 selected = (
                     ff["override"]

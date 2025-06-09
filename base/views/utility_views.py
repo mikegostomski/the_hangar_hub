@@ -1,9 +1,8 @@
 from django.shortcuts import render
 from ..services import date_service
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from base.classes.util.app_data import Log, EnvHelper, AppData
-import pytz
 
 log = Log()
 env = EnvHelper()
@@ -27,7 +26,7 @@ def status_page(request):
         request, 'base/status_page.html',
         {
             'dev_test_content': int(time.time()),
-            'server_time': datetime.now(pytz.utc),
+            'server_time': datetime.now(timezone.utc),
             'session_data': session_data,
             'installed_plugins': env.installed_plugins,
         }

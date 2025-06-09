@@ -6,11 +6,10 @@ from django.contrib.auth.models import User
 from base.models.auth.authority import Authority
 from base.models.auth.permission import Permission
 from django.core.paginator import Paginator
-from datetime import datetime
+from datetime import datetime, timezone
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.auth import Auth
-import pytz
 
 
 log = Log()
@@ -42,7 +41,7 @@ def authorized_users(request, authority_id=None):
     if not authority:
         return HttpResponseForbidden()
 
-    now = datetime.now(pytz.utc)
+    now = datetime.now(timezone.utc)
     permissions = Permission.objects.filter(authority__id=authority_id)
     permissions = permissions.filter(Q(effective_date__isnull=True) | Q(effective_date__lte=now))
     permissions = permissions.filter(Q(end_date__isnull=True) | Q(end_date__gt=now))

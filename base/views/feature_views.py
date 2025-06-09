@@ -5,8 +5,7 @@ from ..decorators import require_authority
 from ..models import Feature
 from django.http import HttpResponseForbidden, HttpResponse
 from base.classes.util.log import Log
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone
 
 log = Log()
 allowable_role_list = ['~superuser']
@@ -28,7 +27,7 @@ def feature_list(request):
         {
             'features': features,
             'status_options': {'N': 'Disabled', 'Y': 'Enabled', 'L': 'Limited', },
-            'now': datetime.now(pytz.utc),
+            'now': datetime.now(timezone.utc),
             'toggle_status': toggle_status,
         }
     )

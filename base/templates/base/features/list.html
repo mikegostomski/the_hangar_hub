@@ -34,10 +34,10 @@
                 {%select_menu id=ff.id value=ff.status options=status_options onchange="update_feature($(this));" %}
             </td>
             <td>
-                <input type="text" id="enable_date-{{ff.id}}" value="{%format_datetime ff.enable_date%}" onchange="update_feature($(this));" />
+                <input type="text" id="enable_date-{{ff.id}}" value="{{ff.enable_date|date:'d-M-Y H:i'}}" onchange="update_feature($(this));" />
             </td>
             <td>
-                <input type="text" id="disable_date-{{ff.id}}" value="{%format_datetime ff.disable_date%}" onchange="update_feature($(this));" />
+                <input type="text" id="disable_date-{{ff.id}}" value="{{ff.disable_date|date:'d-M-Y H:i'}}" onchange="update_feature($(this));" />
             </td>
             <td class="date"><span class="bi bi-trash text-danger" title="Delete this feature" onclick="delete_feature($(this), {{ff.id}});"></span></td>
         </tr>
@@ -85,9 +85,11 @@
         You may specify the date/time in any reasonable format.  If only a date is given, the time will default to 00:00<br />
         Examples:
         <ul>
-            <li>{%format_datetime now%}</li>
-            <li>{%format_date now%}</li>
-            <li>{%format_timestamp now%}</li>
+            <li>{{now|date:"Y-m-d"}}</li>
+            <li>{{now|date:"F j, Y"}}</li>
+            <li>{{now|date:"m-d-Y h:i A"}}</li>
+            <li>{{now|date:"m/d/Y H:i"}}</li>
+            <li>{{now|date:"d-M-Y H:i"}}</li>
         </ul>
     </p>
 

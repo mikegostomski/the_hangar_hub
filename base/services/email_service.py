@@ -6,9 +6,8 @@ from django.core.mail import EmailMultiAlternatives
 from ..context_processors import util as util_context, auth as auth_context
 from django.urls import reverse
 from base.classes.util.caller_data import CallerData
-from datetime import datetime
+from datetime import datetime, timezone
 from base.classes.util.app_data import Log, EnvHelper, AppData
-import pytz
 
 log = Log()
 env = EnvHelper()
@@ -111,7 +110,7 @@ def send(
         return False
 
     # Grab the time that this email attempt was initiated
-    now = datetime.now(pytz.utc)
+    now = datetime.now(timezone.utc)
     now_str = now.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
     # If there are no attempts yet, initialize the list of attempts

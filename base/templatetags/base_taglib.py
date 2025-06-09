@@ -185,21 +185,6 @@ def format_currency(*args, **kwargs):
     return format_decimal(*args, **kwargs)
 
 
-@register.simple_tag()
-def format_date(datetime_instance):
-    return date_service.to_date_string(datetime_instance)
-
-
-@register.simple_tag()
-def format_datetime(datetime_instance):
-    return date_service.to_datetime_string(datetime_instance)
-
-
-@register.simple_tag()
-def format_timestamp(datetime_instance):
-    return date_service.to_timestamp_string(datetime_instance)
-
-
 @register.filter
 def feature(feature_code, true_false):
     """

@@ -2,8 +2,7 @@ from django.db import models
 from base.classes.util.log import Log
 from django.contrib.auth.models import User
 from base.models.auth.authority import Authority
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone
 
 log = Log()
 
@@ -24,10 +23,10 @@ class Permission(models.Model):
         return self.effective_date if self.effective_date else self.date_created
 
     def is_future(self):
-        return self.effective_date and self.effective_date > datetime.now(pytz.utc)
+        return self.effective_date and self.effective_date > datetime.now(timezone.utc)
 
     def is_history(self):
-        return self.end_date and self.end_date <= datetime.now(pytz.utc)
+        return self.end_date and self.end_date <= datetime.now(timezone.utc)
 
     def is_active(self):
         return not (self.is_history() or self.is_future())
@@ -36,5 +35,5 @@ class Permission(models.Model):
         if self.is_future():
             self.delete()
         else:
-            self.end_date = datetime.now(pytz.utc)
+            self.end_date = datetime.now(timezone.utc)
             self.save()

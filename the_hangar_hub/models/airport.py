@@ -12,6 +12,7 @@ class Airport(models.Model):
     identifier = models.CharField(max_length=6, unique=True, db_index=True)
     city = models.CharField(max_length=60)
     state = models.CharField(max_length=3)
+    timezone = models.CharField(max_length=50, blank=True, null=True)
 
     # Email displayed to users/tenants who need to contact the airport
     info_email = models.CharField(max_length=150, blank=True, null=True)
