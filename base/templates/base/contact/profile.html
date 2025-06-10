@@ -14,16 +14,43 @@
     <br />
 
     <h2>Bio Data</h2>
-        {% csrf_token %}
-        <fieldset>
-            <label for="first_name">First Name</label>
-            <input type="text" name="first_name" id="first_name" value="{{contact.first_name|default:''}}" class="form-control" maxlength="60" onchange="update_contact($(this));" />
-        </fieldset>
-        <fieldset>
-            <label for="last_name">Last Name</label>
-            <input type="text" name="last_name" id="last_name" value="{{contact.last_name|default:''}}" class="form-control" maxlength="60" onchange="update_contact($(this));" />
-        </fieldset>
+    <label for="first_name">First Name</label>
+    <input type="text" name="first_name" id="first_name" value="{{contact.first_name|default:''}}" class="form-control" maxlength="60" onchange="update_contact($(this));" />
     <br />
+    <label for="last_name">Last Name</label>
+    <input type="text" name="last_name" id="last_name" value="{{contact.last_name|default:''}}" class="form-control" maxlength="60" onchange="update_contact($(this));" />
+    <br />
+    <br />
+
+    <h2>Email Addresses</h2>
+    {%for email in emails%}
+
+        {%if email.verified%}
+            {%icon bi-shield-check text-success title="Verified"%}
+        {%else%}
+            {%icon bi-shield-minus text-danger title="Unverified"%}
+        {%endif%}
+        &nbsp;
+        {{email.email}}
+        &nbsp;
+        {%if email.primary%}
+            {%icon bi-star-fill text-warning title="Primary"%}
+        {%endif%}
+        <br />
+    {%endfor%}
+<br />
+<br />
+
+
+    <a class="login" href="{% url 'account_email' %}">Change E-mail</a><br />
+    <a href="{%url 'socialaccount_connections'%}">socialaccount_connections</a><br />
+
+    Email: {{user.email}}<br />
+    Emails: {{emails}}<br />
+
+
+
+
     <h2>Addresses</h2>
     {%include 'base/contact/_addresses.html'%}
 
@@ -51,12 +78,6 @@
         </form>
     {%endif%}
 
-
-    <a class="login" href="{% url 'account_email' %}">Change E-mail</a><br />
-    <a href="{%url 'socialaccount_connections'%}">socialaccount_connections</a><br />
-
-    Email: {{user.email}}<br />
-    Emails: {{emails}}<br />
 
 
     {%if authorities%}

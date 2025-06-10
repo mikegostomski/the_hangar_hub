@@ -36,6 +36,9 @@
 
     <script src="{%static 'js/utils.js'%}?v={%app_version%}"></script>
     <script src="{%static 'js/ajax.js'%}?v={%app_version%}"></script>
+    <script type="text/javascript">
+        {%include "base/template/standard/template.js"%}
+    </script>
 
     <link href="{%static 'css/ajax.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
     <link href="{%static 'css/legacy.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
@@ -69,6 +72,7 @@
         </div>
     </div>
     {%include "base/components/loading_indicator.html"%}
+    {%smokescreen_spinner name="page_loading" message="Loading..." icon="bi-gear"%}
 </body>
 </html>
 

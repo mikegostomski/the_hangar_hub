@@ -25,8 +25,6 @@ class MySocialAdapter(DefaultSocialAccountAdapter):
         - social account's email exists, link social account to existing user
         """
 
-        log.debug(f"!!!!! ToDo: pre_social_login")
-
         # Ignore existing social accounts, just do this stuff for new ones
         if sociallogin.is_existing:
             return
@@ -40,20 +38,37 @@ class MySocialAdapter(DefaultSocialAccountAdapter):
         # check if given email address already exists.
         # Note: __iexact is used to ignore cases
         try:
-            email = sociallogin.account.extra_data['email'].lower()
+            existing_user = None
+            this_email = sociallogin.account.extra_data['email'].lower()
 
-            # email_address = EmailAddress.objects.get(email__iexact=email)
-            user = User.objects.get(email=email)
-            if user:
+            # Check Django User objects
+            try:
+                existing_user = User.objects.get(email__iexact=this_email)
+            except User.DoesNotExist:
                 pass
-            else:
+
+            # Also check for verified emails added via allauth
+            if not existing_user:
+                try:
+                    email_address = EmailAddress.objects.get(email__iexact=this_email, verified=True)
+                    if email_address:
+                        existing_user = email_address.user
+                except EmailAddress.DoesNotExist:
+                    pass
+
+            # delete any non-verified instances of this email
+            # An existing non-verified email will prevent a user from logging in via this email
+            try:
+                EmailAddress.objects.filter(email__iexact=this_email, verified=False).delete()
+            except:
                 return
 
-
-        # if it does not, let allauth take care of this new social account
+            # if email not found, let allauth take care of this new social account
+            if not existing_user:
+                return
         except EmailAddress.DoesNotExist:
             return
 
         # if it does, connect this new social login to the existing user
-        user = user
-        sociallogin.connect(request, user)
+        sociallogin.connect(request, existing_user)
+

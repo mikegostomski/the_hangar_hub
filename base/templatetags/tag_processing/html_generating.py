@@ -446,20 +446,21 @@ class FaNode(template.Node):
 
         # Everything else should have been in key="value" format
         other_attributes = {k: v for k, v in attrs.items() if k != v}
+        title = other_attributes.get("title")
 
         # Determine screen reader text
-        if other_attributes.get('aria-hidden', 'false').lower() == 'true':
+        if other_attributes.get("aria-hidden", "false").lower() == "true":
             aria_text = ""
         elif other_attributes.get("aria-label"):
             aria_text = other_attributes.get("aria-label")
             del other_attributes["aria-label"]
-        elif other_attributes.get('title'):
-            aria_text = other_attributes.get('title')
+        elif title:
+            aria_text = title
         else:
             aria_text = ""
-        # If screen reader text was found, put it in a sr-only span
+        # If screen reader text was found, put it in a visually-hidden span
         if aria_text:
-            aria_text = f"<span class=\"sr-only\">{aria_text}</span>"
+            aria_text = f'<span class="visually-hidden">{aria_text}</span>'
 
         # Icon will be wrapped in a button if it has an onclick action
         onclick = other_attributes.get('onclick')
@@ -470,13 +471,22 @@ class FaNode(template.Node):
                 del other_attributes['class']
             else:
                 classes = ""
-            icon = [f"<button type=\"button\" onclick=\"{onclick}\" class=\"btn btn-icon {classes}\""]
+            icon = [f'<button type="button" onclick="{onclick}" class="btn btn-icon {classes}"']
         else:
             icon = ["<span"]
 
         for kk, vv in other_attributes.items():
-            icon.append(f" {kk}=\"{vv}\"")
-        icon.append('>')
+            if kk == "title":
+                # Title will be on the icon and in the visually-hidden span
+                continue
+            if kk == "style" and "background-color" not in vv:
+                vv = f"background-color:transparent;{vv}"
+            icon.append(f' {kk}="{vv}"')
+
+        if "style" not in other_attributes.items():
+            icon.append(' style="background-color:transparent;"')
+
+        icon.append(">")
 
         # Build a basic FA icon inside the div or button
         icon.append('<span class="')
@@ -487,9 +497,11 @@ class FaNode(template.Node):
         for fa_class in icon_classes:
             icon.append(f" {fa_class}")
         icon.append('"')
-        # Icon should always be aria-hidden, since title/label was printed in an sr-only span
+        if title:
+            icon.append(f' title="{title}"')
+        # Icon should always be aria-hidden, since title/label was printed in a visually-hidden span
         icon.append(' aria-hidden="true"')
-        icon.append('></span>')
+        icon.append("></span>")
 
         # Append hidden screen reader text, if present
         icon.append(aria_text)
@@ -500,7 +512,7 @@ class FaNode(template.Node):
         else:
             icon.append("</span>")
 
-        return ''.join(icon)
+        return "".join(icon)
 
 
 class IconNode(template.Node):
