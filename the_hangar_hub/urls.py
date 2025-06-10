@@ -28,6 +28,12 @@ app_paths = [
     path('airport/manager/add', add_airport_manager, name='add_airport_manager'),
     path('airport/invitation/accept/<verification_code>', accept_invitation, name='accept_invitation'),
     path('airport/invitation/accept', accept_invitation, name='invitation_link'),
+
+    path('manage/<airport_identifier>', airport_buildings, name='airport_buildings'),
+    path('manage/<airport_identifier>/building/add', add_building, name='add_building'),
+    path('manage/<airport_identifier>/building/<building_id>', building_hangars, name='building_hangars'),
+    path('manage/<airport_identifier>/building/<building_id>/add', add_hangar, name='add_hangar'),
+    path('manage/<airport_identifier>/hangar/<hangar_id>', manage_hangar, name='manage_hangar'),
 ]
 
 urlpatterns = [

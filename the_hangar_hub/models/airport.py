@@ -1,4 +1,6 @@
 from django.db import models
+
+import the_hangar_hub.models.hangar
 from base.classes.util.log import Log
 from django.utils import timezone
 from zoneinfo import ZoneInfo
@@ -25,6 +27,20 @@ class Airport(models.Model):
         else:
             timezone.deactivate()
 
+    def get_building(self, building_identifier):
+        if str(building_identifier).isnumeric():
+            return self.buildings.get(pk=building_identifier)
+        else:
+            return self.buildings.get(code=building_identifier)
+
+    def get_hangar(self, hangar_identifier):
+        try:
+            if str(hangar_identifier).isnumeric():
+                return the_hangar_hub.models.hangar.Hangar.objects.get(building__airport=self, pk=hangar_identifier)
+            else:
+                return the_hangar_hub.models.hangar.Hangar.objects.get(building__airport=self, code=hangar_identifier)
+        except the_hangar_hub.models.hangar.Hangar.DoesNotExist:
+            return None
 
     @classmethod
     def get(cls, id_or_ident):

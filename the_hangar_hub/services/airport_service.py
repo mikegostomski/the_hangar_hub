@@ -1,7 +1,10 @@
+import the_hangar_hub.models.hangar
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.auth import Auth
+from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.invitation import Invitation
+from base.services import message_service
 
 
 log = Log()
@@ -30,6 +33,54 @@ def is_airport_manager(user=None, airport=None):
         return bool([mgmt for mgmt in manages if mgmt.is_active])
     else:
         return False
+
+def get_managed_airport(airport_identifier, post_error=True):
+    try:
+        user_profile = Auth().get_user()
+        if can_query_user(user_profile):
+            if type(airport_identifier) is the_hangar_hub.models.airport.Airport:
+                airport = airport_identifier
+            elif type(airport_identifier) is the_hangar_hub.models.hangar.Building:
+                airport = airport_identifier.airport
+            elif type(airport_identifier) is the_hangar_hub.models.hangar.Hangar:
+                airport = airport_identifier.building.airport
+            else:
+                airport = Airport.get(airport_identifier)
+            if not airport:
+                if post_error:
+                    message_service.post_error("The specified airport could not be found")
+            elif is_airport_manager(user_profile, airport):
+                return airport
+            elif post_error:
+                message_service.post_error("You are not authorized to manage the specified airport")
+    except Exception as ee:
+        log.error(f"Could not get managed airport: {ee}")
+    return None
+
+def get_managed_building(airport_identifier, building_identifier, post_error=True):
+    building = None
+    try:
+        airport = get_managed_airport(airport_identifier, post_error)
+        if airport:
+            building = airport.get_building(building_identifier)
+            if post_error and not building:
+                message_service.post_error("The specified building could not be found")
+    except Exception as ee:
+        log.error(f"Could not get managed building: {ee}")
+    return building
+
+def get_managed_hangar(airport_identifier, hangar_identifier, post_error=True):
+    hangar = None
+    try:
+        airport = get_managed_airport(airport_identifier, post_error)
+        if airport:
+            hangar = airport.get_hangar(hangar_identifier)
+            if post_error and not hangar:
+                message_service.post_error("The specified hangar could not be found")
+    except Exception as ee:
+        log.error(f"Could not get managed hangar: {ee}")
+    return hangar
+
 
 def managed_airports(user=None):
     user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()

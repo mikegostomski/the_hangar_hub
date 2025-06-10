@@ -83,20 +83,8 @@ def select_airport(request):
 
 @require_authentication()
 def manage_airport(request, airport_identifier):
-    airport = Airport.get(airport_identifier)
+    airport = airport_service.get_managed_airport(airport_identifier)
     if not airport:
-        message_service.post_error("The specified airport was not found.")
-        return redirect("hub:welcome")
-
-    # User must be an active manager for this airport
-    # Page will also list all managers, which is why I'm selecting all of them
-    managers = airport_service.get_managers(airport)
-    user_profile = Auth().get_user()
-
-    # Is this user an active manager?
-    is_manager = bool([mgmt.is_active for mgmt in managers if mgmt.user == user_profile.django_user()])
-    if not is_manager:
-        message_service.post_error("Only airport managers may manage airport data.")
         return  render(
             request, "the_hangar_hub/airport/access_denied.html",
             {"airport": airport}
@@ -108,7 +96,7 @@ def manage_airport(request, airport_identifier):
         request, "the_hangar_hub/airport/manage_airport/manage_airport.html",
         {
             "airport": airport,
-            "managers": managers,
+            "managers": airport.management.all(),
             "invitations": airport_service.get_pending_invitations(airport, "MANAGER"),
             "timezone_options": timezones,
         }
@@ -119,15 +107,9 @@ def update_airport_data(request):
     airport_id = request.POST.get("airport_id")
     attribute = request.POST.get("attribute")
     value = request.POST.get("value")
-    airport = Airport.get(airport_id)
+    airport = airport_service.get_managed_airport(airport_id)
     if not airport:
-        message_service.post_error("The specified airport was not found.")
         return HttpResponseForbidden()
-
-    # User must be an active manager for this airport
-    if not airport_service.is_airport_manager():
-        message_service.post_error("Only airport managers may manage airport data.")
-        return  HttpResponseForbidden()
 
     try:
         prev_value = getattr(airport, attribute)
@@ -153,14 +135,8 @@ def add_airport_manager(request):
     invitee = request.POST.get("invitee")
     log.trace([airport_id, invitee])
 
-    airport = Airport.get(airport_id)
+    airport = airport_service.get_managed_airport(airport_id)
     if not airport:
-        message_service.post_error("The specified airport was not found.")
-        return HttpResponseForbidden()
-
-    # User must be an active manager for this airport
-    if not airport_service.is_airport_manager():
-        message_service.post_error("Only airport managers may invite other managers.")
         return  HttpResponseForbidden()
 
     airport.activate_timezone()

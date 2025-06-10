@@ -1,0 +1,70 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Hangars: {{building.code}}{%endblock%}
+
+{% block main_content %}
+    <h1>Hangars in {{building.code}}</h1>
+
+    <form method="POST" action="{%url 'hub:add_hangar' airport.identifier building.id%}">
+        {%csrf_token%}
+    <table class="table">
+        <tr valign="top">
+            <th scope="col">Hangar Code</th>
+            <th scope="col">
+                Default Rent<br />
+                <em>The default rent when adding tenants</em>
+            </th>
+            <th scope="col">Capacity</th>
+            <th scope="col" align="center">Has Electricity</th>
+            <th scope="col" align="center">-</th>
+        </tr>
+        {%for hangar in hangars%}
+            <tr>
+                <td>
+                    <a href="{%url 'hub:manage_hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
+                </td>
+                <td align="right">{%format_currency hangar.default_rent%}</td>
+                <td align="right">{{hangar.capacity}}</td>
+                <td align="center">
+                    {%if hangar.electricity%}
+                        {%icon bi-check-square title="Has Electricity%}
+                    {%else%}
+                        {%icon bi-check title="Doesn't Have Electricity%}
+                    {%endif%}
+                </td>
+                <td align="right">-</td>
+            </tr>
+        {%endfor%}
+        <tr>
+            <td>
+                <label for="hangar_code" class="visually-hidden">Hangar Code</label>
+                <input type="text" id="hangar_code" name="hangar_code" placeholder="{{building.code}}-#" class="form-control" />
+            </td>
+            <td>
+                <label for="default_rent" class="visually-hidden">Default Rent</label>
+                <input type="text" id="default_rent" name="default_rent" placeholder="$0.00" class="form-control" />
+            </td>
+            <td>
+                <label for="capacity" class="visually-hidden">Capacity</label>
+                <input type="number" id="capacity" name="capacity" placeholder="1" class="form-control" />
+            </td>
+            <td align="center">
+                <label for="electric" class="visually-hidden">Has Electric</label>
+                <input type="checkbox" id="electric" name="electric" value="1" />
+            </td>
+            <td>
+                <button type="submit" class="btn btn-success btn-sm">Add Hangar</button>
+            </td>
+        </tr>
+    </table>
+
+    </form>
+
+    To bulk-add hangars with sequenced codes, enter the number of desired hangars in brackets in the building code.<br />
+    Example:<br />
+    <div class="indent">
+        Hangar Code: "A-[5]" would create hangars A-1 through A-5
+    </div>
+
+{%endblock%}
