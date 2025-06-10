@@ -7,6 +7,7 @@ from django.utils.functional import SimpleLazyObject
 from base.models.contact.contact import Contact
 from django.db.models import Q
 from datetime import datetime, timezone
+from allauth.account.models import EmailAddress
 
 log = Log()
 
@@ -160,12 +161,17 @@ class UserProfile:
                 if str(user_data).isnumeric():
                     self._cached_django_user = User.objects.get(pk=user_data)
                 elif '@' in user_data:
-                    log.debug(f"LOOKING UP EMAIL:::::{user_data}")
-                    self._cached_django_user = User.objects.get(email__iexact=user_data)
-                    log.debug(f"RESULT::::::{self._cached_django_user}")
+                    try:
+                        self._cached_django_user = User.objects.get(email__iexact=user_data)
+                    except User.DoesNotExist:
+                        # Look at other confirmed emails
+                        confirmed_email = EmailAddress.objects.get(email__iexact=user_data, verified=True)
+                        self._cached_django_user = confirmed_email.user
                 else:
                     self._cached_django_user = User.objects.get(username__iexact=user_data)
             except User.DoesNotExist:
+                self._make_anonymous()
+            except EmailAddress.DoesNotExist:
                 self._make_anonymous()
 
         self.populate_supplemental_data(get_contact, get_authorities)
