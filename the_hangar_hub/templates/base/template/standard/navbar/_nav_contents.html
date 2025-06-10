@@ -30,18 +30,22 @@
 
 <li class="dropdown-divider"></li>
 
-<li class="dropdown-header">
-    Administration
-</li>
-<li>
-    <div class="dropdown-item">Manage Airport</div>
-</li>
-<li>
-    <div class="dropdown-item">Manage Hangars</div>
-</li>
-<li>
-    <span class="dropdown-item">Manage Tenants</span>
-</li>
-<li>
-    <span class="dropdown-item">Manage Waitlist</span>
-</li>
+{%if managed_airport_identifiers%}
+    {%for identifier in managed_airport_identifiers%}
+        <li class="dropdown-header">
+            Administration: {{identifier}}
+        </li>
+        <li>
+            <a href="{%url 'hub:manage_airport' identifier%}" class="dropdown-item">Manage Airport</a>
+        </li>
+        <li>
+            <div class="dropdown-item">Manage Hangars</div>
+        </li>
+        <li>
+            <span class="dropdown-item">Manage Tenants</span>
+        </li>
+        <li>
+            <span class="dropdown-item">Manage Waitlist</span>
+        </li>
+    {%endfor%}
+{%endif%}

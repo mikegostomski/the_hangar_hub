@@ -160,7 +160,9 @@ class UserProfile:
                 if str(user_data).isnumeric():
                     self._cached_django_user = User.objects.get(pk=user_data)
                 elif '@' in user_data:
+                    log.debug(f"LOOKING UP EMAIL:::::{user_data}")
                     self._cached_django_user = User.objects.get(email__iexact=user_data)
+                    log.debug(f"RESULT::::::{self._cached_django_user}")
                 else:
                     self._cached_django_user = User.objects.get(username__iexact=user_data)
             except User.DoesNotExist:

@@ -169,6 +169,8 @@ class Auth:
     def lookup_user(cls, user_data, get_contact=False, get_authorities=False):
         if user_data is None:
             return UserProfile(None)
+        elif type(user_data) is UserProfile:
+            return user_data
 
         lookup_key = str(user_data)
         user_map = env.recall() or {}
@@ -176,7 +178,7 @@ class Auth:
 
         if not found_user:
             # Perform lookup
-            log.debug(f"Performing lookup for {lookup_key}")  # ToDo: Remove this line
+            log.debug(f"Performing lookup for {lookup_key} ({type(user_data)})")  # ToDo: Remove this line
             user_instance = UserProfile(user_data=user_data, get_contact=get_contact, get_authorities=get_authorities)
             # Add user_instance to dict
             if user_instance and user_instance.id:
@@ -196,7 +198,7 @@ class Auth:
                 found_user.get_contact_instance()
 
         # Return UserProfile object (or None)
-        return found_user
+        return found_user or UserProfile(None)
 
     @classmethod
     def audit(

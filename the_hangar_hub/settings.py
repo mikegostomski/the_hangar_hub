@@ -68,6 +68,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'the_hangar_hub.middleware.airport_middleware.AirportMiddleware',
 ]
 
 ROOT_URLCONF = 'the_hangar_hub.urls'
@@ -85,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'base.context_processors.util',
                 'base.context_processors.auth',
+                'the_hangar_hub.context_processors.airport',
             ],
             'libraries':{
                 # If the_hangar_hub had a taglib, it would need to be defined here:
@@ -120,7 +122,8 @@ ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 ACCOUNT_PRESERVE_USERNAME_CASING = False
 ACCOUNT_SESSION_REMEMBER = True
-SOCIALACCOUNT_ADAPTER = 'base.allauth_adapter.MySocialAdapter'
+ACCOUNT_ADAPTER = 'the_hangar_hub.allauth_adapter.HubAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'the_hangar_hub.allauth_adapter.HubSocialAdapter'
 # -----------------------------------------------------------------------------
 
 # Message classes

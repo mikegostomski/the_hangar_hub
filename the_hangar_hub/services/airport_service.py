@@ -7,6 +7,13 @@ from the_hangar_hub.models.invitation import Invitation
 log = Log()
 env = EnvHelper()
 
+
+def can_query_user(user_profile):
+    """
+    Can only run queries with related User field when the specified User object has been saved
+    """
+    return user_profile.django_user().id
+
 def get_managers(airport=None, status=None):
     managers = AirportManager.objects.filter(airport=airport)
     if status:
@@ -16,11 +23,23 @@ def get_managers(airport=None, status=None):
 
 def is_airport_manager(user=None, airport=None):
     user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()
-    manages = AirportManager.objects.filter(user=user_profile.django_user(), status_code="A").select_related("user")
-    if airport:
-        manages = manages.filter(airport=airport)
+    if can_query_user(user_profile):
+        manages = AirportManager.objects.filter(user=user_profile.django_user(), status_code="A").select_related("user")
+        if airport:
+            manages = manages.filter(airport=airport)
+        return bool([mgmt for mgmt in manages if mgmt.is_active])
+    else:
+        return False
 
-    return bool([mgmt for mgmt in manages if mgmt.is_active])
+def managed_airports(user=None):
+    user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()
+    if can_query_user(user_profile):
+        manages = AirportManager.objects.filter(user=user_profile.django_user(), status_code="A").select_related("airport")
+        return [mgmt.airport for mgmt in manages if mgmt.is_active]
+    return []
+
+def managed_airport_identifiers(user=None):
+    return [airport.identifier for airport in managed_airports(user)]
 
 
 def set_airport_manager(airport, user=None):

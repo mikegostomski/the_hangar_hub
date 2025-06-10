@@ -1,6 +1,7 @@
 from allauth.account.models import EmailAddress
 from allauth.account.utils import perform_login
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from allauth.account.adapter import DefaultAccountAdapter
 from django.core.exceptions import ObjectDoesNotExist
 from the_hangar_hub import settings
 from django.contrib.auth.models import User
@@ -8,10 +9,23 @@ from base.classes.util.env_helper import Log
 
 log = Log()
 
+class BaseAccountAdapter(DefaultAccountAdapter):
+    def login(self, request, user):
+        # Standard login...
+        DefaultAccountAdapter().login(request, user)
 
-class MySocialAdapter(DefaultSocialAccountAdapter):
+        # Custom processing...
+        log.debug("######## LOGIN !!!!!!!!")
+
+    def clean_email(self, email: str) -> str:
+        """
+        Validates an email value. You can hook into this if you want to
+        (dynamically) restrict what email addresses can be chosen.
+        """
+        return email.lower() if email else email
+
+class BaseSocialAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
-
         """
         Invoked just after a user successfully authenticates via a
         social provider, but before the login is actually processed
@@ -24,6 +38,8 @@ class MySocialAdapter(DefaultSocialAccountAdapter):
         - social account has no email or email is unknown, just go on
         - social account's email exists, link social account to existing user
         """
+        log.debug("Base SocialAuth Adapter")
+
 
         # Ignore existing social accounts, just do this stuff for new ones
         if sociallogin.is_existing:

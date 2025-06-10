@@ -4,6 +4,7 @@ from base.services import utility_service, message_service, email_service, auth_
 from base.classes.auth.auth import Auth
 from the_hangar_hub.models.airport import Airport
 from django.contrib.auth.models import User
+from datetime import datetime, timezone
 
 log = Log()
 
@@ -22,6 +23,10 @@ class Invitation(models.Model):
 
     status_code = models.CharField(max_length=1, blank=False, null=False, default="I")
     status_change_date = models.DateTimeField(auto_now_add=True)
+
+    def change_status(self, new_status):
+        self.status_code = new_status
+        self.status_change_date = datetime.now(timezone.utc)
 
     @property
     def status_description(self):
