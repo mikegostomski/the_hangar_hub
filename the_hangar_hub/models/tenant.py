@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from base.classes.util.log import Log
-from django.utils import timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
+from django.db.models import Q
 
 log = Log()
 
@@ -36,3 +36,25 @@ class Rental(models.Model):
     rent = models.DecimalField(max_digits=10, decimal_places=2)
     deposit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+
+    @classmethod
+    def current_rentals(cls):
+        now = datetime.now(timezone.utc)
+        return cls.objects.filter(
+            Q(end_date__gt=now) | Q(end_date__isnull=True)
+        ).filter(
+            # Null start date assumes rental started before joining this site and date is not known
+            Q(start_date__lte=now) | Q(start_date__isnull=True)
+        )
+
+    @classmethod
+    def get(cls, data):
+        try:
+            return cls.objects.get(pk=data)
+        except cls.DoesNotExist:
+            return None
+        except Exception as ee:
+            log.error(f"Could not get {cls}: {ee}")
+            return None
+
+

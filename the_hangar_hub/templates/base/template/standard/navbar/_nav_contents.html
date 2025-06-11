@@ -6,6 +6,20 @@
 
 <li class="dropdown-divider"></li>
 
+{%if is_tenant%}
+    <li class="dropdown-header">
+        My Hangars
+    </li>
+    {%for rental in my_rentals%}
+    <li>
+        <a href="{%url 'hub:tenant_hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
+    </li>
+    {%endfor%}
+{%endif%}
+
+
+
+
 <li class="dropdown-header">
     Hangar Waitlist
 </li>

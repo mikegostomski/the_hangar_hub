@@ -35,6 +35,9 @@ app_paths = [
     path('manage/<airport_identifier>/building/<building_id>/add', add_hangar, name='add_hangar'),
     path('manage/<airport_identifier>/hangar/<hangar_id>', manage_hangar, name='manage_hangar'),
     path('manage/<airport_identifier>/hangar/<hangar_id>/add', add_tenant, name='add_tenant'),
+
+
+    path('tenant/<airport_identifier>/hangar/<hangar_id>', tenant_hangar, name='tenant_hangar'),
 ]
 
 urlpatterns = [

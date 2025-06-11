@@ -3,6 +3,8 @@ from base.classes.util.log import Log
 from datetime import datetime, timezone
 from django.db.models import Q
 
+from the_hangar_hub.models.tenant import Rental
+
 log = Log()
 
 
@@ -48,8 +50,7 @@ class Hangar(models.Model):
     default_rent = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Default passed to tenant
 
     def current_rentals(self):
-        now = datetime.now(timezone.utc)
-        return self.rentals.filter(Q(end_date__gt=now) | Q(end_date__isnull=True)).filter(Q(start_date__lte=now) | Q(start_date__isnull=True))
+        return Rental.current_rentals().filter(hangar=self)
 
     def future_rentals(self):
         now = datetime.now(timezone.utc)
@@ -74,3 +75,9 @@ class Hangar(models.Model):
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")
             return None
+
+    def __str__(self):
+        return f"{self.building.airport.identifier}: {self.code}"
+
+    def __repr__(self):
+        return str(self)
