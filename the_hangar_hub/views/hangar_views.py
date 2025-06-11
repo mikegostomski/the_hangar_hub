@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.util.log import Log
 from base.classes.auth.auth import Auth
@@ -11,6 +12,7 @@ from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service
 from base.fixtures.timezones import timezones
 from decimal import Decimal
+from base.classes.breadcrumb import Breadcrumb
 import re
 
 log = Log()
@@ -23,6 +25,9 @@ def airport_buildings(request, airport_identifier):
 
 
     buildings = airport.buildings.all()
+    Breadcrumb.add_breadcrumb(
+        "Buildings", ("hub:airport_buildings", airport_identifier), "bi-building", icon_only=True, reset=True
+    )
 
     return render(
         request, "the_hangar_hub/hangars/airport.html",
@@ -90,6 +95,9 @@ def add_building(request, airport_identifier):
 
 @require_authentication()
 def building_hangars(request, airport_identifier, building_id):
+    Breadcrumb.add_breadcrumb(
+        "Hangars", ("hub:building_hangars", airport_identifier, building_id), "bi-shop-window", icon_only=True
+    )
     building = airport_service.get_managed_building(airport_identifier, building_id)
     if not building:
         return redirect("hub:airport_buildings", airport_identifier)
@@ -166,10 +174,16 @@ def add_hangar(request, airport_identifier, building_id):
 
 @require_authentication()
 def manage_hangar(request, airport_identifier, hangar_id):
+
+
     hangar = airport_service.get_managed_hangar(airport_identifier, hangar_id)
     if not hangar:
         return redirect("hub:airport_buildings", airport_identifier)
     airport = hangar.building.airport
+
+    Breadcrumb.add_breadcrumb(
+        f"Hangar {hangar.code}", ("hub:manage_hangar", airport_identifier, hangar_id), "bi-plane", icon_only=True
+    )
 
     return render(
         request,

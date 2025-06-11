@@ -19,6 +19,7 @@ class Invitation(models.Model):
     role = models.CharField(max_length=8, blank=False, null=False)
 
     invited_by = models.ForeignKey(User, models.CASCADE, related_name="has_invited", blank=False, null=False)
+    tenant = models.ForeignKey('the_hangar_hub.Tenant', models.CASCADE, related_name="invitations", blank=True, null=True, db_index=True)
     resulting_user = models.ForeignKey(User, models.CASCADE, related_name="invitations", blank=True, null=True, db_index=True)
 
     status_code = models.CharField(max_length=1, blank=False, null=False, default="I")

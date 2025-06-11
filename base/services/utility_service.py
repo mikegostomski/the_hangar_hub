@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from base.classes.util.app_data import Log, EnvHelper, AppData
 import string
 import secrets
+from django.urls import reverse
 
 log = Log()
 env = EnvHelper()
@@ -362,62 +363,6 @@ def pagination_sort_info(
         return_val = sort_param, page
 
     return return_val
-
-
-def clear_breadcrumbs():
-    env.set_session_variable("base_breadcrumbs", [])
-    env.set_page_scope("base_breadcrumbs_inti", True)
-
-
-def add_breadcrumb(
-        label,
-        url=None,
-        icon=None, icon_only=False,
-        active=False,
-        reset=False,
-        duplicate=False,
-):
-    bcs = get_breadcrumbs()
-    if reset or not bcs:
-        bcs = []
-
-        # Reset breadcrumb list (optionally start with Home link)
-        if reset and "home" in str(reset).lower():
-            home = {
-                "label": "Home",
-                "url": "/",
-            }
-            if "icon" in str(reset).lower(): # and
-                home["icon"] = "bi-house"
-                if "only" in str(reset).lower():
-                    home["icon_only"] = True
-            bcs.append(home)
-
-    if bcs and not duplicate:
-        # If this label already exists, it will be removed
-        # The new breadcrumb will be added to the end
-        bcs = [x for x in bcs if x.get("label") != label]
-
-    bcs.append({
-        "label": label,
-        "url": url,
-        "active": active,
-        "icon": icon,
-        "icon_only": icon_only,
-    })
-    return env.set_session_variable("base_breadcrumbs", bcs)
-
-
-def get_breadcrumbs():
-    init_ind = bool(env.get_page_scope("base_breadcrumbs_inti"))
-    bcs = env.get_session_variable("base_breadcrumbs", [])
-    if not init_ind:
-        ii = 0
-        of = len(bcs)
-        for bc in bcs:
-            ii += 1
-            bc["reload_ind"] = f"{ii}/{of}"
-    return env.get_session_variable("base_breadcrumbs", [])
 
 
 def store(value):

@@ -5,21 +5,21 @@
     {%for bc in breadcrumbs%}
         {%if bc.is_active%}
             <li class="breadcrumb-item active" aria-current="page">
-                {%if bc.icon%}{%icon icon_class=bc.icon%}{%else%}{%icon bi-geo-fill%}{%endif%}{{bc.label}}
+                {%if bc.icon%}{%icon icon_class=bc.icon%}{%else%}{%icon bi-geo-fill%}{%endif%}{%if not bc.icon_only%}{{bc.label}}{%endif%}
             </li>
         {%elif not bc.url%}
             <li class="breadcrumb-item">
-                {%if bc.icon%}{%icon icon_class=bc.icon%}{%elif bc.is_active%}{%icon bi-geo-fill%}{%endif%}{{bc.label}}
+                {%if bc.icon%}{%icon icon_class=bc.icon%}{%elif bc.is_active%}{%icon bi-geo-fill%}{%endif%}{%if not bc.icon_only%}{{bc.label}}{%endif%}
             </li>
         {%else%}
             <li class="breadcrumb-item">
                 <a href="{{bc.url}}">
-                    {%if bc.icon%}{%icon icon_class=bc.icon%}{%elif bc.is_active%}{%icon bi-geo-fill%}{%endif%}{{bc.label}}
+                    {%if bc.icon%}{%icon icon_class=bc.icon%}{%elif bc.is_active%}{%icon bi-geo-fill%}{%endif%}{%if not bc.icon_only%}{{bc.label}}{%endif%}
                 </a>
             </li>
         {%endif%}
         {## forloop.counter < breadcrumbs|length ##}
-        {%endfor%}
+    {%endfor%}
     </ol>
     </nav>
 {%endif%}

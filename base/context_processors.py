@@ -1,4 +1,4 @@
-from .services import utility_service, auth_service
+from .services import auth_service
 from .classes.breadcrumb import Breadcrumb
 from django.conf import settings
 from base.classes.util.app_data import Log, EnvHelper, AppData
@@ -16,7 +16,7 @@ def util(request):
         absolute_root_url = absolute_root_url.replace('http://', 'https://')
 
     breadcrumbs = []
-    for bc in utility_service.get_breadcrumbs():
+    for bc in Breadcrumb.get_breadcrumbs():
         breadcrumbs.append(Breadcrumb(bc))
 
     app_code = app.get_app_code()
