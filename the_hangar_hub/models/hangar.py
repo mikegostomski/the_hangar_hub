@@ -1,7 +1,7 @@
 from django.db import models
 from base.classes.util.log import Log
-from django.utils import timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
+from django.db.models import Q
 
 log = Log()
 
@@ -46,6 +46,21 @@ class Hangar(models.Model):
     capacity = models.IntegerField(default=1)
     electric = models.BooleanField(default=False)
     default_rent = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Default passed to tenant
+
+    def current_rentals(self):
+        now = datetime.now(timezone.utc)
+        return self.rentals.filter(Q(end_date__gt=now) | Q(end_date__isnull=True)).filter(Q(start_date__lte=now) | Q(start_date__isnull=True))
+
+    def future_rentals(self):
+        now = datetime.now(timezone.utc)
+        return self.rentals.filter(start_date__gt=now)
+
+    def past_rentals(self):
+        now = datetime.now(timezone.utc)
+        return self.rentals.filter(end_date__lte=now)
+
+    def rent(self):
+        return self.default_rent or self.building.default_rent
 
     class Meta:
         unique_together = ('building', 'code',)

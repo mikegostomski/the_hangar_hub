@@ -1,23 +1,25 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
-
+from django.db.models import Q
 import the_hangar_hub.models
-from base.classes.util.log import Log
+from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.auth import Auth
-from base.services.message_service import post_error
+from the_hangar_hub.models import Tenant
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
-from base.services import message_service, utility_service, email_service
+from base.services import message_service, utility_service, email_service, date_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service
-from base.fixtures.timezones import timezones
 from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
+from django.contrib.auth.models import User
 import re
+from datetime import datetime, timezone
 
 log = Log()
+env = EnvHelper()
 
 @require_authentication()
 def airport_buildings(request, airport_identifier):
@@ -194,5 +196,151 @@ def manage_hangar(request, airport_identifier, hangar_id):
             "airport": airport,
             "hangar": hangar,
             "rentals": rentals,
+            "prefill": env.get_flash_scope("prefill") or {},
+            "issues": env.get_flash_scope("add_tenant_issues") or [],
         }
     )
+
+
+@require_authentication()
+def add_tenant(request, airport_identifier, hangar_id):
+    hangar = airport_service.get_managed_hangar(airport_identifier, hangar_id)
+    if not hangar:
+        return redirect("hub:airport_buildings", airport_identifier)
+    airport = hangar.building.airport
+
+    # Process Parameters
+    issues = []
+    email = request.POST.get("email")
+    first_name = request.POST.get("first_name")
+    last_name = request.POST.get("last_name")
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date")
+    rent = request.POST.get("rent")
+    deposit = request.POST.get("deposit")
+    notes = request.POST.get("notes")
+
+    if not email:
+        issues.append("Email address is required")
+
+    if start_date:
+        start_date = date_service.string_to_date(start_date, airport.timezone)
+        if not start_date:
+            issues.append("Invalid Start Date")
+    else:
+        start_date = datetime.now(timezone.utc)
+
+    if end_date:
+        end_date = date_service.string_to_date(end_date, airport.timezone)
+    else:
+        end_date = None
+
+    if rent:
+        rent = str(rent).replace('$', '').replace(',', '')
+    else:
+        rent = hangar.rent()
+    if not rent:
+        issues.append("Rent is required")
+
+    if deposit:
+        deposit = str(deposit).replace('$', '').replace(',', '')
+
+    prefill = {
+        "email": email,
+        "first_name": first_name,
+        "last_name": last_name,
+        "start_date": start_date.strftime("%Y-%m-%d") if start_date else None,
+        "end_date": end_date.strftime("%Y-%m-%d") if end_date else None,
+        "rent": rent,
+        "deposit": deposit,
+        "notes": notes,
+    }
+
+    if issues:
+        env.set_flash_scope("add_tenant_issues", issues)
+        env.set_flash_scope("prefill", prefill)
+        return redirect("hub:manage_hangar", airport_identifier, hangar_id)
+
+    # Look for existing user via email
+    user = contact = tenant = None
+    existing_user_profile = Auth.lookup_user(email)
+    if existing_user_profile.id:
+        user = existing_user_profile.user
+        contact = existing_user_profile.contact()
+        if not existing_user_profile.is_active:
+            try:
+                user.is_active = True
+                user.save()
+            except Exception as ee:
+                log.error(f"Unable to activate User: {user} ({ee})")
+    else:
+        # If not an existing user, send an invitation
+        Invitation.invite(airport, email, "TENANT", hangar=hangar).send()
+
+    # If not an existing user, look for existing contact record
+    if not user:
+        try:
+            contact = the_hangar_hub.models.contact.Contact.get(email__iexact=email)
+        except the_hangar_hub.models.contact.Contact.DoesNotExist:
+            pass
+
+    # If user or contact exists, look for existing tenant record
+    if user or contact:
+        try:
+            tenant = Tenant.objects.get()
+        except Tenant.DoesNotExist:
+            pass
+
+    # Contact must be created if not already found
+    if not contact:
+        try:
+            contact = the_hangar_hub.models.contact.Contact()
+            contact.first_name = first_name
+            contact.last_name = last_name
+            contact.email = email
+            contact.save()
+        except Exception as ee:
+            log.error(f"Error creating contact: {ee}")
+            issues.append("Unable to create contact record.")
+    if issues:
+        env.set_flash_scope("add_tenant_issues", issues)
+        env.set_flash_scope("prefill", prefill)
+        return redirect("hub:manage_hangar", airport_identifier, hangar_id)
+
+    # If tenant record ws not found, create one now
+    if not tenant:
+        try:
+            tenant = Tenant()
+            tenant.contact = contact
+            tenant.user = user
+            tenant.save()
+        except Exception as ee:
+            log.error(f"Error creating tenant: {ee}")
+            issues.append("Unable to create tenant record.")
+    if issues:
+        env.set_flash_scope("add_tenant_issues", issues)
+        env.set_flash_scope("prefill", prefill)
+        return redirect("hub:manage_hangar", airport_identifier, hangar_id)
+
+    # Create the rental record
+    try:
+        log.debug(f"Start Date ({type(start_date)}): {start_date}")
+        log.debug(f"End Date ({type(end_date)}): {end_date}")
+        rental = the_hangar_hub.models.tenant.Rental()
+        rental.tenant = tenant
+        rental.hangar = hangar
+        rental.start_date = start_date
+        rental.end_date = end_date
+        rental.rent = rent
+        rental.deposit = deposit
+        rental.notes = notes
+        rental.save()
+
+        message_service.post_success("New tenant has been added")
+    except Exception as ee:
+        log.error(f"Error creating rental: {ee}")
+        issues.append("Unable to create rental record.")
+        env.set_flash_scope("add_tenant_issues", issues)
+        env.set_flash_scope("prefill", prefill)
+
+    return redirect("hub:manage_hangar",airport_identifier, hangar.code)

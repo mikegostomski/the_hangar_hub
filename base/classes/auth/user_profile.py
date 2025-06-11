@@ -18,43 +18,43 @@ class UserProfile:
     # ------------------------------------------------------
     @property
     def id(self):
-        return self.django_user().id
+        return self.user.id if self.user else None
 
     @property
     def first_name(self):
-        return self.django_user().first_name
+        return self.user.first_name if self.user else None
 
     @property
     def last_name(self):
-        return self.django_user().last_name
+        return self.user.last_name if self.user else None
 
     @property
     def username(self):
-        return self.django_user().username
+        return self.user.username if self.user else None
 
     @property
     def email(self):
-        return self.django_user().email
+        return self.user.email if self.user else None
 
     @property
     def is_staff(self):
-        return self.django_user().is_staff
+        return self.user.is_staff if self.user else None
 
     @property
     def is_active(self):
-        return self.django_user().is_active
+        return self.user.is_active if self.user else None
 
     @property
     def is_superuser(self):
-        return self.django_user().is_superuser
+        return self.user.is_superuser if self.user else None
 
     @property
     def is_authenticated(self):
-        return self.django_user().is_authenticated
+        return self.user.is_authenticated if self.user else None
 
     @property
     def is_anonymous(self):
-        return self.django_user().is_anonymous
+        return self.user.is_anonymous if self.user else None
     # ------------------------------------------------------
 
     # Authentication/Authorization Data
@@ -62,7 +62,7 @@ class UserProfile:
     authorities = None  # {"auth_code": "Auth Title", ...}
 
     # Holders for other classes (only do DB query once per request)
-    _cached_django_user = None
+    user = None
     _cached_contact = None
 
     @property
@@ -71,7 +71,7 @@ class UserProfile:
 
     def get_avatar_url(self):
         try:
-            du = self.django_user()
+            du = self.user
             if du:
                 for account in SocialAccount.objects.filter(user=du):
                     if account.get_avatar_url():
@@ -80,9 +80,6 @@ class UserProfile:
         except Exception as ee:
             log.error("Could not get avatar URL: {ee}")
         return None
-
-    def django_user(self):
-        return self._cached_django_user or User()
 
     def contact(self):
         self.get_contact_instance()
@@ -135,7 +132,7 @@ class UserProfile:
         return self.id and self.is_active
 
     def populate_supplemental_data(self, get_contact=True, get_authorities=True):
-        if self._cached_django_user and self._cached_django_user.id:
+        if self.user and self.user.id:
             if get_authorities:
                 self.populate_authorities()
             if get_contact:
@@ -149,7 +146,7 @@ class UserProfile:
 
         # New from Django User
         elif type(user_data) in [User, SimpleLazyObject]:
-            self._cached_django_user = user_data
+            self.user = user_data
 
         # If already a UserProfile
         elif type(user_data) is UserProfile:
@@ -159,16 +156,16 @@ class UserProfile:
         else:
             try:
                 if str(user_data).isnumeric():
-                    self._cached_django_user = User.objects.get(pk=user_data)
+                    self.user = User.objects.get(pk=user_data)
                 elif '@' in user_data:
                     try:
-                        self._cached_django_user = User.objects.get(email__iexact=user_data)
+                        self.user = User.objects.get(email__iexact=user_data)
                     except User.DoesNotExist:
                         # Look at other confirmed emails
                         confirmed_email = EmailAddress.objects.get(email__iexact=user_data, verified=True)
-                        self._cached_django_user = confirmed_email.user
+                        self.user = confirmed_email.user
                 else:
-                    self._cached_django_user = User.objects.get(username__iexact=user_data)
+                    self.user = User.objects.get(username__iexact=user_data)
             except User.DoesNotExist:
                 self._make_anonymous()
             except EmailAddress.DoesNotExist:
@@ -178,7 +175,7 @@ class UserProfile:
 
     def _make_anonymous(self):
         self.authorities = []
-        self._cached_django_user = None
+        self.user = None
         self._cached_contact = None
 
     def populate_authorities(self, force=False):
@@ -192,7 +189,7 @@ class UserProfile:
 
                 try:
                     now = datetime.now(timezone.utc)
-                    permissions = self._cached_django_user.permissions.filter(Q(effective_date__isnull=True) | Q(effective_date__lte=now))
+                    permissions = self.user.permissions.filter(Q(effective_date__isnull=True) | Q(effective_date__lte=now))
                     permissions = permissions.filter(Q(end_date__isnull=True) | Q(end_date__gt=now))
                     if permissions:
                         for pp in permissions:
@@ -205,12 +202,12 @@ class UserProfile:
             return
 
         # Contact is linked to User
-        if not self._cached_django_user:
+        if not self.user:
             return
 
         # Get contact from User
         try:
-            self._cached_contact = self._cached_django_user.contact
+            self._cached_contact = self.user.contact
         except:
             self._cached_contact = None
 
@@ -219,10 +216,10 @@ class UserProfile:
             self._cached_contact = Contact.get(self.email)
             # If found, update user to match Contact
             if self._cached_contact:
-                self._cached_django_user.first_name = self._cached_contact.first_name
-                self._cached_django_user.last_name = self._cached_contact.last_name
-                self._cached_django_user.save()
-                self._cached_contact.user = self._cached_django_user
+                self.user.first_name = self._cached_contact.first_name
+                self.user.last_name = self._cached_contact.last_name
+                self.user.save()
+                self._cached_contact.user = self.user
                 self._cached_contact.save()
                 # Refresh self with updated info
                 self.populate_supplemental_data(get_contact=False, get_authorities=False)
@@ -231,11 +228,11 @@ class UserProfile:
         # Create a new contact if needed
         if not self._cached_contact:
             # First and last are required, but may not exist in user object
-            placeholder = self._cached_django_user.username
+            placeholder = self.user.username
             if not placeholder:
-                placeholder = self._cached_django_user.email.split('@')[0] if self._cached_django_user.email else None
+                placeholder = self.user.email.split('@')[0] if self.user.email else None
             self._cached_contact = Contact()
-            self._cached_contact.user = self._cached_django_user
+            self._cached_contact.user = self.user
             self._cached_contact.first_name = self.first_name or placeholder
             self._cached_contact.last_name = self.last_name or placeholder
             self._cached_contact.email = self.email

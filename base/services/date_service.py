@@ -22,25 +22,28 @@ def string_to_date(date_string, source_timezone=None):
         return datetime.now(timezone.utc)
 
     dt = None
+    try:
+        # Use pandas to convert date string
+        if isinstance(date_string, str):
+            try:
+                dt = pandas.to_datetime(date_string).to_pydatetime()
+            except Exception as ee:
+                log.warning(f"Pandas cannot convert string to date ({ee})")
 
-    # Use pandas to convert date string
-    if isinstance(date_string, str):
-        try:
-            dt = pandas.to_datetime(date_string).to_pydatetime()
-        except Exception as ee:
-            log.warning(f"Pandas cannot convert string to date ({ee})")
+        elif isinstance(date_string, datetime):
+            dt = date_string
 
-    elif isinstance(date_string, datetime):
-        dt = date_string
+        else:
+            log.warning(f"String to date received a non-string: {type(date_string)}")
 
-    else:
-        log.warning(f"String to date received a non-string: {type(date_string)}")
+        if dt and dt.tzinfo is None:
+            tz = ZoneInfo(source_timezone or "America/New_York")
+            dt = dt.replace(tzinfo=tz)
 
-    if dt and dt.tzinfo is None:
-        tz = ZoneInfo(source_timezone or "America/New_York")
-        dt = dt.replace(tzinfo=tz)
-
-    return dt.astimezone(timezone.utc) if dt else None
+        return dt.astimezone(timezone.utc) if dt else None
+    except Exception as ee:
+        log.error(f"Error converting string to date: {ee}")
+        return None
 
 
 def humanize(datetime_instance):

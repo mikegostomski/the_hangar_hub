@@ -43,8 +43,112 @@
 </div>
 
 <div class="content-block">
-    <h2>Current Tenant</h2>
-    ToDo: Display Current Tenant
+    <h2>Current/Future Tenants</h2>
+
+    <table class="table">
+        <tr>
+            <th scope="col">First Name</th>
+            <th scope="col">Last Name</th>
+            <th scope="col">Email Address</th>
+            <th scope="col">Start Date</th>
+            <th scope="col">End Date</th>
+            <th scope="col">Rent</th>
+            <th scope="col">Deposit</th>
+            <th scope="col">Notes</th>
+            <th scope="col">Action</th>
+        </tr>
+        {%for rental in hangar.current_rentals%}
+            <tr>
+                <td>{{rental.tenant.contact.first_name}}</td>
+                <td>{{rental.tenant.contact.last_name}}</td>
+                <td>{{rental.tenant.contact.email}}</td>
+                <td>{{rental.start_date|date:preferred_date_format}}</td>
+                <td>{{rental.end_date|date:preferred_date_format}}</td>
+                <td>{{rental.rent}}</td>
+                <td>{{rental.deposit}}</td>
+                <td>{{rental.notes}}</td>
+                <td>{{rental.id}}</td>
+            </tr>
+        {%empty%}
+            <tr>
+                <td colspan="9" class="text-center">No Current Tenants</td>
+            </tr>
+        {%endfor%}
+        {%for rental in hangar.future_rentals%}
+            <tr>
+                <td>{{rental.tenant.contact.first_name}}</td>
+                <td>{{rental.tenant.contact.last_name}}</td>
+                <td>{{rental.tenant.contact.email}}</td>
+                <td>{{rental.start_date|date:preferred_date_format}}</td>
+                <td>{{rental.end_date|date:preferred_date_format}}</td>
+                <td>{{rental.rent}}</td>
+                <td>{{rental.deposit}}</td>
+                <td>{{rental.notes}}</td>
+                <td>{{rental.id}}</td>
+            </tr>
+        {%endfor%}
+        <form method="post" action="{%url 'hub:add_tenant' airport.identifier hangar.id%}">
+            {%csrf_token%}
+            <tr>
+                <td>
+                    <label for="nt-first_name" class="visually-hidden">First Name</label>
+                    <input type="text" name="first_name" id="nt-first_name" placeholder="First Name" value="{{prefill.first_name|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-last_name" class="visually-hidden">Last Name</label>
+                    <input type="text" name="last_name" id="nt-last_name" placeholder="Last Name" value="{{prefill.last_name|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-email" class="visually-hidden">Email Address</label>
+                    <input type="email" name="email" id="nt-email" placeholder="Email Address" value="{{prefill.email|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-start_date" class="visually-hidden">Start Date</label>
+                    <input type="date" name="start_date" id="nt-start_date" placeholder="Start Date" value="{{prefill.start_date|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-end_date" class="visually-hidden">End Date</label>
+                    <input type="date" name="end_date" id="nt-end_date" placeholder="End Date" value="{{prefill.end_date|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-rent" class="visually-hidden">Rent</label>
+                    <input type="text" name="rent" id="nt-rent" placeholder="Rent" value="{{prefill.rent|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-deposit" class="visually-hidden">Deposit</label>
+                    <input type="text" name="deposit" id="nt-deposit" placeholder="Deposit" value="{{prefill.deposit|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-notes" class="visually-hidden">notes</label>
+                    <textarea name="notes" id="nt-notes" placeholder="notes" rows="3">{{prefill.notes|default:''}}</textarea>
+                </td>
+                <td>
+                    <button type="submit" class="btn btn-success">Add</button>
+                </td>
+            </tr>
+        </form>
+    </table>
+    {%if issues%}
+        <div class="alert alert-danger">
+            <b>{%icon bi-exclamation-triangle%} There were issues creating the new tenant</b><br />
+            <ul>
+                {%for issue in issues%}
+                    <li>{{issue}}</li>
+                {%endfor%}
+            </ul>
+        </div>
+    {%endif%}
+
+
+
+
+
+
+
+
+
+
+
 </div>
 
 

@@ -95,9 +95,9 @@ class Audit(models.Model):
     ):
         audit = Audit()
         audit.app_code = app.get_app_code()
-        audit.user = auth.authenticated_user.django_user()
-        audit.impersonated_user = auth.impersonated_user.django_user()
-        audit.proxied_user = auth.proxied_user.django_user()
+        audit.user = auth.authenticated_user.user
+        audit.impersonated_user = auth.impersonated_user.user
+        audit.proxied_user = auth.proxied_user.user
         audit.crud_code = crud_code
         audit.event_code = event_code
         audit.comments = str(comments) if comments is not None else None

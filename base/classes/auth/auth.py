@@ -116,7 +116,7 @@ class Auth:
             # for u_type in ['authenticated_user', 'impersonated_user', 'proxied_user']:
             #     user_class = getattr(self, u_type)
             #     if user_class:
-            #         user_django = user_class.django_user()
+            #         user_django = user_class.user
             #         if user_django:
             #             save_changes = False
             #             for attr in ["first_name", "last_name", "email"]:
@@ -216,11 +216,11 @@ class Auth:
             auth = Auth.get()
             audit = Audit()
             audit.app_code = app.get_app_code()
-            audit.user = auth.authenticated_user.django_user()
+            audit.user = auth.authenticated_user.user
             if auth.is_impersonating():
-                audit.impersonated_user = auth.impersonated_user.django_user()
+                audit.impersonated_user = auth.impersonated_user.user
             if auth.is_proxying():
-                audit.proxied_user = auth.proxied_user.django_user()
+                audit.proxied_user = auth.proxied_user.user
             audit.crud_code = crud_code
             audit.event_code = event_code
             audit.comments = str(comments) if comments is not None else None

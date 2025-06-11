@@ -20,6 +20,7 @@ class Invitation(models.Model):
 
     invited_by = models.ForeignKey(User, models.CASCADE, related_name="has_invited", blank=False, null=False)
     tenant = models.ForeignKey('the_hangar_hub.Tenant', models.CASCADE, related_name="invitations", blank=True, null=True, db_index=True)
+    hangar = models.ForeignKey('the_hangar_hub.Hangar', models.CASCADE, related_name="invitations", blank=True, null=True)
     resulting_user = models.ForeignKey(User, models.CASCADE, related_name="invitations", blank=True, null=True, db_index=True)
 
     status_code = models.CharField(max_length=1, blank=False, null=False, default="I")
@@ -102,7 +103,7 @@ class Invitation(models.Model):
         return False
 
     @classmethod
-    def invite(cls, airport, email_address, role):
+    def invite(cls, airport, email_address, role, hangar=None):
         """
         Invite someone to join specified airport via their email address
         """
@@ -110,7 +111,7 @@ class Invitation(models.Model):
 
         try:
             existing = cls.objects.get(
-                airport=airport, email__iexact=email_address, role=role, invited_by=inviter.django_user()
+                airport=airport, email__iexact=email_address, role=role, invited_by=inviter.user
             )
             if existing:
                 # If re-inviting after expiration or revocation, reset the status
@@ -130,7 +131,7 @@ class Invitation(models.Model):
                 email=email_address,
                 role=role,
                 verification_code=utility_service.generate_verification_code(30),
-                invited_by=inviter.django_user(),
+                invited_by=inviter.user,
                 status_code="I",  # Initiated
             )
             ii.save()

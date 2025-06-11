@@ -15,7 +15,7 @@ def can_query_user(user_profile):
     """
     Can only run queries with related User field when the specified User object has been saved
     """
-    return user_profile.django_user().id
+    return user_profile.id
 
 def get_managers(airport=None, status=None):
     managers = AirportManager.objects.filter(airport=airport)
@@ -27,7 +27,7 @@ def get_managers(airport=None, status=None):
 def is_airport_manager(user=None, airport=None):
     user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()
     if can_query_user(user_profile):
-        manages = AirportManager.objects.filter(user=user_profile.django_user(), status_code="A").select_related("user")
+        manages = AirportManager.objects.filter(user=user_profile.user, status_code="A").select_related("user")
         if airport:
             manages = manages.filter(airport=airport)
         return bool([mgmt for mgmt in manages if mgmt.is_active])
@@ -85,7 +85,7 @@ def get_managed_hangar(airport_identifier, hangar_identifier, post_error=True):
 def managed_airports(user=None):
     user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()
     if can_query_user(user_profile):
-        manages = AirportManager.objects.filter(user=user_profile.django_user(), status_code="A").select_related("airport")
+        manages = AirportManager.objects.filter(user=user_profile.user, status_code="A").select_related("airport")
         return [mgmt.airport for mgmt in manages if mgmt.is_active]
     return []
 
@@ -99,7 +99,7 @@ def set_airport_manager(airport, user=None):
     # If account is inactive, re-activate it
     try:
         if not user_profile.is_active:
-            du = user_profile.django_user()
+            du = user_profile.user
             du.is_active = True
             du.save()
     except Exception as ee:
@@ -111,7 +111,7 @@ def set_airport_manager(airport, user=None):
 
     # Look for existing management relation (may not be active)
     try:
-        existing = AirportManager.objects.get(user=user_profile.django_user(), airport=airport)
+        existing = AirportManager.objects.get(user=user_profile.user, airport=airport)
     except AirportManager.DoesNotExist:
         existing = None
 
@@ -126,7 +126,7 @@ def set_airport_manager(airport, user=None):
             )
             return True
         else:
-            new_manager = airport.management.create(user=user_profile.django_user(), airport=airport)
+            new_manager = airport.management.create(user=user_profile.user, airport=airport)
             Auth.audit(
                 "C", "MANAGEMENT",
                 "Created airport manager relationship",
@@ -142,7 +142,7 @@ def deactivate_airport_manager(airport, user):
     log.trace([airport, user])
     try:
         user_profile = Auth().lookup_user(user_data=user)
-        manager = AirportManager.objects.get(user=user_profile.django_user(), airport=airport)
+        manager = AirportManager.objects.get(user=user_profile.user, airport=airport)
         manager.status_code = "I"
         manager.save()
         Auth.audit(
