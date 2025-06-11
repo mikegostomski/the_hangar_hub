@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
+
+import the_hangar_hub.models
 from base.classes.util.log import Log
 from base.classes.auth.auth import Auth
 from base.services.message_service import post_error
@@ -25,8 +27,8 @@ def airport_buildings(request, airport_identifier):
 
 
     buildings = airport.buildings.all()
-    Breadcrumb.add_breadcrumb(
-        "Buildings", ("hub:airport_buildings", airport_identifier), "bi-building", icon_only=True, reset=True
+    Breadcrumb.add(
+        "Buildings", ("hub:airport_buildings", airport_identifier), reset=True
     )
 
     return render(
@@ -95,15 +97,15 @@ def add_building(request, airport_identifier):
 
 @require_authentication()
 def building_hangars(request, airport_identifier, building_id):
-    Breadcrumb.add_breadcrumb(
-        "Hangars", ("hub:building_hangars", airport_identifier, building_id), "bi-shop-window", icon_only=True
-    )
     building = airport_service.get_managed_building(airport_identifier, building_id)
     if not building:
         return redirect("hub:airport_buildings", airport_identifier)
 
     hangars = building.hangars.all()
 
+    Breadcrumb.add(
+        f"{building.code} Hangars", ("hub:building_hangars", airport_identifier, building_id)
+    )
     return render(
         request, "the_hangar_hub/hangars/building.html",
         {
@@ -174,15 +176,15 @@ def add_hangar(request, airport_identifier, building_id):
 
 @require_authentication()
 def manage_hangar(request, airport_identifier, hangar_id):
-
-
     hangar = airport_service.get_managed_hangar(airport_identifier, hangar_id)
     if not hangar:
         return redirect("hub:airport_buildings", airport_identifier)
     airport = hangar.building.airport
 
-    Breadcrumb.add_breadcrumb(
-        f"Hangar {hangar.code}", ("hub:manage_hangar", airport_identifier, hangar_id), "bi-plane", icon_only=True
+    rentals = the_hangar_hub.models.tenant.Rental.objects.filter(hangar=hangar)
+
+    Breadcrumb.add(
+        f"Hangar {hangar.code}", ("hub:manage_hangar", airport_identifier, hangar_id),
     )
 
     return render(
@@ -191,5 +193,6 @@ def manage_hangar(request, airport_identifier, hangar_id):
         {
             "airport": airport,
             "hangar": hangar,
+            "rentals": rentals,
         }
     )

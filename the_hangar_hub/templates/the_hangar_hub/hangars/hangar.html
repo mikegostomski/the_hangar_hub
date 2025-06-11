@@ -4,8 +4,82 @@
 {%block title%}Hangar: {{hangar.code}}{%endblock%}
 
 {% block main_content %}
-    <h1>Hangar {{hangar.code}}</h1>
+<h1>{{hangar.code}}</h1>
+
+<div class="content-block">
+    <h2>Hangar Data</h2>
+    <table class="table">
+        <tr valign="top">
+            <th scope="col">
+                Capacity<br />
+                <em>Number of planes</em>
+            </th>
+            <th scope="col">
+                Default Rent
+                <em>Can be overridden per rental</em>
+            </th>
+            <th scope="col">Features</th>
+        </tr>
+        <tr valign="top">
+            <td>
+                <label for="capacity" class="visually-hidden">Capacity</label>
+                <input type="number" id="capacity" name="capacity" value="{{hangar.capacity}}" min="1" max="100" />
+            </td>
+            <td>
+                <label for="default_rent" class="visually-hidden">Default Rent</label>
+                <input type="text" id="default_rent" name="default_rent" value="{{hangar.default_rent}}" />
+            </td>
+            <td>
+                <fieldset>
+                    <legend class="visually-hidden">Features</legend>
+                    <label>
+                        <input type="checkbox" value="1" name="electric" {%if hangar.electric %}checked{%endif%} />
+                        Electricity
+                    </label>
+                </fieldset>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="content-block">
+    <h2>Current Tenant</h2>
+    ToDo: Display Current Tenant
+</div>
 
 
+<div class="content-block">
+    <h2>Maintenance Requests</h2>
+    ToDo: Display Recent Maintenance Requests
+</div>
+
+
+<div class="content-block">
+    <h2>Rental History</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Tenant</th>
+            <th scope="col">Start Date</th>
+            <th scope="col">End Date</th>
+            <th scope="col">Rent</th>
+            <th scope="col">Deposit</th>
+            <th scope="col">Notes</th>
+        </tr>
+        {%for rental in rentals%}
+            <tr>
+                <td>{{rental.tenant}}</td>
+                <td>{{rental.start_date|date:preferred_date_format}}</td>
+                <td>{{rental.end_date|date:preferred_date_format}}</td>
+                <td>{{rental.rent}}</td>
+                <td>{{rental.deposit}}</td>
+                <td>{{rental.notes}}</td>
+            </tr>
+        {%empty%}
+            <tr>
+                <td colspan="6" class="text-center">No Rental History</td>
+            </tr>
+        {%endfor%}
+    </table>
+</div>
 
 {%endblock%}

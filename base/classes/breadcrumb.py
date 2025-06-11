@@ -47,12 +47,12 @@ class Breadcrumb:
 
 
     @classmethod
-    def clear_breadcrumbs(cls):
+    def clear(cls):
         env.set_session_variable("base_breadcrumbs", [])
         env.set_page_scope("base_breadcrumbs_inti", True)
 
     @classmethod
-    def add_breadcrumb(
+    def add(
             cls,
             label,
             url=None,
@@ -61,7 +61,7 @@ class Breadcrumb:
             reset=False,
             duplicate=False,
     ):
-        bcs = cls.get_breadcrumbs()
+        bcs = cls.get()
         if reset or not bcs:
             bcs = []
 
@@ -102,7 +102,7 @@ class Breadcrumb:
         return env.set_session_variable("base_breadcrumbs", bcs)
 
     @classmethod
-    def get_breadcrumbs(cls):
+    def get(cls):
         init_ind = bool(env.get_page_scope("base_breadcrumbs_inti"))
         bcs = env.get_session_variable("base_breadcrumbs", [])
         if not init_ind:

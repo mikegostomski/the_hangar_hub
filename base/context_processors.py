@@ -16,7 +16,7 @@ def util(request):
         absolute_root_url = absolute_root_url.replace('http://', 'https://')
 
     breadcrumbs = []
-    for bc in Breadcrumb.get_breadcrumbs():
+    for bc in Breadcrumb.get():
         breadcrumbs.append(Breadcrumb(bc))
 
     app_code = app.get_app_code()
@@ -42,7 +42,8 @@ def util(request):
         # Posted messages at top of page by default. Setting option allows moving them to the bottom
         'posted_message_position': getattr(settings, 'POSTED_MESSAGE_POSITION', 'TOP').upper(),
 
-        "now": datetime.now(timezone.utc)
+        "now": datetime.now(timezone.utc),
+        "preferred_date_format": "m-d-Y"
     }
 
     # Get admin links for any installed custom plugins, and the current app
