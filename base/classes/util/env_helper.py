@@ -237,6 +237,40 @@ class EnvHelper:
     # ##########################################################################
 
     @property
+    def nonprod_email_addresses(self):
+        """
+        When sending mail from non-production, only these addresses are allowed to receive emails.
+        Emails with no allowed recipients will be redirected to the logged-in user's email address
+        """
+        emails = self.get_setting("NONPROD_EMAIL_ALLOWED_RECIPIENTS") or []
+        if type(emails) is not list:
+            log.error("Invalid value for NONPROD_EMAIL_ALLOWED_RECIPIENTS. Should be a list of email addresses.")
+            emails = []
+        emails.append(self.nonprod_default_recipient)
+        return list(set([x.lower() for x in emails if x]))
+
+    @property
+    def nonprod_default_recipient(self):
+        """
+        In non-production, send email to this address when no allowed address is present
+        """
+        if self.is_prod:
+            return None
+
+        # When authenticated, default to authenticated user
+        request = self.request
+        user = request.user
+        if user.is_authenticated and user.email:
+            return user.email.lower()
+
+        # When not authenticated, allow a default address to be specified and stored in the session
+        session_default = self.get_session_variable("base_default_recipient")
+        # Last resort is the default recipient defined in settings.py
+        global_default = self.get_setting("NONPROD_EMAIL_DEFAULT_RECIPIENT")
+        return session_default or global_default or "mikegostomski@gmail.com"
+
+
+    @property
     def installed_plugins(self):
         """
         Get a dict of the installed custom plugins and their versions

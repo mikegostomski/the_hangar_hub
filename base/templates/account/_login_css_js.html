@@ -1,15 +1,20 @@
 
 <script type="text/javascript">
-    let container = $('.login-errors');
-    let errors = container.find('li');
+    function display_password_login_form(){
+        $('#signup_form').removeClass('hidden');
+        $("span.up-login").remove();
+        $('#inputEmail').focus();
+    }
+
+    // Look at error message container
+    let container = $('div.login-errors');
+    let errors = container.find('.list-group-item');
+    // If errors are displayed
     if(errors.length > 0){
         container.addClass('list-group');
-        errors.addClass('hidden');
-        errors.each(function(){
-            let msg = $(this).html();
-            container.append(`<div class="list-group-item list-group-item-danger">${msg}</div>`);
-        });
-        container.find('ul').remove();
+        display_password_login_form();
+
+
     }
     if(container.children().length > 0){
         container.css('margin-bottom', '25px');

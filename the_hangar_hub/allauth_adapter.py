@@ -34,9 +34,15 @@ class HubAccountAdapter(DefaultAccountAdapter):
                         ii.change_status("A")
                         ii.save()
 
+    def clean_email(self, email: str) -> str:
+        """
+        Validates an email value. You can hook into this if you want to
+        (dynamically) restrict what email addresses can be chosen.
+        """
+        return BaseAccountAdapter().clean_email(email)
 
-
-
+    def send_mail(self, template_prefix: str, email: str, context: dict) -> None:
+        BaseAccountAdapter().send_mail(template_prefix, email, context)
 
 
 class HubSocialAdapter(DefaultSocialAccountAdapter):

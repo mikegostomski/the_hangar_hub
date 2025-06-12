@@ -5,9 +5,13 @@ from allauth.account.adapter import DefaultAccountAdapter
 from django.core.exceptions import ObjectDoesNotExist
 from the_hangar_hub import settings
 from django.contrib.auth.models import User
-from base.classes.util.env_helper import Log
+from base.classes.util.env_helper import Log, EnvHelper
+from django.contrib.sites.shortcuts import get_current_site
+from base.services import email_service, message_service
 
 log = Log()
+env = EnvHelper()
+
 
 class BaseAccountAdapter(DefaultAccountAdapter):
     def login(self, request, user):
@@ -23,6 +27,34 @@ class BaseAccountAdapter(DefaultAccountAdapter):
         (dynamically) restrict what email addresses can be chosen.
         """
         return email.lower() if email else email
+
+    def send_mail(self, template_prefix: str, email: str, context: dict) -> None:
+        log.trace()
+        request = env.request
+        ctx = {
+            "request": request,
+            "email": email,
+            "current_site": get_current_site(request),
+        }
+        ctx.update(context)
+
+        msg = self.render_mail(template_prefix, email, ctx)
+
+        if env.is_nonprod:
+            log.info("Checking nonprod recipients for allauth email")
+            num_before = len(msg.to) + len(msg.cc) + len(msg.bcc)
+            for rtype in ["to", "cc", "bcc"]:
+                recipients = getattr(msg, rtype)
+                cleaned = [x for x in recipients if x.lower() in env.nonprod_email_addresses]
+                setattr(msg, rtype, cleaned)
+
+            num_after = len(msg.to) + len(msg.cc) + len(msg.bcc)
+            if num_after == 0:
+                msg.to = [env.nonprod_default_recipient]
+                message_service.post_info(f"No allowed non-prod recipients. Redirecting to {env.nonprod_default_recipient}.")
+
+
+        msg.send()
 
 class BaseSocialAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):

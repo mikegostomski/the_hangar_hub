@@ -32,33 +32,12 @@ def get_absolute_url(*args):
         return context['absolute_root_url']
 
 
-def get_default_recipient():
-    # When authenticated, default to authenticated user
-    if auth_service.is_logged_in():
-        sso_email = auth_service.get_authenticated_user().email
-        return sso_email.lower() if sso_email else None
-
-    # When non-authenticated in non-production, allow a default address to be specified and stored in the session
-    elif env.is_nonprod:
-        return env.get_session_variable("base_default_recipient")
-
-    # Otherwise, there is no default recipient
-    return None
-
-
 def set_default_email(default_recipient):
     """
     When non-authenticated in non-production, a default recipient can be specified and stored in the session
     (this helps test emails for non-authenticated situations, like Dual Credit Applications)
     """
     env.set_session_variable("base_default_recipient", default_recipient)
-
-
-def get_testing_emails():
-    """
-    Get email addresses that are allowed to receive non-production emails.
-    """
-    return env.get_setting("NONPROD_EMAILS", [])
 
 
 def send(
@@ -414,9 +393,9 @@ def _prepare_recipients(to, cc, bcc):
             testing_emails = []  # No allowed testing emails
         # In STAGE (and unit tests), use defined testers
         else:
-            testing_emails = get_testing_emails()
+            testing_emails = env.nonprod_email_addresses
 
-        default_recipient = get_default_recipient()
+        default_recipient = env.nonprod_default_recipient
         allowed_to = [aa for aa in to if aa in testing_emails or aa == default_recipient]
         allowed_cc = [aa for aa in cc if aa in testing_emails or aa == default_recipient]
         allowed_bcc = [aa for aa in bcc if aa in testing_emails or aa == default_recipient]
