@@ -1,4 +1,4 @@
-from base.classes.util.log import Log
+from base.classes.util.env_helper import Log, EnvHelper
 from base.services import utility_service, error_service
 from base.classes.auth.dynamic_role import DynamicRole
 from allauth.socialaccount.models import SocialAccount
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from allauth.account.models import EmailAddress
 
 log = Log()
+env = EnvHelper()
 
 
 class UserProfile:
@@ -34,7 +35,7 @@ class UserProfile:
 
     @property
     def email(self):
-        return self.user.email if self.user else None
+        return self.user.email.lower() if self.user else None
 
     @property
     def is_staff(self):
@@ -68,6 +69,16 @@ class UserProfile:
     @property
     def display_name(self):
         return f"{self.first_name} {self.last_name}".strip()
+
+    @property
+    def emails(self):
+        return list(set([x.email.lower() for x in self.verified_email_records()] + [self.email]))
+
+    def verified_email_records(self):
+        return list(EmailAddress.objects.filter(user=self.user, verified=True))
+
+    def allauth_email_records(self):
+        return list(EmailAddress.objects.filter(user=self.user))
 
     def get_avatar_url(self):
         try:
@@ -175,7 +186,7 @@ class UserProfile:
 
     def _make_anonymous(self):
         self.authorities = []
-        self.user = None
+        self.user = env.request.user  # AnonymousUser
         self._cached_contact = None
 
     def populate_authorities(self, force=False):

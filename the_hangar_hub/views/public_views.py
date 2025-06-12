@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.util.env_helper import Log, EnvHelper
 from base.services import auth_service
+from base.classes.auth.session import Auth
 
 log = Log()
 env = EnvHelper()

@@ -4,11 +4,10 @@ from django.http import HttpResponse, HttpResponseForbidden
 
 import the_hangar_hub.models
 from base.classes.util.log import Log
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
-from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service, utility_service, email_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service, tenant_service

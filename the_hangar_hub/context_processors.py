@@ -4,6 +4,7 @@ from django.conf import settings
 from base.classes.util.app_data import Log, EnvHelper, AppData
 from datetime import datetime, timezone
 from the_hangar_hub.services import airport_service, tenant_service
+from base.classes.auth.session import Auth
 
 log = Log()
 env = EnvHelper()
@@ -23,7 +24,6 @@ def airport(request):
         "managed_airport_identifiers": managed_airports,
         "my_rentals": rentals,
     }
-
 
     return model
 

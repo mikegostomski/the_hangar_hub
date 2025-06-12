@@ -10,6 +10,7 @@ from base.allauth_adapter import BaseSocialAdapter, BaseAccountAdapter
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.services import airport_service
 from base.services import message_service
+from base.classes.auth.session import Auth
 
 log = Log()
 
@@ -20,19 +21,29 @@ class HubAccountAdapter(DefaultAccountAdapter):
 
         # Custom processing...
         log.debug("######## HUB LOGIN ....")
+        # Get user_profile
+        user_profile = Auth.lookup_user_profile(user)
 
         # Look for invitations (manager, tenant, etc)
-        # Must look for all confirmed emails
-        confirmed_emails = list(EmailAddress.objects.filter(user=user, verified=True))
-        confirmed_emails.append(user.email)
-        for email in list(set(confirmed_emails)):
-            for ii in Invitation.objects.filter(email__iexact=email, status_code__in=["I", "S"]):
-                if ii.role == "MANAGER":
-                    if airport_service.set_airport_manager(ii.airport, user):
-                        message_service.post_success(f"bi-airplane You are now a manager for {ii.airport.display_name}!")
-                        ii.resulting_user = user
-                        ii.change_status("A")
-                        ii.save()
+        for ii in Invitation.find():
+            if ii.role == "MANAGER":
+                if airport_service.set_airport_manager(ii.airport, user):
+                    message_service.post_success(f"bi-airplane You are now a manager for {ii.airport.display_name}!")
+                    ii.resulting_user = user
+                    ii.change_status("A")
+                    ii.save()
+            elif ii.role == "TENANT" and ii.hangar:
+                ii.resulting_user = user
+
+
+
+                if ii.hangar.add_tenant(user):
+                    pass
+
+                ii.change_status("A")
+                ii.save()
+
+
 
     def clean_email(self, email: str) -> str:
         """

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.util.log import Log
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.invitation import Invitation
@@ -142,7 +142,7 @@ def add_airport_manager(request):
     airport.activate_timezone()
 
     # Check for existing user
-    existing_user = Auth.lookup_user(invitee)
+    existing_user = Auth.lookup_user_profile(invitee)
     # If user already has an account, just add them as a manager
     if existing_user:
         if airport_service.set_airport_manager(airport, existing_user):
@@ -164,7 +164,7 @@ def add_airport_manager(request):
         return HttpResponseForbidden()
 
     # Create and send an invitation
-    Invitation.invite(airport, invitee, "MANAGER").send()
+    Invitation.invite_manager(airport, invitee)
     return render(
         request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
         {
@@ -183,10 +183,10 @@ def accept_invitation(request, verification_code):
     if not invite:
         message_service.post_error("The specified invitation was not found.")
         return render(request, error_html, {"invite": invite})
-    elif invite.is_invalid():
+    elif invite.is_inactive():
         return render(request, error_html, {"invite": invite})
 
-    user_profile = Auth().get_user()
+    user_profile = Auth.current_user_profile()
     if user_profile.email.lower() != invite.email.lower():
         return render(request, error_html, {"invite": invite})
 

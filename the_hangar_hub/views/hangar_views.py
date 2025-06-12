@@ -4,7 +4,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 import the_hangar_hub.models
 from base.classes.util.env_helper import Log, EnvHelper
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 from the_hangar_hub.models import Tenant
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
@@ -17,6 +17,7 @@ from base.classes.breadcrumb import Breadcrumb
 from django.contrib.auth.models import User
 import re
 from datetime import datetime, timezone
+from base.models.contact.contact import Contact
 
 log = Log()
 env = EnvHelper()
@@ -244,6 +245,9 @@ def add_tenant(request, airport_identifier, hangar_id):
 
     if deposit:
         deposit = str(deposit).replace('$', '').replace(',', '')
+    else:
+        deposit = None
+
 
     prefill = {
         "email": email,
@@ -263,7 +267,7 @@ def add_tenant(request, airport_identifier, hangar_id):
 
     # Look for existing user via email
     user = contact = tenant = None
-    existing_user_profile = Auth.lookup_user(email)
+    existing_user_profile = Auth.lookup_user_profile(email)
     if existing_user_profile.id:
         user = existing_user_profile.user
         contact = existing_user_profile.contact()
@@ -273,28 +277,25 @@ def add_tenant(request, airport_identifier, hangar_id):
                 user.save()
             except Exception as ee:
                 log.error(f"Unable to activate User: {user} ({ee})")
-    else:
-        # If not an existing user, send an invitation
-        Invitation.invite(airport, email, "TENANT", hangar=hangar).send()
 
     # If not an existing user, look for existing contact record
     if not user:
         try:
-            contact = the_hangar_hub.models.contact.Contact.get(email__iexact=email)
-        except the_hangar_hub.models.contact.Contact.DoesNotExist:
+            contact = Contact.objects.get(email__iexact=email)
+        except Contact.DoesNotExist:
             pass
 
     # If user or contact exists, look for existing tenant record
     if user or contact:
         try:
-            tenant = Tenant.objects.get()
+            tenant = Tenant.objects.get(Q(user=user) | Q(contact=contact))
         except Tenant.DoesNotExist:
             pass
 
     # Contact must be created if not already found
     if not contact:
         try:
-            contact = the_hangar_hub.models.contact.Contact()
+            contact = Contact()
             contact.first_name = first_name
             contact.last_name = last_name
             contact.email = email
@@ -326,6 +327,8 @@ def add_tenant(request, airport_identifier, hangar_id):
     try:
         log.debug(f"Start Date ({type(start_date)}): {start_date}")
         log.debug(f"End Date ({type(end_date)}): {end_date}")
+        log.debug(f"Rent ({type(rent)}): {rent}")
+        log.debug(f"Deposit ({type(deposit)}): {deposit}")
         rental = the_hangar_hub.models.tenant.Rental()
         rental.tenant = tenant
         rental.hangar = hangar
@@ -342,5 +345,9 @@ def add_tenant(request, airport_identifier, hangar_id):
         issues.append("Unable to create rental record.")
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
+
+    # If not an existing user, send an invitation
+    if not user:
+        Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
     return redirect("hub:manage_hangar",airport_identifier, hangar.code)

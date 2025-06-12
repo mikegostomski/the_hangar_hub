@@ -1,10 +1,9 @@
 import the_hangar_hub.models.hangar
 from base.classes.util.env_helper import Log, EnvHelper
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 from the_hangar_hub.models import Hangar
 from the_hangar_hub.models.tenant import Tenant, Rental
 from the_hangar_hub.models.airport_manager import AirportManager
-from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service
 from the_hangar_hub.models.airport import Airport
 
@@ -13,12 +12,14 @@ log = Log()
 env = EnvHelper()
 
 def get_tenant_rentals(user=None):
-    user_profile = Auth().lookup_user(user) if user else Auth().get_user()
-    return Rental.current_rentals().filter(tenant__user=user_profile.user)
+    user = Auth().lookup_user(user) if user else Auth.current_user()
+    if user and user.id:
+        return Rental.current_rentals().filter(tenant__user=user)
+    return None
 
 
 def get_hangar_rental(airport_identifier, hangar_identifier, user=None, post_error=True):
-    user_profile = Auth().lookup_user(user) if user else Auth().get_user()
+    user = Auth().lookup_user_profile(user) if user else Auth.current_user()
     airport = Airport.get(airport_identifier)
     hangar = rental = None
     if airport:
@@ -29,7 +30,7 @@ def get_hangar_rental(airport_identifier, hangar_identifier, user=None, post_err
 
     if hangar:
         try:
-            rental = Rental.current_rentals().get(hangar=hangar, tenant__user=user_profile.user)
+            rental = Rental.current_rentals().get(hangar=hangar, tenant__user=user)
             return rental
         except Rental.DoesNotExist:
             pass

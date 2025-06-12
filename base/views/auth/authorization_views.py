@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from datetime import datetime, timezone
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 
 
 log = Log()

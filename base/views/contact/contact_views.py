@@ -5,7 +5,7 @@ from base.models import Contact, Address, Phone
 from base.decorators import require_authority, require_authentication
 from django.db.models import Q
 from django.core.paginator import Paginator
-
+from base.classes.auth.session import Auth
 from base.classes.util.env_helper import EnvHelper, Log
 
 log = Log()
@@ -116,10 +116,9 @@ def profile(request):
     if type(contact) in [HttpResponseRedirect, HttpResponseForbidden]:
         return contact
 
-    authorities = auth_service.get_user().authorities
-
-    from allauth.account.models import EmailAddress
-    emails = EmailAddress.objects.filter(user=auth_service.get_user().user)
+    current_user = Auth.current_user_profile()
+    authorities = current_user.authorities
+    emails = current_user.allauth_email_records()
 
     return render(request, 'base/contact/profile.html', {
         'contact': contact,
@@ -291,9 +290,9 @@ def _get_contact_or_redirect(request, contact_id=None):
         else:
             contact = Contact.get(contact_id)
     else:
-        user = auth_service.get_user()
-        if user.is_authenticated:
-            contact = user.contact()
+        user_profile = Auth.current_user_profile()
+        if user_profile.is_authenticated:
+            contact = user_profile.contact()
 
     if contact:
         return contact

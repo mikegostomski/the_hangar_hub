@@ -12,6 +12,7 @@ from django.db.models import Q
 from django.http import HttpResponseForbidden, Http404, HttpResponse
 from django.core.paginator import Paginator
 from base.classes.util.app_data import Log, EnvHelper, AppData
+from base.classes.auth.session import Auth
 
 log = Log()
 env = EnvHelper()
@@ -237,17 +238,15 @@ def audit_xss_review_attempt(request):
     """
     Review an XSS attempt
     """
-    auth = auth_service.get_auth_instance()
-
     # Mark as reviewed
     xss_id = request.POST.get("id", 0)
     xss_instance = get_xss(xss_id)
     if xss_instance:
-        xss_instance.reviewer_username = auth.get_user().username
+        xss_instance.reviewer_username = Auth.current_user_profile().username
         xss_instance.save()
 
         # Also log it in the audit table.
-        auth.audit("U", "XSS", comments=f"Reviewed attempt #{xss_id} by {xss_instance.user_username}")
+        Auth.audit("U", "XSS", comments=f"Reviewed attempt #{xss_id} by {xss_instance.user_username}")
 
         return HttpResponse("success")
     else:

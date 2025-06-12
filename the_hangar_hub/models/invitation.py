@@ -1,10 +1,11 @@
 from django.db import models
 from base.classes.util.log import Log
 from base.services import utility_service, message_service, email_service, auth_service
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 from the_hangar_hub.models.airport import Airport
 from django.contrib.auth.models import User
 from datetime import datetime, timezone
+from the_hangar_hub.services import airport_service
 
 log = Log()
 
@@ -49,16 +50,16 @@ class Invitation(models.Model):
 
     @property
     def invited_by_user_profile(self):
-        return auth_service.lookup_user(self.invited_by)
+        return auth_service.lookup_user_profile(self.invited_by)
 
     @property
     def resulting_user_profile(self):
         if self.resulting_user:
-            return auth_service.lookup_user(self.resulting_user)
+            return auth_service.lookup_user_profile(self.resulting_user)
         else:
             return None
 
-    def is_invalid(self, post_errors=False):
+    def is_inactive(self, post_errors=False):
         msg = None
         if self.status_code in ["E", "R"]:
             msg = "This invitation has expired"
@@ -68,9 +69,8 @@ class Invitation(models.Model):
             message_service.post_error(msg)
         return msg
 
-    def is_valid(self, post_errors=False):
-        return not self.is_invalid(post_errors)
-
+    def is_active(self, post_errors=False):
+        return not self.is_inactive(post_errors)
 
     def send(self):
         """
@@ -86,7 +86,7 @@ class Invitation(models.Model):
         elif self.status_code == "R ":
             message_service.post_warning("Did not send invitation because it was revoked.")
         else:
-            inviter = Auth.lookup_user(self.invited_by)
+            inviter = Auth.lookup_user_profile(self.invited_by)
             if email_service.send(
                 subject=f"Invitation to join {self.airport.identifier} on The Hanger Hub",
                 sender=inviter.email,
@@ -102,44 +102,46 @@ class Invitation(models.Model):
                 return True
         return False
 
-    @classmethod
-    def invite(cls, airport, email_address, role, hangar=None):
+    def accept(self):
         """
-        Invite someone to join specified airport via their email address
+        Accept an invitation and do any necessary processing
         """
-        inviter = Auth().get_user()
+        if self.status_code in ["E", "R"]:
+            log.warning("Cannot accept an expired invitation")
+            return False
+        elif self.status_code == "A":
+            log.warning("Invitation has already been accepted")
+            return False
 
-        try:
-            existing = cls.objects.get(
-                airport=airport, email__iexact=email_address, role=role, invited_by=inviter.user
-            )
-            if existing:
-                # If re-inviting after expiration or revocation, reset the status
-                if existing.status_code in ["E", "R"]:
-                    existing.status_code = "I"
-                    existing.save()
-                # Otherwise do not alter or duplicate the invitation
-                return existing
-        except cls.DoesNotExist:
-            pass
-        except Exception as ee:
-            log.error(f"Could not look for existing invites: {ee}")
+        # Invitations can only be accepted by the invited user
+        user_profile = Auth.current_user_profile()
+        if self.email.lower() not in user_profile.emails:
+            log.warning("Invitation can only be accepted by the invited person")
+            return False
 
-        try:
-            ii = Invitation(
-                airport=airport,
-                email=email_address,
-                role=role,
-                verification_code=utility_service.generate_verification_code(30),
-                invited_by=inviter.user,
-                status_code="I",  # Initiated
-            )
-            ii.save()
-            return ii
-        except Exception as ee:
-            log.error(f"Could not create invitation: {ee}")
-            message_service.post_error(f"Unable to invite {email_address}")
-            return Invitation()  # Likely will be followed by .send()
+        # Django user object is used for all relations
+        user = user_profile.user
+
+        # Accept airport manager invitation
+        if self.role == "MANAGER":
+            if airport_service.set_airport_manager(self.airport, user):
+                message_service.post_success(f"bi-airplane You are now a manager for {self.airport.display_name}")
+                self.resulting_user = user
+                self.change_status("A")
+                self.save()
+                return True
+
+        elif self.role == "TENANT" and self.hangar:
+            if not self.tenant.user:
+                self.tenant.user = user
+                self.tenant.save()
+
+            self.resulting_user = user
+            self.change_status("A")
+            self.save()
+            return True
+
+        return False
 
     @classmethod
     def get(cls, key):
@@ -153,3 +155,85 @@ class Invitation(models.Model):
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")
             return None
+
+    @classmethod
+    def invite_manager(cls, airport, email_address):
+        """
+        Invite someone to be an airport manager
+        """
+        return Invitation(
+            airport=airport,
+            email=email_address,
+            role="MANAGER",
+            verification_code=utility_service.generate_verification_code(30),
+            invited_by=Auth.current_user(),
+            status_code="I",  # Initiated
+        )._finalize().send()
+
+
+    @classmethod
+    def invite_tenant(cls, airport, email_address, tenant, hangar):
+        """
+        Invite someone to be an airport tenant
+        """
+        return Invitation(
+            airport=airport,
+            tenant=tenant,
+            hangar=hangar,
+            email=email_address,
+            role="TENANT",
+            verification_code=utility_service.generate_verification_code(30),
+            invited_by=Auth.current_user(),
+            status_code="I",  # Initiated
+        )._finalize().send()
+
+    @classmethod
+    def find(cls):
+        """Find any active invitations for the current user"""
+        user_profile = Auth.current_user_profile()
+        invitations = []
+        for email in user_profile.emails:
+            invitations.extend(list(Invitation.objects.filter(email__iexact=email, status_code__in=["I", "S"])))
+        log.debug(f"{user_profile} has {len(invitations)} invitations")
+        return invitations
+
+
+    def _check_preexisting(self):
+        try:
+            # Look for other invitations from this inviter
+            existing = Invitation.objects.get(
+                airport=self.airport,
+                role=self.role,
+                invited_by=self.invited_by,
+                email__iexact=self.email_address,
+                hangar=self.hangar
+            )
+            if existing:
+                # If re-inviting after expiration or revocation, reset the status
+                if existing.status_code in ["E", "R"]:
+                    existing.status_code = "I"
+                    existing.save()
+                # Otherwise do not alter or duplicate the invitation
+                return existing
+        except Invitation.DoesNotExist:
+            pass
+        except Exception as ee:
+            log.error(f"Could not look for existing invites: {ee}")
+        return None
+
+    def _finalize(self):
+        try:
+            # Before saving, look for an existing invite that can be reused
+            reuse = self._check_preexisting()
+            if reuse:
+                del self
+                return reuse
+            else:
+                self.save()
+                return self
+        except Exception as ee:
+            log.error(f"Could not create invitation: {ee}")
+        message_service.post_error(f"Unable to invite {self.email}")
+        return Invitation()  # Likely will be followed by .send()
+
+

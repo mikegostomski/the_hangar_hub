@@ -75,14 +75,14 @@ def auth(request):
     return {
         'is_authenticated': auth_instance.is_logged_in(),
         'is_logged_in': auth_instance.is_logged_in(),
-        'current_user': auth_instance.get_user(),
+        'current_user': auth_instance.get_current_user_profile(),
         'authenticated_user': auth_instance.authenticated_user,
         'proxied_user': auth_instance.proxied_user,
         'can_impersonate': auth_instance.can_impersonate(),
         'is_impersonating': auth_instance.is_impersonating(),
-        'can_proxy': auth_instance.get_user().has_authority('~proxy'),
+        'can_proxy': auth_instance.get_current_user_profile().has_authority('~proxy'),
         'is_proxying': auth_instance.is_proxying(),
         'is_developer': auth_service.has_authority("developer"),
         'is_admin': auth_service.has_authority("admin"),
-        'avatar_url': auth_instance.get_user().get_avatar_url(),
+        'avatar_url': auth_instance.get_current_user_profile().get_avatar_url(),
     }

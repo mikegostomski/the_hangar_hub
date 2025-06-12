@@ -1,5 +1,5 @@
 from base.classes.util.log import Log
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 from django.contrib.auth.models import User
 from django.utils.functional import SimpleLazyObject
 
@@ -15,32 +15,39 @@ def is_logged_in():
     return get_auth_instance().is_logged_in()
 
 
+def get_user_profile():
+    """
+    In non-production, admins can impersonate others for testing
+    In production, developers can impersonate others for debugging
+    """
+    return Auth.current_user_profile()
+
 def get_user():
     """
     In non-production, admins can impersonate others for testing
     In production, developers can impersonate others for debugging
     """
-    return get_auth_instance().get_user()
+    return Auth.current_user()
 
 
-def get_user_or_proxy():
+def get_user_or_proxy_profile():
     auth = get_auth_instance()
     if auth.is_proxying():
         return auth.proxied_user
     else:
-        return auth.get_user()
+        return auth.get_current_user_profile()
 
 
-def get_authenticated_user():
+def get_authenticated_user_profile():
     return get_auth_instance().authenticated_user
 
 
-def lookup_user(user_data, get_contact=False, get_authorities=False):
+def lookup_user_profile(user_data, get_contact=False, get_authorities=False):
     """
     Get a UserProfile object for specified user.
     Lookups are cached for the duration of the request.
     """
-    return Auth.lookup_user(user_data, get_contact, get_authorities)
+    return Auth.lookup_user_profile(user_data, get_contact, get_authorities)
 
 
 def has_authority(authority_list, use_impersonated=True):
@@ -49,9 +56,9 @@ def has_authority(authority_list, use_impersonated=True):
     If a list of authorities is given, only one of the authorities is required
     """
     if use_impersonated:
-        return get_user().has_authority(authority_list)
+        return Auth.current_user_profile().has_authority(authority_list)
     else:
-        return get_authenticated_user().has_authority(authority_list)
+        return get_authenticated_user_profile().has_authority(authority_list)
 
 
 def can_impersonate():

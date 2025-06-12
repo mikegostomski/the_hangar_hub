@@ -1,9 +1,8 @@
 import the_hangar_hub.models.hangar
 from base.classes.util.env_helper import Log, EnvHelper
-from base.classes.auth.auth import Auth
+from base.classes.auth.session import Auth
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.airport_manager import AirportManager
-from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service
 
 
@@ -11,11 +10,12 @@ log = Log()
 env = EnvHelper()
 
 
-def can_query_user(user_profile):
+def can_query_user(user):
     """
     Can only run queries with related User field when the specified User object has been saved
+    (This check works for either user or user_profile)
     """
-    return user_profile.id
+    return user and user.id
 
 def get_managers(airport=None, status=None):
     managers = AirportManager.objects.filter(airport=airport)
@@ -25,9 +25,9 @@ def get_managers(airport=None, status=None):
     return managers
 
 def is_airport_manager(user=None, airport=None):
-    user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()
-    if can_query_user(user_profile):
-        manages = AirportManager.objects.filter(user=user_profile.user, status_code="A").select_related("user")
+    user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
+    if can_query_user(user):
+        manages = AirportManager.objects.filter(user=user, status_code="A").select_related("user")
         if airport:
             manages = manages.filter(airport=airport)
         return bool([mgmt for mgmt in manages if mgmt.is_active])
@@ -36,8 +36,8 @@ def is_airport_manager(user=None, airport=None):
 
 def get_managed_airport(airport_identifier, post_error=True):
     try:
-        user_profile = Auth().get_user()
-        if can_query_user(user_profile):
+        user = Auth.current_user()
+        if can_query_user(user):
             if type(airport_identifier) is the_hangar_hub.models.airport.Airport:
                 airport = airport_identifier
             elif type(airport_identifier) is the_hangar_hub.models.hangar.Building:
@@ -49,7 +49,7 @@ def get_managed_airport(airport_identifier, post_error=True):
             if not airport:
                 if post_error:
                     message_service.post_error("The specified airport could not be found")
-            elif is_airport_manager(user_profile, airport):
+            elif is_airport_manager(user, airport):
                 return airport
             elif post_error:
                 message_service.post_error("You are not authorized to manage the specified airport")
@@ -83,9 +83,9 @@ def get_managed_hangar(airport_identifier, hangar_identifier, post_error=True):
 
 
 def managed_airports(user=None):
-    user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()
-    if can_query_user(user_profile):
-        manages = AirportManager.objects.filter(user=user_profile.user, status_code="A").select_related("airport")
+    user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
+    if can_query_user(user):
+        manages = AirportManager.objects.filter(user=user, status_code="A").select_related("airport")
         return [mgmt.airport for mgmt in manages if mgmt.is_active]
     return []
 
@@ -94,24 +94,25 @@ def managed_airport_identifiers(user=None):
 
 
 def set_airport_manager(airport, user=None):
-    user_profile = Auth().lookup_user(user_data=user) if user else Auth().get_user()
+    user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
+    if (not user) or not getattr(user, "id"):
+        return None
 
-    # If account is inactive, re-activate it
+    # If the account is inactive, re-activate it
     try:
-        if not user_profile.is_active:
-            du = user_profile.user
-            du.is_active = True
-            du.save()
+        if not user.is_active:
+            user.is_active = True
+            user.save()
     except Exception as ee:
-        log.error(f"Could not activate user {user_profile}: {ee}")
+        log.error(f"Could not activate user {user}: {ee}")
 
-    if not user_profile.is_valid():
-        log.error(f"Invalid user may not be an airport manager: {user_profile}")
+    if not user.is_active:
+        log.error(f"Invalid user may not be an airport manager: {user}")
         return False
 
     # Look for existing management relation (may not be active)
     try:
-        existing = AirportManager.objects.get(user=user_profile.user, airport=airport)
+        existing = AirportManager.objects.get(user=user, airport=airport)
     except AirportManager.DoesNotExist:
         existing = None
 
@@ -126,7 +127,7 @@ def set_airport_manager(airport, user=None):
             )
             return True
         else:
-            new_manager = airport.management.create(user=user_profile.user, airport=airport)
+            new_manager = airport.management.create(user=user, airport=airport)
             Auth.audit(
                 "C", "MANAGEMENT",
                 "Created airport manager relationship",
@@ -141,7 +142,7 @@ def set_airport_manager(airport, user=None):
 def deactivate_airport_manager(airport, user):
     log.trace([airport, user])
     try:
-        user_profile = Auth().lookup_user(user_data=user)
+        user_profile = Auth().lookup_user_profile(user_data=user)
         manager = AirportManager.objects.get(user=user_profile.user, airport=airport)
         manager.status_code = "I"
         manager.save()
@@ -156,7 +157,7 @@ def deactivate_airport_manager(airport, user):
         log.error(f"Could not remove airport manager: {ee}")
 
 def get_pending_invitations(airport, role=None):
-    q = Invitation.objects.filter(airport=airport, status_code__in=["I", "S"]).select_related("invited_by")
+    q = the_hangar_hub.models.Invitation.objects.filter(airport=airport, status_code__in=["I", "S"]).select_related("invited_by")
     if role:
         q = q.filter(role=role)
     return q
