@@ -6,7 +6,7 @@
 {% block main_content %}
     <h1>Hangars in {{building.code}}</h1>
 
-    <form method="POST" action="{%url 'hub:add_hangar' airport.identifier building.id%}">
+    <form method="POST" action="{%url 'manage:add_hangar' airport.identifier building.id%}">
         {%csrf_token%}
     <table class="table">
         <tr valign="top">
@@ -22,7 +22,7 @@
         {%for hangar in hangars%}
             <tr>
                 <td>
-                    <a href="{%url 'hub:manage_hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
+                    <a href="{%url 'manage:one_hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
                 </td>
                 <td align="right">{%format_currency hangar.default_rent%}</td>
                 <td align="right">{{hangar.capacity}}</td>

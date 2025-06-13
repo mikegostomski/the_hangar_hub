@@ -8,7 +8,7 @@ function update_airport_data(element) {
 
     $.ajax({
         type:   "POST",
-        url:    "{%url 'hub:update_airport_data'%}",
+        url:    "{%url 'manage:update_airport'%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             airport_id: airport_id,
@@ -47,7 +47,7 @@ function invite_manager() {
 
     $.ajax({
         type:   "POST",
-        url:    "{%url 'hub:add_airport_manager'%}",
+        url:    "{%url 'manage:add_manager'%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             airport_id: airport_id,

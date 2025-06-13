@@ -1,3 +1,8 @@
+
+from the_hangar_hub.models.airport import Airport
+
+from base.fixtures.timezones import timezones
+
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
@@ -18,20 +23,154 @@ from django.contrib.auth.models import User
 import re
 from datetime import datetime, timezone
 from base.models.contact.contact import Contact
+from the_hangar_hub.decorators import require_airport, require_airport_manager
 
 log = Log()
 env = EnvHelper()
 
-@require_authentication()
-def airport_buildings(request, airport_identifier):
-    airport = airport_service.get_managed_airport(airport_identifier)
-    if not airport:
-        return redirect("hub:welcome")
 
+@require_authentication()
+@require_airport()
+def claim_airport(request, airport_identifier):
+    airport = request.airport
+
+    # Get existing airport managers (including inactive ones)
+    managers = airport_service.get_managers(airport)
+    is_manager = is_inactive = False
+
+    # If managers exist, see if this user is already one of them
+    if managers:
+        for manager in managers:
+            if manager.user == request.user:
+                is_manager = True
+                log.info(f"Is already a manager for {airport.identifier}")
+                if manager.status != "A":
+                    log.warning(f"Is a non-active manager for {airport.identifier}")
+                    is_inactive = True
+                elif not manager.user.is_active:
+                    log.warning(f"Is a manager, but a non-active user")
+                    is_inactive = True
+                break
+
+        # Since managers exist for this airport, this user must be an active manager or ask an existing one for access
+        if is_inactive or not is_manager:
+            if not is_manager:
+                message_service.post_error(
+                    "This airport already has a manager. You'll need to request access from existing management."
+                )
+            else:
+                message_service.post_error(
+                    "Your airport management status is inactive. You'll need to request access from existing management."
+                )
+
+            return render(
+                request, "the_hangar_hub/airport/access_denied.html",
+                {"airport": airport}
+            )
+
+    # Since no managers exist for this airport, auto-assign this user to be the manager for this airport
+    else:
+        log.info(f"No managers exist for {airport}")
+        if airport_service.set_airport_manager(airport, request.user):
+            message_service.post_success(f"You are now the airport manager for {airport.identifier}")
+        else:
+            message_service.post_error(f"Unable to record you as the manager for {airport.identifier}")
+
+    return redirect("manage:my_airport", airport.identifier)
+
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def my_airport(request, airport_identifier):
+    airport = request.airport
+    return render(
+        request, "the_hangar_hub/airport/manage_airport/manage_airport.html",
+        {
+            "airport": airport,
+            "managers": airport.management.all(),
+            "invitations": airport_service.get_pending_invitations(airport, "MANAGER"),
+            "timezone_options": timezones,
+        }
+    )
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def update_airport(request, airport_identifier):
+    airport = request.airport
+    attribute = request.POST.get("attribute")
+    value = request.POST.get("value")
+
+    try:
+        prev_value = getattr(airport, attribute)
+        setattr(airport, attribute, value)
+        airport.save()
+        message_service.post_success("Airport data updated")
+
+        Auth.audit(
+            "U", "AIRPORT",
+            f"Updated airport data: {attribute}",
+            reference_code="Airport", reference_id=airport.id,
+            previous_value=prev_value, new_value=value
+        )
+    except Exception as ee:
+        message_service.post_error(f"Could not update airport data: {ee}")
+
+    return HttpResponse("ok")
+
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def add_manager(request, airport_identifier):
+    airport = request.airport
+    invitee = request.POST.get("invitee")
+    log.trace([airport, invitee])
+
+    # Check for existing user
+    existing_user = Auth.lookup_user_profile(invitee)
+    # If user already has an account, just add them as a manager
+    if existing_user:
+        if airport_service.set_airport_manager(airport, existing_user):
+            message_service.post_success(f"Added airport manager: {invitee}")
+        else:
+            message_service.post_error(f"Could not add airport manager: {invitee}")
+        return render(
+            request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
+            {
+                "airport": airport,
+                "managers": airport_service.get_managers(airport=airport),
+                "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
+            }
+        )
+
+    # Since user did not have an account, an email is needed to invite them
+    if "@" not in invitee:
+        message_service.post_error("The given user information could not be found. Please enter an email address.")
+        return HttpResponseForbidden()
+
+    # Create and send an invitation
+    Invitation.invite_manager(airport, invitee)
+    return render(
+        request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
+        {
+            "airport": airport,
+            "managers": airport_service.get_managers(airport=airport),
+            "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
+        }
+    )
+
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def my_buildings(request, airport_identifier):
+    airport = request.airport
 
     buildings = airport.buildings.all()
     Breadcrumb.add(
-        "Buildings", ("hub:airport_buildings", airport_identifier), reset=True
+        "Buildings", ("manage:buildings", airport_identifier), reset=True
     )
 
     return render(
@@ -44,10 +183,11 @@ def airport_buildings(request, airport_identifier):
 
 
 @require_authentication()
+@require_airport()
+@require_airport_manager()
 def add_building(request, airport_identifier):
-    airport = airport_service.get_managed_airport(airport_identifier)
-    if not airport:
-        return redirect("hub:welcome")
+    airport = request.airport
+
 
     building_code = request.POST.get("building_code")
     if not building_code:
@@ -95,24 +235,27 @@ def add_building(request, airport_identifier):
         else:
 
             Building.objects.create(airport=airport, code=building_code, default_rent=default_rent)
-    return redirect("hub:airport_buildings", airport_identifier)
+    return redirect("manage:buildings", airport_identifier)
 
 
 @require_authentication()
-def building_hangars(request, airport_identifier, building_id):
-    building = airport_service.get_managed_building(airport_identifier, building_id)
+@require_airport()
+@require_airport_manager()
+def my_hangars(request, airport_identifier, building_id):
+    airport = request.airport
+    building = airport_service.get_managed_building(airport, building_id)
     if not building:
-        return redirect("hub:airport_buildings", airport_identifier)
+        return redirect("manage:buildings", airport.identifier)
 
     hangars = building.hangars.all()
 
     Breadcrumb.add(
-        f"{building.code} Hangars", ("hub:building_hangars", airport_identifier, building_id)
+        f"{building.code} Hangars", ("manage:hangars", airport.identifier, building_id)
     )
     return render(
         request, "the_hangar_hub/hangars/building.html",
         {
-            "airport": building.airport,
+            "airport": airport,
             "building": building,
             "hangars": hangars,
         }
@@ -120,12 +263,15 @@ def building_hangars(request, airport_identifier, building_id):
 
 
 @require_authentication()
+@require_airport()
+@require_airport_manager()
 def add_hangar(request, airport_identifier, building_id):
-    building = airport_service.get_managed_building(airport_identifier, building_id)
-    if not building:
-        return redirect("hub:airport_buildings", airport_identifier)
+    airport = request.airport
 
-    airport = building.airport
+    building = airport_service.get_managed_building(airport, building_id)
+    if not building:
+        return redirect("manage:buildings", airport.identifier)
+
     hangar_code = request.POST.get("hangar_code")
     default_rent = request.POST.get("default_rent") or 0.0
     capacity = int(request.POST.get("capacity") or 1)
@@ -174,20 +320,24 @@ def add_hangar(request, airport_identifier, building_id):
             Hangar.objects.create(
                 building=building, default_rent=default_rent, code=hangar_code, capacity=capacity, electric=electric
             )
-    return redirect("hub:building_hangars", airport_identifier, building_id)
+    return redirect("manage:hangars", airport.identifier, building_id)
 
 
 @require_authentication()
-def manage_hangar(request, airport_identifier, hangar_id):
-    hangar = airport_service.get_managed_hangar(airport_identifier, hangar_id)
+@require_airport()
+@require_airport_manager()
+def one_hangar(request, airport_identifier, hangar_id):
+    airport = request.airport
+
+    hangar = airport_service.get_managed_hangar(airport, hangar_id)
     if not hangar:
-        return redirect("hub:airport_buildings", airport_identifier)
+        return redirect("manage:buildings", airport.identifier)
     airport = hangar.building.airport
 
     rentals = the_hangar_hub.models.tenant.Rental.objects.filter(hangar=hangar)
 
     Breadcrumb.add(
-        f"Hangar {hangar.code}", ("hub:manage_hangar", airport_identifier, hangar_id),
+        f"Hangar {hangar.code}", ("manage:one_hangar", airport.identifier, hangar_id),
     )
 
     return render(
@@ -204,11 +354,14 @@ def manage_hangar(request, airport_identifier, hangar_id):
 
 
 @require_authentication()
+@require_airport()
+@require_airport_manager()
 def add_tenant(request, airport_identifier, hangar_id):
-    hangar = airport_service.get_managed_hangar(airport_identifier, hangar_id)
+    airport = request.airport
+
+    hangar = airport_service.get_managed_hangar(airport, hangar_id)
     if not hangar:
-        return redirect("hub:airport_buildings", airport_identifier)
-    airport = hangar.building.airport
+        return redirect("manage:buildings", airport_identifier)
 
     # Process Parameters
     issues = []
@@ -263,7 +416,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     if issues:
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
-        return redirect("hub:manage_hangar", airport_identifier, hangar_id)
+        return redirect("manage:one_hangar", airport.identifier, hangar_id)
 
     # Look for existing user via email
     user = contact = tenant = None
@@ -306,7 +459,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     if issues:
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
-        return redirect("hub:manage_hangar", airport_identifier, hangar_id)
+        return redirect("manage:one_hangar", airport_identifier, hangar_id)
 
     # If tenant record ws not found, create one now
     if not tenant:
@@ -321,7 +474,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     if issues:
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
-        return redirect("hub:manage_hangar", airport_identifier, hangar_id)
+        return redirect("manage:one_hangar", airport.identifier, hangar_id)
 
     # Create the rental record
     try:
@@ -350,4 +503,4 @@ def add_tenant(request, airport_identifier, hangar_id):
     if not user:
         Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
-    return redirect("hub:manage_hangar",airport_identifier, hangar.code)
+    return redirect("manage:one_hangar",airport_identifier, hangar.code)

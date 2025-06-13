@@ -20,7 +20,7 @@
                 Airport: {{invite.airport.display_name}} ({{invite.airport.identifier}})<br />
                 Role: {{invite.role_description}}<br />
                 <br />
-                <a href="{%absolute_url 'hub:accept_invitation' invite.verification_code%}">Accept Invitation</a>
+                <a href="{%absolute_url 'hub:home'%}?ivc={{invite.verification_code}}">Accept Invitation</a>
                 <br style="clear:both;" />
             </div>
             <br />

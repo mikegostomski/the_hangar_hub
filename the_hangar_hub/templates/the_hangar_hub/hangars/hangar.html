@@ -87,7 +87,7 @@
                 <td>{{rental.id}}</td>
             </tr>
         {%endfor%}
-        <form method="post" action="{%url 'hub:add_tenant' airport.identifier hangar.id%}">
+        <form method="post" action="{%url 'manage:add_tenant' airport.identifier hangar.id%}">
             {%csrf_token%}
             <tr>
                 <td>

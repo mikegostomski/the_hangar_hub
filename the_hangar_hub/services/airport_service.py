@@ -9,6 +9,14 @@ from base.services import message_service
 log = Log()
 env = EnvHelper()
 
+def save_airport_selection(airport):
+    env.set_session_variable(
+        "thh-selected-airport", airport.identifier if type(airport) is Airport else airport
+    )
+
+def get_airport_selection():
+    return env.get_session_variable("thh-selected-airport")
+
 
 def can_query_user(user):
     """

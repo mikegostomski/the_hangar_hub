@@ -6,7 +6,7 @@
 {% block main_content %}
     <h1>Buildings at {{airport.identifier}}</h1>
 
-    <form method="POST" action="{%url 'hub:add_building' airport.identifier%}">
+    <form method="POST" action="{%url 'manage:add_building' airport.identifier%}">
     <table class="table">
         <tr valign="top">
             <th scope="col">Building Code</th>
@@ -19,7 +19,7 @@
         {%for building in buildings%}
             <tr>
                 <td>
-                    <a href="{%url 'hub:building_hangars' airport.identifier building.id%}">{{building.code}}</a>
+                    <a href="{%url 'manage:hangars' airport.identifier building.id%}">{{building.code}}</a>
                 </td>
                 <td>{%format_currency building.default_rent%}</td>
                 <td align="right">{{building.num_hangars}}</td>

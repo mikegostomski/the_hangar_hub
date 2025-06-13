@@ -58,16 +58,16 @@
                 {%if is_authenticated%}
                     Create your airport and begin managing your hangars.<br />
                 <br />
-                    <a class="btn btn-info btn-sm" href="{% url 'hub:welcome' %}">Create Airport</a>
+                    <a class="btn btn-info btn-sm" href="{% url 'hub:search' %}">Create Airport</a>
 
                 {%else%}
                     Log in or create an account to create your airport and begin managing your hangars.
                     <br />
                     <br />
                     <div class="text-left">
-                        <a class="btn btn-info btn-sm" href="{% url 'base:login_then' %}?next=hub:welcome">{%icon bi-box-arrow-in-right%} Log In</a>
+                        <a class="btn btn-info btn-sm" href="{% url 'base:login_then' %}?next=hub:search">{%icon bi-box-arrow-in-right%} Log In</a>
                         <span>&nbsp; &nbsp;</span>
-                        <a class="btn btn-success btn-sm" href="{% url 'base:login_then' %}?next=hub:welcome">{%icon bi-person-plus%} Sign Up</a>
+                        <a class="btn btn-success btn-sm" href="{% url 'base:login_then' %}?next=hub:search">{%icon bi-person-plus%} Sign Up</a>
                     </div>
                 {%endif%}
                 <br />

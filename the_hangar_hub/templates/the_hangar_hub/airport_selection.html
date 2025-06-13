@@ -1,14 +1,14 @@
 {% extends 'base/template/standard/template.html' %}
 {% load base_taglib %}
 
-{%block title%}The Hangar Hub: Airport Identifier{%endblock%}
+{%block title%}The Hangar Hub: Airport Selection{%endblock%}
 
 {% block main_content %}
 <div class="content-800">
-    <h1>Airport Identification</h1>
+    <h1>Airport Selection</h1>
     <br />
     <form method="get">
-        Enter the FAA/ICAO identifier for the airport you are managing:<br />
+        Enter the FAA/ICAO identifier for your airport:<br />
         <br />
         <label for="identifier" class="visually-hidden">Airport Identifier</label>
 
@@ -35,11 +35,7 @@
                 <td>{{match.display_name}}</td>
                 <td>{{match.city}}, {{match.state}}</td>
                 <td>
-                    <form method="post" action="{%url 'hub:search'%}">
-                        {%csrf_token%}
-                        <input type="hidden" name="airport_id" value="{{match.id}}" />
-                        <button class="btn btn-info btn-sm" type="submit">Select</button>
-                    </form>
+                    <a href="{%url 'hub:select' match.identifier%}" class="btn btn-info btn-sm">Select</a>
                 </td>
             </tr>
             {%endfor%}
