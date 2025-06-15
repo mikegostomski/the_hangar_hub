@@ -1,0 +1,59 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}{%app_name%} - Referral Dashboard{%endblock%}
+{% block main_content %}
+    <h1>Referral Dashboard</h1>
+    {%if referral_codes%}
+        <h2>My Referral Code(s)</h2>
+        <table class="table">
+            <tr>
+                <th scope="col">Referral Code</th>
+                <th scope="col">Status</th>
+                <th scope="col">You Get</th>
+                <th scope="col">They Get</th>
+                <th scope="col">Reward Balance</th>
+                <th scope="col">Reward Type</th>
+            </tr>
+            {%for referral in referral_codes%}
+                <tr>
+                    <td>{{referral.code}}</td>
+                    <td>{{referral.status}}</td>
+                    <td>{{referral.reward}}</td>
+                    <td>{{referral.discount}}</td>
+                    <td>{{referral.reward_balance}}</td>
+                    <td>{{referral.reward_type}}</td>
+                </tr>
+            {%endfor%}
+        </table>
+    {%else%}
+
+        <p>
+            Take advantage of our referral program.  We are currently offering:
+            <table class="table" style="max-width: 500px;">
+                <tr>
+                    <th scope="row">You Get</th>
+                    <td>{{offer_you}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">They Get</th>
+                    <td>{{offer_them}}</td>
+                </tr>
+                {%if offer_details%}
+                <tr>
+                    <th scope="row">Details</th>
+                    <td>{{offer_details}}</td>
+                </tr>
+                {%endif%}
+            </table>
+        </p>
+        <a href="{%url 'base:generate_referral_code'%}" class="btn btn-info">
+            Generate a Referral Code
+        </a>
+    {%endif%}
+    <br />
+    <br />
+
+
+
+{% endblock %}

@@ -39,7 +39,7 @@ class SessionHelperTestCase(TestCase):
             "2025-01-31T20:24",
         ]
         for date_string in test_formats:
-            dt_utc = date_service.string_to_date(date_string)
+            dt_utc = date_service.string_to_date(date_string, "America/New_York")
             self.assertTrue(type(dt_utc) is datetime, f"Result is not a datetime object: {date_string}")
             self.assertTrue(dt_utc.tzinfo is not None, f"Missing timezone for {date_string}")
             self.assertTrue(dt_utc.tzinfo == timezone.utc, f"Result is not in UTC: {date_string}")

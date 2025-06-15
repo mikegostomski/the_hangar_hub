@@ -155,7 +155,6 @@ class FeatureToggle:
     """
 
     id: None
-    app_code: None
     default: None
     override: None
     feature_code: None
@@ -167,7 +166,6 @@ class FeatureToggle:
 
     def __init__(self, feature_dict):
         self.id = feature_dict["id"]
-        self.app_code = feature_dict["app_code"]
         self.default = feature_dict["default"]
         self.override = feature_dict["override"]
         self.feature_code = feature_dict["feature_code"]

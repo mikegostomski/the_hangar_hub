@@ -21,6 +21,13 @@ class Airport(models.Model):
     # Email displayed to users/tenants who need to contact the airport
     info_email = models.CharField(max_length=150, blank=True, null=True)
 
+    # A referral code is required to claim a new airport
+    referral_code = models.CharField(max_length=30, blank=True, null=True, db_index=True)
+    status_code = models.CharField(max_length=1, default="I")
+
+    def is_active(self):
+        return self.status_code != "I"  # ToDo: revisit when more statuses exist
+
     def activate_timezone(self):
         if self.timezone:
             timezone.activate(ZoneInfo(self.timezone))
@@ -44,6 +51,7 @@ class Airport(models.Model):
 
     @classmethod
     def get(cls, id_or_ident):
+        log.trace([id_or_ident])
         try:
             if str(id_or_ident).isnumeric():
                 log.debug(f"Get by ID: {id_or_ident}")
@@ -51,6 +59,7 @@ class Airport(models.Model):
             else:
                 return cls.objects.get(identifier=id_or_ident)
         except cls.DoesNotExist:
+            log.debug(f"Airport not found: {id_or_ident}")
             return None
         except Exception as ee:
             log.error(f"Could not get airport: {ee}")

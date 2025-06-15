@@ -25,12 +25,12 @@ public_paths = [
 ]
 
 airport_paths = [
-    path('', public.home,                                          name='welcome'),
+    path('<slug:airport_identifier>', airport.welcome,                                  name='welcome'),
 ]
 
 airport_manager_paths = [
-    path('<slug:airport_identifier>', manage.my_airport,                                name='airport'),
     path('<slug:airport_identifier>/claim', manage.claim_airport,                       name='claim'),
+    path('<slug:airport_identifier>', manage.my_airport,                                name='airport'),
     path('<slug:airport_identifier>/update', manage.update_airport,                     name='update_airport'),
     path('<slug:airport_identifier>/assign', manage.add_manager,                        name='add_manager'),
     path('<slug:airport_identifier>/buildings', manage.my_buildings,                       name='buildings'),

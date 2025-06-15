@@ -23,7 +23,7 @@ def my_hangar(request, airport_identifier, hangar_id):
     rental = tenant_service.get_hangar_rental(airport_identifier, hangar_id)
     if not rental:
         Breadcrumb.clear()
-        return redirect("airport:welcome")
+        return redirect("airport:welcome", airport_identifier)
 
     return render(
         request, "the_hangar_hub/tenants/my_hangar.html",

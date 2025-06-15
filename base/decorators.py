@@ -64,7 +64,7 @@ def require_authentication(redirect_url=None):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-
+            log.debug("#### I'M HERE!")
             # If not logged in, redirect
             if not request.user.is_authenticated:
                 # Remember where to return after logging in
@@ -133,7 +133,6 @@ def require_feature(feature_code, redirect_url='/'):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-
             # If feature is active, render the view
             if utility_service.feature_is_enabled(feature_code):
                 return view_func(request, *args, **kwargs)

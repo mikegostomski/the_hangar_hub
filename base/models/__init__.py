@@ -4,4 +4,6 @@ from base.models.contact.contact import Contact
 from base.models.contact.address import Address
 from base.models.contact.phone import Phone
 from base.models.utility.feature import Feature
+from base.models.utility.variable import Variable
 from base.models.utility.xss_attempt import XssAttempt
+from .referral import Referral

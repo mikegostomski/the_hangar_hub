@@ -1,0 +1,39 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar Hub: Manage Airport - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+<div class="content-800">
+    <h1>{{airport.display_name}}</h1>
+    <br />
+    <div class="alert alert-danger">
+        {%icon bi-moon-stars%} {{airport.display_name}} is not currently active on The Hangar Hub.
+    </div>
+    <br />
+    <p>
+        The Hangar Hub is still in its early stages, and is currently accepting new airports upon request/referral.
+        If you have a referral code, enter it in the form below. Otherwise, please request a referral code by emailing
+        xxx@xxx.xxx.
+    </p>
+
+    <form method="post" action="{%url 'manage:claim' airport.identifier%}">
+        {%csrf_token%}
+        <div class="input-group mb-3">
+            <label for="referral_code" class="visually-hidden">Referral Code</label>
+            <span class="input-group-text" id="basic-addon1">{%icon bi-upc-scan%}</span>
+            <input  type="text" id="referral_code" name="referral_code" class="form-control" />
+            <button class="btn btn-success" type="submit">
+                {%icon bi-send title="Submit"%}
+            </button>
+        </div>
+    </form>
+
+
+</div>
+
+<br />
+<br />
+
+
+{%endblock%}

@@ -1,5 +1,5 @@
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from base.fixtures.timezones import timezones
 from base.classes.util.log import Log
 from zoneinfo import ZoneInfo
@@ -20,6 +20,12 @@ def string_to_date(date_string, source_timezone=None):
 
     if str(date_string).lower() == "now":
         return datetime.now(timezone.utc)
+    elif date_string.lower() == "yesterday":
+        return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    elif date_string.lower() == "today":
+        return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif date_string.lower() == "tomorrow":
+        return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
     dt = None
     try:
@@ -37,7 +43,7 @@ def string_to_date(date_string, source_timezone=None):
             log.warning(f"String to date received a non-string: {type(date_string)}")
 
         if dt and dt.tzinfo is None:
-            tz = ZoneInfo(source_timezone or "America/New_York")
+            tz = ZoneInfo(source_timezone or "UTC")
             dt = dt.replace(tzinfo=tz)
 
         return dt.astimezone(timezone.utc) if dt else None

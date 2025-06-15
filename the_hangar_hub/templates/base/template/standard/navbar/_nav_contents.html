@@ -6,60 +6,64 @@
 
 <li class="dropdown-divider"></li>
 
-{%if is_tenant%}
-    <li class="dropdown-header">
-        My Hangars
-    </li>
-    {%for rental in my_rentals%}
-    <li>
-        <a href="{%url 'tenant:my_hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
-    </li>
-    {%endfor%}
-{%endif%}
 
+{% if user.is_authenticated %}
 
-
-
-<li class="dropdown-header">
-    Hangar Waitlist
-</li>
-<li>
-    <div class="dropdown-item">Application</div>
-</li>
-<li>
-    <span class="dropdown-item">Status</span>
-</li>
-
-<li class="dropdown-divider"></li>
-
-<li class="dropdown-header">
-    Maintenance
-</li>
-<li>
-    <div class="dropdown-item">Report an Issue</div>
-</li>
-<li>
-    <span class="dropdown-item">Something Else?</span>
-</li>
-
-<li class="dropdown-divider"></li>
-
-{%if managed_airport_identifiers%}
-    {%for identifier in managed_airport_identifiers%}
+    {%if is_tenant%}
         <li class="dropdown-header">
-            Administration: {{identifier}}
+            My Hangars
         </li>
+        {%for rental in my_rentals%}
         <li>
-            <a href="{%url 'manage:my_airport' identifier%}" class="dropdown-item">Manage Airport</a>
+            <a href="{%url 'tenant:my_hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
         </li>
-        <li>
-            <a href="{%url 'manage:buildings' identifier%}" class="dropdown-item">Manage Hangars</a>
-        </li>
-        <li>
-            <span class="dropdown-item">Manage Tenants</span>
-        </li>
-        <li>
-            <span class="dropdown-item">Manage Waitlist</span>
-        </li>
-    {%endfor%}
+        {%endfor%}
+    {%endif%}
+
+
+
+
+    <li class="dropdown-header">
+        Hangar Waitlist
+    </li>
+    <li>
+        <div class="dropdown-item">Application</div>
+    </li>
+    <li>
+        <span class="dropdown-item">Status</span>
+    </li>
+
+    <li class="dropdown-divider"></li>
+
+    <li class="dropdown-header">
+        Maintenance
+    </li>
+    <li>
+        <div class="dropdown-item">Report an Issue</div>
+    </li>
+    <li>
+        <span class="dropdown-item">Something Else?</span>
+    </li>
+
+    <li class="dropdown-divider"></li>
+
+    {%if managed_airport_identifiers%}
+        {%for identifier in managed_airport_identifiers%}
+            <li class="dropdown-header">
+                Administration: {{identifier}}
+            </li>
+            <li>
+                <a href="{%url 'manage:my_airport' identifier%}" class="dropdown-item">Manage Airport</a>
+            </li>
+            <li>
+                <a href="{%url 'manage:buildings' identifier%}" class="dropdown-item">Manage Hangars</a>
+            </li>
+            <li>
+                <span class="dropdown-item">Manage Tenants</span>
+            </li>
+            <li>
+                <span class="dropdown-item">Manage Waitlist</span>
+            </li>
+        {%endfor%}
+    {%endif%}
 {%endif%}

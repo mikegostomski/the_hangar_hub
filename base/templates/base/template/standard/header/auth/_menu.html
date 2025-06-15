@@ -18,6 +18,13 @@
                 </a>
             </li>
 
+            <li>
+                <a class="dropdown-item" href="{% url 'base:referral_dashboard' %}">
+                    {%icon bi-chat-heart%}
+                    Referral Dashboard
+                </a>
+            </li>
+
             {%if can_impersonate %}
                 {# Link to Remove Current Impersonation ########}
                 {% if is_impersonating %}

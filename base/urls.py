@@ -33,6 +33,9 @@ urlpatterns = [
     path('contact/update/phone', views.update_phone, name='update_phone'),
     path('contact/update/address', views.update_address, name='update_address'),
 
+    # Referrals
+    path('referral/dashboard', views.referral_dashboard, name='referral_dashboard'),
+    path('referral/generate', views.generate_referral_code, name='generate_referral_code'),
 
     # Feature Toggles
     path('features', views.feature_list, name='features'),

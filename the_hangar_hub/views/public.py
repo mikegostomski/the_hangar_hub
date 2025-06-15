@@ -23,12 +23,12 @@ def search(request):
         # If exactly one match, select it
         if matches and len(matches) == 1:
             log.debug(f"ONE MATCH: {identifier}")
-            return redirect("hub:select", identifier)
+            return redirect("hub:select", matches[0].identifier)
 
         # If multiple matches, the user will be able to select one
         # If no matches, the user can search again
         return render(
-            request, "the_hangar_hub/airport_selection.html",
+            request, "the_hangar_hub/public/airport_selection.html",
             {"identifier": identifier, "matches": matches}
         )
 
@@ -39,6 +39,7 @@ def search(request):
 
 @require_airport()
 def select(request, airport_identifier):
+    log.trace([airport_identifier])
     next_url = env.get_session_variable("thh-after-ap-selection-url")
     if next_url:
         return redirect(next_url)

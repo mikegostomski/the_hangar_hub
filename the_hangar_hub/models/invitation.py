@@ -92,7 +92,7 @@ class Invitation(models.Model):
                 sender=inviter.email,
                 sender_display_name=inviter.display_name,
                 to=self.email,
-                email_template="the_hangar_hub/airport/invitations/invitation_email.html",
+                email_template="the_hangar_hub/airport/invitation/invitation_email.html",
                 context={"invite": self},
                 max_recipients=1,
                 include_context=True

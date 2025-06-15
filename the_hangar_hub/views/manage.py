@@ -34,6 +34,25 @@ env = EnvHelper()
 def claim_airport(request, airport_identifier):
     airport = request.airport
 
+    # Airport must be inactive
+    if airport.is_active():
+        return redirect("airport:welcome", airport.identifier)
+
+    if request.method == "POST":
+        referral_code = request.POST.get("referral_code")
+        if referral_code:
+            pass
+
+
+    # Any inactive airport can be claimed.
+    # Display page with instructions/referral code
+    return render(
+        request, "the_hangar_hub/airport/management/claim.html",
+        {
+            "airport": airport,
+        }
+    )
+
     # Get existing airport managers (including inactive ones)
     managers = airport_service.get_managers(airport)
     is_manager = is_inactive = False
@@ -85,7 +104,7 @@ def claim_airport(request, airport_identifier):
 def my_airport(request, airport_identifier):
     airport = request.airport
     return render(
-        request, "the_hangar_hub/airport/manage_airport/manage_airport.html",
+        request, "the_hangar_hub/airport/management/airport.html",
         {
             "airport": airport,
             "managers": airport.management.all(),
@@ -137,7 +156,7 @@ def add_manager(request, airport_identifier):
         else:
             message_service.post_error(f"Could not add airport manager: {invitee}")
         return render(
-            request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
+            request, "the_hangar_hub/airport/management/_manager_table.html",
             {
                 "airport": airport,
                 "managers": airport_service.get_managers(airport=airport),
@@ -153,7 +172,7 @@ def add_manager(request, airport_identifier):
     # Create and send an invitation
     Invitation.invite_manager(airport, invitee)
     return render(
-        request, "the_hangar_hub/airport/manage_airport/_manager_table.html",
+        request, "the_hangar_hub/airport/management/_manager_table.html",
         {
             "airport": airport,
             "managers": airport_service.get_managers(airport=airport),
@@ -174,7 +193,7 @@ def my_buildings(request, airport_identifier):
     )
 
     return render(
-        request, "the_hangar_hub/hangars/airport.html",
+        request, "the_hangar_hub/airport/management/buildings.html",
         {
             "airport": airport,
             "buildings": buildings,
@@ -253,7 +272,7 @@ def my_hangars(request, airport_identifier, building_id):
         f"{building.code} Hangars", ("manage:hangars", airport.identifier, building_id)
     )
     return render(
-        request, "the_hangar_hub/hangars/building.html",
+        request, "the_hangar_hub/airport/management/hangars.html",
         {
             "airport": airport,
             "building": building,
@@ -342,7 +361,7 @@ def one_hangar(request, airport_identifier, hangar_id):
 
     return render(
         request,
-        "the_hangar_hub/hangars/hangar.html",
+        "the_hangar_hub/airport/management/one_hangar.html",
         {
             "airport": airport,
             "hangar": hangar,

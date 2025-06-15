@@ -414,121 +414,17 @@ def feature_is_enabled(feature_code, force_query=False):
     """
     Is the given feature code active for this app?
     """
-    feature = get_feature(feature_code, force_query)
-
-    # If feature was not found, create it
-    if feature is None:
-        log.info(f"Creating feature: {feature_code}")
-        # For apps with multiple sub-apps, create as a global default
-        if env.get_setting("SUB_APPS"):
-            app_code = None
-            default = "Y"
-        else:
-            app_code = get_app_code()
-            default = "N"
-        feature = Feature(
-            app_code=app_code,
-            default=default,
-            feature_code=feature_code,
-            feature_title=f"Feature: {feature_code}",
-            status="N",  # New features will default to inactive
-        )
-        feature.save()
-        env.set_page_scope(
-            "features", None
-        )  # Force re-query of features to prevent duplicate feature inserts
-
-    # If feature is limited to admins (for testing/validation of new feature)
-    if feature.status == "L":
-        # Is this an admin/developer with access to Limited features?
-        return env.get_session_variable("allow_limited_features")
-
-    else:
-        return feature.status == "Y"
+    return Feature.is_enabled(feature_code)
 
 
 def get_feature(feature_code, force_query=False):
-    return get_features(force_query).get(feature_code)
+    return Feature.get(feature_code)
 
 
 def get_features(force_query=False):
     """"""
-    # Retrieve from temp session, if exists
-    results = env.get_page_scope("features")
-    if force_query or not results:
-        # If not cached, query for the features
-        results = {}
+    return Feature.get_feature_toggles(force_query)
 
-        # Get all app and global features and then select the correct ones (accounting for defaults and overrides)
-        features = Feature.objects.filter(
-            Q(app_code=get_app_code()) | Q(app_code__isnull=True)
-        )
-
-        # Sort by feature_code
-        if features:
-            feature_dict = {}
-            for ff in features:
-                # Initialize the dict, if needed
-                if ff.feature_code not in feature_dict:
-                    feature_dict[ff.feature_code] = {
-                        "app": None,
-                        "default": None,
-                        "override": None,
-                    }
-                # Sort by app, default, or override
-                if ff.app_code == get_app_code():
-                    feature_dict[ff.feature_code]["app"] = ff
-                elif ff.override == "Y":
-                    feature_dict[ff.feature_code]["override"] = ff
-                else:
-                    feature_dict[ff.feature_code]["default"] = ff
-
-            # Select the appropriate instance of each feature
-            now = datetime.now(timezone.utc)
-            for feature_code, ff in feature_dict.items():
-                selected = (
-                    ff["override"]
-                    if ff["override"]
-                    else ff["app"]
-                    if ff["app"]
-                    else ff["default"]
-                )
-
-                # Update status based on start/end dates, if applicable
-                if selected.enable_date:
-                    try:
-                        start = selected.enable_date
-                        if start and start <= now.datetime_instance:
-                            selected.status = "Y"
-                            selected.enable_date = None
-                            selected.save()
-                    except Exception as ee:
-                        error_service.unexpected_error(None, ee)
-
-                if selected.status != "N" and selected.disable_date:
-                    try:
-                        if selected.disable_date <= now:
-                            selected.status = "N"
-                            selected.disable_date = None
-                            selected.save()
-                    except Exception as ee:
-                        error_service.unexpected_error(None, ee)
-
-                results[feature_code] = selected.to_dict()
-
-            # Cache the results
-            env.set_page_scope("features", results)
-            del features
-            del feature_dict
-
-    # Convert cached results into FeatureToggle classes
-    feature_toggles = {}
-    if results:
-        for feature_code, ff in results.items():
-            feature_toggles[feature_code] = FeatureToggle(ff)
-        del results
-
-    return feature_toggles
 
 
 # ===                   ===

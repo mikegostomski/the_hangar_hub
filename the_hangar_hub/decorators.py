@@ -23,7 +23,7 @@ def require_airport(after_selection_url=None):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-
+            log.debug("Requiring AIRPORT")
             # Clear any previous post-airport-selection URL
             env.set_session_variable("thh-after-ap-selection-url", None)
 
@@ -38,12 +38,15 @@ def require_airport(after_selection_url=None):
 
             selected_airport = get_parameter or post_parameter or airport_kwarg or saved_airport
             if selected_airport:
+                log.debug(f"FOUND AIRPORT: {selected_airport}")
                 request.airport = Airport.get(selected_airport)
+                log.debug(f"REQUEST AIRPORT: {request.airport}")
 
             # If found, save it and render the view
             if request.airport:
                 airport_service.save_airport_selection(selected_airport)
                 request.airport.activate_timezone()
+                log.debug(f"Returning view func: {view_func}")
                 return view_func(request, *args, **kwargs)
 
             # If identifier was not found or was invalid
