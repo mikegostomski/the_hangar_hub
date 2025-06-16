@@ -8,7 +8,7 @@ function update_airport_data(element) {
 
     $.ajax({
         type:   "POST",
-        url:    "{%url 'manage:update_airport'%}",
+        url:    "{%url 'manage:update_airport' airport.identifier%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             airport_id: airport_id,
@@ -24,6 +24,9 @@ function update_airport_data(element) {
             clearAjaxStatusClasses(tr);
             element.addClass('ajax-success');
             status_container.html(getAjaxSavedIcon());
+            if(attribute == "identifier"){
+                window.location.reload();
+            }
         },
         error:function(){
             clearAjaxStatusClasses(tr);
@@ -47,7 +50,7 @@ function invite_manager() {
 
     $.ajax({
         type:   "POST",
-        url:    "{%url 'manage:add_manager'%}",
+        url:    "{%url 'manage:add_manager' airport.identifier%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             airport_id: airport_id,

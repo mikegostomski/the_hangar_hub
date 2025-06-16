@@ -1,0 +1,91 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar Hub: Invitation Dashboard{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+    <h1>Invitation Dashboard</h1>
+    <br />
+
+    <h2>Send an Invitation</h2>
+    <div id="invitation-form-container">
+        <form method="post" action="{%url 'administration:send_invitation'%}">
+            {%csrf_token%}
+            <table class="table">
+                <tr>
+                    <th scope="row"><label for="inv-airport">Airport Identifier</label></th>
+                    <td>
+                        <input type="text" name="airport" id="inv-airport" class="form-control" value="{{prefill.airport|default:''}}" />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="inv-email">Email Address</label></th>
+                    <td>
+                        <input type="email" name="email" id="inv-email" class="form-control" value="{{prefill.email|default:''}}" />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="inv-role_code">Role</label></th>
+                    <td>
+                        {%select_menu options=Invitation.role_options name="role_code" id="inv-role_code" class="form-select" nullable=False value="{{prefill.role_code|default:''}}"%}
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <div class="text-center">
+                <button class="btn btn-success" type="submit">
+                    {%icon bi-send%} Send Invitation
+                </button>
+            </div>
+        </form>
+    </div>
+    <br />
+    <br />
+
+
+
+    <h2>Open Invitations</h2>
+    <div id="open-invitations-container">
+        <table class="table" >
+            <tr>
+                <th scope="col">Airport</th>
+                <th scope="col">Email</th>
+                <th scope="col">Role</th>
+                <th scope="col">Invited By</th>
+                <th scope="col">Status</th>
+                <th scope="col">Status Change Date</th>
+                <th scope="col">Actions</th>
+            </tr>
+            {%for invite in open_invitations%}
+            <tr>
+                <td>{{invite.airport.identifier}}</td>
+                <td>{{invite.email}}</td>
+                <td>{{invite.role}}</td>
+                <td>{{invite.invited_by}}</td>
+                <td>{{invite.status}}</td>
+                <td>{{invite.status_change_date}}</td>
+                <td>{{invite.id}}</td>
+            </tr>
+            {%empty%}
+            <tr>
+                <td colspan="7" class="text-center">
+                    <em class="text-muted">No Open Invitations</em>
+                </td>
+            </tr>
+            {%endfor%}
+        </table>
+    </div>
+
+
+<style>
+    #invitation-form-container {
+        border: 1px solid #777;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 10px;
+        max-width: 600px;
+    }
+</style>
+
+{%endblock%}

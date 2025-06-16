@@ -3,6 +3,7 @@ from django.http import HttpResponseForbidden, HttpResponse
 from base.services import auth_service, error_service
 from base.decorators import require_impersonation_authority, require_authentication
 from base.classes.util.env_helper import Log, EnvHelper
+from django.urls import reverse
 
 
 log = Log()
@@ -70,5 +71,8 @@ def post_login_handler(request):
 
 def login_then_next(request):
     next_url = request.GET.get("next") or "/"
+    p = request.GET.get("p")
+    if p:
+        next_url = reverse(next_url, args=[p])
     env.set_session_variable("after_auth_url", next_url)
     return redirect("account_signup")

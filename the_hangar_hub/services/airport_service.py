@@ -164,8 +164,8 @@ def deactivate_airport_manager(airport, user):
     except Exception as ee:
         log.error(f"Could not remove airport manager: {ee}")
 
-def get_pending_invitations(airport, role=None):
+def get_pending_invitations(airport, role_code=None):
     q = the_hangar_hub.models.Invitation.objects.filter(airport=airport, status_code__in=["I", "S"]).select_related("invited_by")
-    if role:
-        q = q.filter(role=role)
+    if role_code:
+        q = q.filter(role_code=role_code)
     return q

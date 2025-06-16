@@ -17,7 +17,7 @@ class Invitation(models.Model):
     airport = models.ForeignKey(Airport, models.CASCADE, related_name="invites", blank=False, null=False, db_index=True)
     email = models.CharField(max_length=128, blank=False, null=False, db_index=True)
     verification_code = models.CharField(max_length=30, blank=False, null=False)
-    role = models.CharField(max_length=8, blank=False, null=False)
+    role_code = models.CharField(max_length=8, blank=False, null=False)
 
     invited_by = models.ForeignKey(User, models.CASCADE, related_name="has_invited", blank=False, null=False)
     tenant = models.ForeignKey('the_hangar_hub.Tenant', models.CASCADE, related_name="invitations", blank=True, null=True, db_index=True)
@@ -31,22 +31,30 @@ class Invitation(models.Model):
         self.status_code = new_status
         self.status_change_date = datetime.now(timezone.utc)
 
-    @property
-    def status_description(self):
+    @staticmethod
+    def status_options():
         return {
             "I": "Invited (not sent)",
             "S": "Invitation Sent",
             "A": "Accepted",
             "R": "Invitation Revoked",
             "E": "Invitation Expired",
-        }.get(self.status_code) or self.status_code
+        }
 
     @property
-    def role_description(self):
+    def status(self):
+        return self.status_options().get(self.status_code) or self.status_code
+
+    @staticmethod
+    def role_options():
         return {
             "MANAGER": "Airport Manager",
             "TENANT": "Hangar Tenant",
-        }.get(self.role) or self.role
+        }
+
+    @property
+    def role(self):
+        return self.role_options().get(self.role_code) or self.role_code
 
     @property
     def invited_by_user_profile(self):
@@ -123,15 +131,15 @@ class Invitation(models.Model):
         user = user_profile.user
 
         # Accept airport manager invitation
-        if self.role == "MANAGER":
+        if self.role_code == "MANAGER":
             if airport_service.set_airport_manager(self.airport, user):
-                message_service.post_success(f"bi-airplane You are now a manager for {self.airport.display_name}")
                 self.resulting_user = user
                 self.change_status("A")
                 self.save()
+                message_service.post_success(f"bi-airplane You are now a manager for {self.airport.display_name}")
                 return True
 
-        elif self.role == "TENANT" and self.hangar:
+        elif self.role_code == "TENANT" and self.hangar:
             if not self.tenant.user:
                 self.tenant.user = user
                 self.tenant.save()
@@ -139,6 +147,7 @@ class Invitation(models.Model):
             self.resulting_user = user
             self.change_status("A")
             self.save()
+            message_service.post_success(f"bi-airplane You are now a tenant at {self.airport.display_name}")
             return True
 
         return False
@@ -164,8 +173,8 @@ class Invitation(models.Model):
         return Invitation(
             airport=airport,
             email=email_address,
-            role="MANAGER",
-            verification_code=utility_service.generate_verification_code(30),
+            role_code="MANAGER",
+            verification_code=cls._generate_invitation_code(),
             invited_by=Auth.current_user(),
             status_code="I",  # Initiated
         )._finalize().send()
@@ -181,8 +190,8 @@ class Invitation(models.Model):
             tenant=tenant,
             hangar=hangar,
             email=email_address,
-            role="TENANT",
-            verification_code=utility_service.generate_verification_code(30),
+            role_code="TENANT",
+            verification_code=cls._generate_invitation_code(),
             invited_by=Auth.current_user(),
             status_code="I",  # Initiated
         )._finalize().send()
@@ -203,7 +212,7 @@ class Invitation(models.Model):
             # Look for other invitations from this inviter
             existing = Invitation.objects.get(
                 airport=self.airport,
-                role=self.role,
+                role_code=self.role_code,
                 invited_by=self.invited_by,
                 email__iexact=self.email_address,
                 hangar=self.hangar
@@ -236,4 +245,9 @@ class Invitation(models.Model):
         message_service.post_error(f"Unable to invite {self.email}")
         return Invitation()  # Likely will be followed by .send()
 
-
+    @classmethod
+    def _generate_invitation_code(cls):
+        code = utility_service.generate_verification_code(30)
+        while code.isnumeric() or cls.objects.filter(verification_code=code).count() > 0:
+            code = utility_service.generate_verification_code(30)
+        return code

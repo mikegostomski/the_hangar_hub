@@ -56,9 +56,9 @@
             <div class="list-group-item">
                 <b>Get Started</b><br />
                 {%if is_authenticated%}
-                    Create your airport and begin managing your hangars.<br />
-                <br />
-                    <a class="btn btn-info btn-sm" href="{% url 'hub:search' %}">Create Airport</a>
+                    Select your airport and begin managing your hangars.<br />
+                    <br />
+                    <a class="btn btn-info btn-sm" href="{% url 'hub:search' %}">Select Airport</a>
 
                 {%else%}
                     Log in or create an account to create your airport and begin managing your hangars.

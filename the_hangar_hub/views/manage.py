@@ -95,7 +95,7 @@ def claim_airport(request, airport_identifier):
         else:
             message_service.post_error(f"Unable to record you as the manager for {airport.identifier}")
 
-    return redirect("manage:my_airport", airport.identifier)
+    return redirect("manage:airport", airport.identifier)
 
 
 @require_authentication()

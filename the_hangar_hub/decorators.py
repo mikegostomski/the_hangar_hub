@@ -24,6 +24,8 @@ def require_airport(after_selection_url=None):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
             log.debug("Requiring AIRPORT")
+            invalid_path_id = False
+
             # Clear any previous post-airport-selection URL
             env.set_session_variable("thh-after-ap-selection-url", None)
 
@@ -38,13 +40,16 @@ def require_airport(after_selection_url=None):
 
             selected_airport = get_parameter or post_parameter or airport_kwarg or saved_airport
             if selected_airport:
-                log.debug(f"FOUND AIRPORT: {selected_airport}")
                 request.airport = Airport.get(selected_airport)
-                log.debug(f"REQUEST AIRPORT: {request.airport}")
+
+                # If invalid airport identifier was included in the URL
+                if selected_airport in request.path and not request.airport:
+                    invalid_path_id = selected_airport
+                    selected_airport = None
+                    airport_service.save_airport_selection(selected_airport)
 
             # If found, save it and render the view
             if request.airport:
-                airport_service.save_airport_selection(selected_airport)
                 request.airport.activate_timezone()
                 log.debug(f"Returning view func: {view_func}")
                 return view_func(request, *args, **kwargs)
@@ -67,11 +72,21 @@ def require_airport(after_selection_url=None):
                 # If an airport was selected via this method, redirect to the after_selection_url
                 if request.airport:
                     # The after_selection_url will default to the current url if not provided
-                    airport_service.save_airport_selection(selected_airport)
-                    return decorator_redirect(request, after_selection_url or request.path)
+                    log.debug(f"Saving related airport: {request.airport.identifier}")
+                    airport_service.save_airport_selection(request.airport)
+
+                    send_to = after_selection_url or request.path
+                    if invalid_path_id:
+                        send_to = send_to.replace(invalid_path_id, request.airport.identifier)
+
+                    log.debug(f"Sending to {send_to}")
+                    return decorator_redirect(request, send_to)
 
             # Identifier was still not found. Send to airport selection page
-            env.set_session_variable("thh-after-ap-selection-url", after_selection_url or request.path)
+            send_to = after_selection_url or request.path
+            if invalid_path_id and invalid_path_id in send_to:
+                send_to = "hub:home"
+            env.set_session_variable("thh-after-ap-selection-url", send_to)
             return decorator_redirect(request, "hub:search")
 
         return _wrapped_view

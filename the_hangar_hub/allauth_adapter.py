@@ -5,14 +5,17 @@ from allauth.account.adapter import DefaultAccountAdapter
 from django.core.exceptions import ObjectDoesNotExist
 from the_hangar_hub import settings
 from django.contrib.auth.models import User
-from base.classes.util.env_helper import Log
+from base.classes.util.env_helper import Log, EnvHelper
 from base.allauth_adapter import BaseSocialAdapter, BaseAccountAdapter
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.services import airport_service
 from base.services import message_service
 from base.classes.auth.session import Auth
+from django.urls import reverse
 
 log = Log()
+env = EnvHelper()
+
 
 class HubAccountAdapter(DefaultAccountAdapter):
     def login(self, request, user):
@@ -25,23 +28,30 @@ class HubAccountAdapter(DefaultAccountAdapter):
         user_profile = Auth.lookup_user_profile(user)
 
         # Look for invitations (manager, tenant, etc)
+        manager = tenant = False
         for ii in Invitation.find():
-            if ii.role == "MANAGER":
+            if ii.role_code == "MANAGER":
                 if airport_service.set_airport_manager(ii.airport, user):
                     message_service.post_success(f"bi-airplane You are now a manager for {ii.airport.display_name}!")
                     ii.resulting_user = user
                     ii.change_status("A")
                     ii.save()
-            elif ii.role == "TENANT" and ii.hangar:
+                    manager = ii.airport.identifier
+            elif ii.role_code == "TENANT" and ii.hangar:
                 ii.resulting_user = user
-
-
 
                 if ii.hangar.add_tenant(user):
                     pass
 
                 ii.change_status("A")
                 ii.save()
+                tenant = [ii.hangar.building.airport.identifier, ii.hangar.id]
+
+        if manager:
+            env.set_session_variable("after_auth_url", reverse("manage:airport", args=[manager]))
+        elif tenant:
+            env.set_session_variable("after_auth_url", reverse("tenant:hangar", args=tenant))
+
 
 
 

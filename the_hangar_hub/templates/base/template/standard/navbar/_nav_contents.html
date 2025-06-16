@@ -9,6 +9,15 @@
 
 {% if user.is_authenticated %}
 
+    {%if 'administrator'|has_authority:True%}
+        <li class="dropdown-header">
+            Invitations
+        </li>
+        <li>
+            <a href="{%url 'administration:invitation_dashboard'%}" class="dropdown-item">Invitation Dashboard</a>
+        </li>
+    {%endif%}
+
     {%if is_tenant%}
         <li class="dropdown-header">
             My Hangars
@@ -53,7 +62,7 @@
                 Administration: {{identifier}}
             </li>
             <li>
-                <a href="{%url 'manage:my_airport' identifier%}" class="dropdown-item">Manage Airport</a>
+                <a href="{%url 'manage:airport' identifier%}" class="dropdown-item">Manage Airport</a>
             </li>
             <li>
                 <a href="{%url 'manage:buildings' identifier%}" class="dropdown-item">Manage Hangars</a>

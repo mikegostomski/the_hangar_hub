@@ -1,0 +1,23 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar Hub: Invitation{%endblock%}
+
+{% block main_content %}
+    <h1>You've Been Invited!</h1>
+
+    You've been invited to join {{invite.airport.display_name}}.<br />
+    <br />
+    To get started, you'll need to log in or create a new account.<br />
+    <br />
+
+
+    <a class="btn btn-info" href="{% url 'base:login_then' %}?next=airport:welcome&p={{invite.airport.identifier}}">
+        {%icon bi-box-arrow-in-right%} Log In
+    </a>
+    <span>&nbsp; &nbsp;</span>
+    <a class="btn btn-success" href="{% url 'base:login_then' %}?next=airport:welcome&p={{invite.airport.identifier}}">
+        {%icon bi-person-plus%} Sign Up
+    </a>
+
+{%endblock%}

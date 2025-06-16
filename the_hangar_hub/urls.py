@@ -16,16 +16,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from the_hangar_hub.views import public, application, hangar, airport, tenant, manage
+from the_hangar_hub.views import public, application, administration, airport, tenant, manage
 
 public_paths = [
     path('', public.home,                                          name='home'),
     path('airports', public.search,                                name='search'),
     path('airports/<slug:airport_identifier>', public.select,      name='select'),
+    path('join/<invitation_code>', public.invitation_landing,      name='invitation_landing'),
 ]
 
 airport_paths = [
     path('<slug:airport_identifier>', airport.welcome,                                  name='welcome'),
+]
+
+admin_paths = [
+    path('invitations', administration.invitation_dashboard,                         name='invitation_dashboard'),
+    path('invitations/send', administration.send_invitation,                         name='send_invitation'),
 ]
 
 airport_manager_paths = [
@@ -68,8 +74,9 @@ urlpatterns = [
     re_path('^base/', include(('base.urls', 'base'), namespace='base')),
 
     re_path('', include((public_paths, 'the_hangar_hub'), namespace='hub')),
-    re_path('airport', include((airport_paths, 'the_hangar_hub'), namespace='airport')),
-    re_path('manage', include((airport_manager_paths, 'the_hangar_hub'), namespace='manage')),
-    re_path('apply', include((airport_application_paths, 'the_hangar_hub'), namespace='apply')),
-    re_path('tenant', include((airport_tenant_paths, 'the_hangar_hub'), namespace='tenant')),
+    re_path('airport/', include((airport_paths, 'the_hangar_hub'), namespace='airport')),
+    re_path('manage/', include((airport_manager_paths, 'the_hangar_hub'), namespace='manage')),
+    re_path('apply/', include((airport_application_paths, 'the_hangar_hub'), namespace='apply')),
+    re_path('tenant/', include((airport_tenant_paths, 'the_hangar_hub'), namespace='tenant')),
+    re_path('administration/', include((admin_paths, 'the_hangar_hub'), namespace='administration')),
 ]
