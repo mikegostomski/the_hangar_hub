@@ -12,7 +12,7 @@ app = AppData()
 def util(request):
     # Build an absolute URL (for use in emails)
     absolute_root_url = "{0}://{1}".format(request.scheme, request.get_host())
-    if 'http://' in absolute_root_url and 'localhost' not in absolute_root_url:
+    if 'http://' in absolute_root_url and not env.is_development:
         absolute_root_url = absolute_root_url.replace('http://', 'https://')
 
     breadcrumbs = []

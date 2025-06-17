@@ -24,7 +24,7 @@
         </li>
         {%for rental in my_rentals%}
         <li>
-            <a href="{%url 'tenant:my_hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
+            <a href="{%url 'tenant:hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
         </li>
         {%endfor%}
     {%endif%}

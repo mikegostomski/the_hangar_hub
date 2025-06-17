@@ -258,10 +258,12 @@ class EnvHelper:
             return None
 
         # When authenticated, default to authenticated user
-        request = self.request
-        user = request.user
-        if user.is_authenticated and user.email:
-            return user.email.lower()
+        if not self.is_development:
+            # Not for local development, where I'm authenticating with fake addresses
+            request = self.request
+            user = request.user
+            if user.is_authenticated and user.email:
+                return user.email.lower()
 
         # When not authenticated, allow a default address to be specified and stored in the session
         session_default = self.get_session_variable("base_default_recipient")

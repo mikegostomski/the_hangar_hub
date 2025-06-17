@@ -356,7 +356,7 @@ def one_hangar(request, airport_identifier, hangar_id):
     rentals = the_hangar_hub.models.tenant.Rental.objects.filter(hangar=hangar)
 
     Breadcrumb.add(
-        f"Hangar {hangar.code}", ("manage:one_hangar", airport.identifier, hangar_id),
+        f"Hangar {hangar.code}", ("manage:hangar", airport.identifier, hangar_id),
     )
 
     return render(
@@ -376,6 +376,7 @@ def one_hangar(request, airport_identifier, hangar_id):
 @require_airport()
 @require_airport_manager()
 def add_tenant(request, airport_identifier, hangar_id):
+    log.trace([airport_identifier, hangar_id])
     airport = request.airport
 
     hangar = airport_service.get_managed_hangar(airport, hangar_id)
@@ -431,11 +432,12 @@ def add_tenant(request, airport_identifier, hangar_id):
         "deposit": deposit,
         "notes": notes,
     }
+    log.trace(prefill)
 
     if issues:
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
-        return redirect("manage:one_hangar", airport.identifier, hangar_id)
+        return redirect("manage:hangar", airport.identifier, hangar_id)
 
     # Look for existing user via email
     user = contact = tenant = None
@@ -478,7 +480,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     if issues:
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
-        return redirect("manage:one_hangar", airport_identifier, hangar_id)
+        return redirect("manage:hangar", airport_identifier, hangar_id)
 
     # If tenant record ws not found, create one now
     if not tenant:
@@ -493,14 +495,10 @@ def add_tenant(request, airport_identifier, hangar_id):
     if issues:
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
-        return redirect("manage:one_hangar", airport.identifier, hangar_id)
+        return redirect("manage:hangar", airport.identifier, hangar_id)
 
     # Create the rental record
     try:
-        log.debug(f"Start Date ({type(start_date)}): {start_date}")
-        log.debug(f"End Date ({type(end_date)}): {end_date}")
-        log.debug(f"Rent ({type(rent)}): {rent}")
-        log.debug(f"Deposit ({type(deposit)}): {deposit}")
         rental = the_hangar_hub.models.tenant.Rental()
         rental.tenant = tenant
         rental.hangar = hangar
@@ -522,4 +520,4 @@ def add_tenant(request, airport_identifier, hangar_id):
     if not user:
         Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
-    return redirect("manage:one_hangar",airport_identifier, hangar.code)
+    return redirect("manage:hangar",airport_identifier, hangar.code)

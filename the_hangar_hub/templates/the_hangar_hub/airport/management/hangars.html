@@ -15,16 +15,16 @@
                 Default Rent<br />
                 <em>The default rent when adding tenants</em>
             </th>
-            <th scope="col">Capacity</th>
-            <th scope="col" align="center">Has Electricity</th>
-            <th scope="col" align="center">-</th>
+            <th scope="col" width="100">Capacity</th>
+            <th scope="col" class="text-center" width="200">Has Electricity</th>
+            <th scope="col" class="text-center">-</th>
         </tr>
         {%for hangar in hangars%}
             <tr>
                 <td>
-                    <a href="{%url 'manage:one_hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
+                    <a href="{%url 'manage:hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
                 </td>
-                <td align="right">{%format_currency hangar.default_rent%}</td>
+                <td align="right">{%format_currency hangar.rent%}</td>
                 <td align="right">{{hangar.capacity}}</td>
                 <td align="center">
                     {%if hangar.electricity%}

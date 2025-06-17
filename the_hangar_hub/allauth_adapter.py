@@ -38,11 +38,10 @@ class HubAccountAdapter(DefaultAccountAdapter):
                     ii.save()
                     manager = ii.airport.identifier
             elif ii.role_code == "TENANT" and ii.hangar:
+                ii.tenant.user = user
+                ii.tenant.save()
+
                 ii.resulting_user = user
-
-                if ii.hangar.add_tenant(user):
-                    pass
-
                 ii.change_status("A")
                 ii.save()
                 tenant = [ii.hangar.building.airport.identifier, ii.hangar.id]

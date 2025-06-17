@@ -2,7 +2,7 @@ from base.classes.util.env_helper import Log, EnvHelper
 from base.services import utility_service, error_service
 from base.classes.auth.dynamic_role import DynamicRole
 from allauth.socialaccount.models import SocialAccount
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from django.utils.functional import SimpleLazyObject
 from base.models.contact.contact import Contact
 from django.db.models import Q
@@ -186,7 +186,7 @@ class UserProfile:
 
     def _make_anonymous(self):
         self.authorities = []
-        self.user = env.request.user  # AnonymousUser
+        self.user = AnonymousUser()
         self._cached_contact = None
 
     def populate_authorities(self, force=False):

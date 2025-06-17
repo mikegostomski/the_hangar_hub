@@ -26,7 +26,7 @@ def my_hangar(request, airport_identifier, hangar_id):
         return redirect("airport:welcome", airport_identifier)
 
     return render(
-        request, "the_hangar_hub/tenants/my_hangar.html",
+        request, "the_hangar_hub/airport/tenant/my_hangar.html",
         {
             "airport": rental.hangar.building.airport,
             "building": rental.hangar.building,
