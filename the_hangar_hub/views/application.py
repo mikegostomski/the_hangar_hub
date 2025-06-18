@@ -39,6 +39,8 @@ def form(request, airport_identifier=None, application_id=None):
         # Look for existing Incomplete application for this user/airport
         application = HangarApplication.start(airport, applicant.user)
 
+    airport_preferences = application.airport.application_preferences()
+
     Breadcrumb.add("Hangar Application", ["apply:resume", application.id], reset=True)
     return render(
         request, "the_hangar_hub/airport/application/form/application_form.html",
@@ -46,6 +48,7 @@ def form(request, airport_identifier=None, application_id=None):
             "airport": airport,
             "application": application,
             "applicant": applicant,
+            "airport_preferences": airport_preferences,
         }
     )
 
