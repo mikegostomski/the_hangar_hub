@@ -154,8 +154,6 @@ class Auth:
         user_map = env.recall() or {}
         found_user = user_map.get(lookup_key)
 
-        log.trace([user_data, lookup_key, found_user])
-
         if not found_user:
             # Perform lookup
             log.debug(f"Performing lookup for {lookup_key} ({type(user_data)})")  # ToDo: Remove this line

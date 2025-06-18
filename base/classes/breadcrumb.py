@@ -60,6 +60,7 @@ class Breadcrumb:
             active=False,
             reset=False,
             duplicate=False,
+            append_only=False
     ):
         bcs = cls.get()
         if reset or not bcs:
@@ -92,13 +93,15 @@ class Breadcrumb:
                         break
                 bcs = revised
 
-        bcs.append({
-            "label": label,
-            "url": url,
-            "active": active,
-            "icon": icon,
-            "icon_only": icon_only,
-        })
+        # If append_only, only add the BC if there are existing BCs
+        if bcs or not append_only:
+            bcs.append({
+                "label": label,
+                "url": url,
+                "active": active,
+                "icon": icon,
+                "icon_only": icon_only,
+            })
         return env.set_session_variable("base_breadcrumbs", bcs)
 
     @classmethod

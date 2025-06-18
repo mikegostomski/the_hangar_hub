@@ -65,6 +65,9 @@ class Phone(models.Model):
             valid = False
         return valid
 
+    def is_primary(self):
+        return self.preferred == "Y"
+
     def make_primary(self):
         try:
             if self.preferred == 'N':
@@ -110,3 +113,9 @@ class Phone(models.Model):
             return None
         except Exception as ee:
             error_service.record(ee, [phone_id, contact])
+
+    def __str__(self):
+        return self.formatted_number()
+
+    def __repr__(self):
+        return str(self)

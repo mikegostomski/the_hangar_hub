@@ -33,14 +33,24 @@ def get_managers(airport=None, status=None):
     return managers
 
 def is_airport_manager(user=None, airport=None):
+    use_recall = user is None and airport is None
+    result = None
+    if use_recall:
+        result = env.recall()
+        if result is not None:
+            return result
+
     user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
     if can_query_user(user):
         manages = AirportManager.objects.filter(user=user, status_code="A").select_related("user")
         if airport:
             manages = manages.filter(airport=airport)
-        return bool([mgmt for mgmt in manages if mgmt.is_active])
+        result = bool([mgmt for mgmt in manages if mgmt.is_active])
     else:
-        return False
+        result = False
+    if use_recall:
+        env.store(result)
+    return result
 
 def get_managed_airport(airport_identifier, post_error=True):
     try:
@@ -91,11 +101,20 @@ def get_managed_hangar(airport_identifier, hangar_identifier, post_error=True):
 
 
 def managed_airports(user=None):
+    use_recall = user is None
+    if use_recall:
+        mas = env.recall()
+        if mas is not None:
+            return mas
+
+    manages = []
     user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
     if can_query_user(user):
         manages = AirportManager.objects.filter(user=user, status_code="A").select_related("airport")
-        return [mgmt.airport for mgmt in manages if mgmt.is_active]
-    return []
+        manages = [mgmt.airport for mgmt in manages if mgmt.is_active]
+    if use_recall:
+        env.store(manages)
+    return manages
 
 def managed_airport_identifiers(user=None):
     return [airport.identifier for airport in managed_airports(user)]

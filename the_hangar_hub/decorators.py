@@ -49,7 +49,7 @@ def require_airport(after_selection_url=None):
                     airport_service.save_airport_selection(selected_airport)
 
             # If found, save it and render the view
-            if request.airport:
+            if hasattr(request, "airport") and request.airport:
                 request.airport.activate_timezone()
                 log.debug(f"Returning view func: {view_func}")
                 return view_func(request, *args, **kwargs)
@@ -63,14 +63,14 @@ def require_airport(after_selection_url=None):
                     request.airport = Airport.get(selected_airport)
                 else:
                     aids = list(set(
-                        [x.hanger.building.airport.identifier for x in tenant_service.get_tenant_rentals()]
+                        [x.hangar.building.airport.identifier for x in tenant_service.get_tenant_rentals()]
                     ))
                     if len(aids) == 1:
                         selected_airport = aids[0]
                         request.airport = Airport.get(selected_airport)
 
                 # If an airport was selected via this method, redirect to the after_selection_url
-                if request.airport:
+                if hasattr(request, "airport") and request.airport:
                     # The after_selection_url will default to the current url if not provided
                     log.debug(f"Saving related airport: {request.airport.identifier}")
                     airport_service.save_airport_selection(request.airport)
@@ -87,6 +87,7 @@ def require_airport(after_selection_url=None):
             if invalid_path_id and invalid_path_id in send_to:
                 send_to = "hub:home"
             env.set_session_variable("thh-after-ap-selection-url", send_to)
+            log.debug(f"Must select an airport. The redirect to {send_to}")
             return decorator_redirect(request, "hub:search")
 
         return _wrapped_view

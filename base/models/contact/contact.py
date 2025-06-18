@@ -50,6 +50,24 @@ class Contact(models.Model):
         else:
             "Empty Contact"
 
+    def phone_number_options(self):
+        return {str(x.id): x for x in self.phones.all()}
+
+    def phone_number(self):
+        phones = self.phones.all()
+        if not phones:
+            return None
+        elif len(phones) == 1:
+            return phones[0].formatted_number()
+        pref_phones = [x for x in phones if x.is_primary()]
+        if pref_phones:
+            return pref_phones[0].formatted_number()
+        else:
+            return None
+
+    def address_options(self):
+        return {str(x.id): x for x in self.addresses.all()}
+
     def set_first_name(self, name):
         if name:
             self.first_name = name

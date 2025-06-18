@@ -1,16 +1,20 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
+
+from base.classes.breadcrumb import Breadcrumb
 from base.classes.util.env_helper import Log, EnvHelper
 from base.services import auth_service, message_service
 from base.services.message_service import post_error
 from the_hangar_hub.decorators import require_airport
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.invitation import Invitation
+from the_hangar_hub.services import airport_service
 log = Log()
 env = EnvHelper()
 
 def home(request):
-    return render(request, "the_hangar_hub/public/about.html")
+    Breadcrumb.clear()
+    return render(request, "the_hangar_hub/public/home.html")
 
 
 def invitation_landing(request, invitation_code):
@@ -57,7 +61,7 @@ def search(request):
         # If exactly one match, select it
         if matches and len(matches) == 1:
             log.debug(f"ONE MATCH: {identifier}")
-            return redirect("hub:select", matches[0].identifier)
+            return _post_airport_selection_redirect(matches[0])
 
         # If multiple matches, the user will be able to select one
         # If no matches, the user can search again
@@ -74,11 +78,7 @@ def search(request):
 @require_airport()
 def select(request, airport_identifier):
     log.trace([airport_identifier])
-    next_url = env.get_session_variable("thh-after-ap-selection-url")
-    if next_url:
-        return redirect(next_url)
-    else:
-        return redirect("airport:welcome", airport_identifier)
+    return _post_airport_selection_redirect(request.airport)
 
 
 def router(request):
@@ -92,3 +92,16 @@ def router(request):
     else:
         return redirect("hub:home")
 
+
+def _post_airport_selection_redirect(airport):
+    airport_service.save_airport_selection(airport)
+    next_url = env.get_session_variable("thh-after-ap-selection-url")
+    if next_url:
+        if "IDENTIFIER" in next_url:
+            next_url = next_url.replace("IDENTIFIER", airport.identifier)
+        log.debug(f"Sending to next URL: {next_url}")
+        return redirect(next_url)
+    else:
+        log.debug("No next URL was found. Sending to welcome page")
+        return redirect("airport:home")
+        return redirect("airport:welcome", airport.identifier)

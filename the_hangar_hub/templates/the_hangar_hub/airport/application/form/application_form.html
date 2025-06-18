@@ -1,0 +1,119 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load hub_taglib %}
+
+{%block title%}The Hangar Hub: Hangar Application - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+
+<h1>Hangar Application</h1>
+
+<div class="content-800">
+    <span class="xlg">{{airport.display_name}} ({{airport.identifier}})</span>
+    {%change_airport_link 'apply:airport_form' 'IDENTIFIER'%}
+</div>
+<br />
+<br />
+
+<form method="post" action="{%url 'apply:submit' application.id%}" id="application-form">
+    {%csrf_token%}
+    <div class="content-800">
+        <h2>Personal Data</h2>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="applicant_name">Applicant Name</label>
+            <input type="text" id="applicant_name" value="{{applicant.display_name}}" class="form-control" readonly />
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="preferred_email">Email Address</label>
+            {%select_menu options=applicant.emails value=application.preferred_email name="preferred_email" id="preferred_email" class="form-select" nullable=False%}
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="preferred_phone">Phone Number</label>
+            {%select_menu options=applicant.contact.phone_number_options value=application.preferred_phone_id name="preferred_phone" id="preferred_phone" class="form-select" nullable=False%}
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="mailing_address">Mailing Address</label>
+            {%select_menu options=applicant.contact.address_options value=application.mailing_address_id name="mailing_address" id="mailing_address" class="form-select" nullable=False%}
+        </div>
+
+        If you need to update your personal information, you may do so in your profile.
+        <a href="{%url 'base:profile'%}" class="btn btn-secondary float-right">Edit Profile Information</a>
+        <br style="clear:both;" />
+
+    </div>
+    <br />
+    <br />
+
+    <div class="content-800">
+        <h2>Aircraft Data</h2>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_type_code">Category</label>
+            {%select_menu options=application.aircraft_type_options value=application.aircraft_type_code name="aircraft_type_code" id="aircraft_type_code" class="form-select" nullable=False%}
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_make">Make</label>
+            <input type="text" name="aircraft_make" id="aircraft_make" value="{{application.aircraft_make|default:''}}" placeholder="Cessna, Mooney, Piper, etc" class="form-control" />
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_model">Model</label>
+            <input type="text" name="aircraft_model" id="aircraft_model" value="{{application.aircraft_model|default:''}}" placeholder="150, M20C, Cub, etc" class="form-control" />
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="registration_number">Registration Number</label>
+            <input type="text" name="registration_number" id="registration_number" value="{{application.registration_number|default:''}}" placeholder="{%if airport.country == 'CAN'%}C-GIYT{%else%}N12345{%endif%}" class="form-control" />
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_wingspan">Wingspan ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%})</label>
+            <input type="number" name="aircraft_wingspan" id="aircraft_wingspan" value="{{application.aircraft_wingspan|default:''}}"  class="form-control" />
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_height">Height ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%})</label>
+            <input type="number" name="aircraft_height" id="aircraft_height" value="{{application.aircraft_height|default:''}}"  class="form-control" />
+        </div>
+
+    </div>
+    <br />
+    <br />
+
+    <div class="content-800">
+        <h2>Other Information</h2>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="hangar_type_code">Hangar Preference</label>
+            {%select_menu options=application.hangar_type_options value=application.hangar_type_code name="hangar_type_code" id="hangar_type_code" class="form-select" nullable=False%}
+        </div>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="plane_notes">Notes</label>
+            <textarea name="plane_notes" id="plane_notes" class="form-control">{{application.plane_notes|default:''}}</textarea>
+        </div>
+    </div>
+    <br />
+    <br />
+
+    <button type="button" class="btn btn-secondary" onclick="save_changes();">
+        {%icon bi-floppy%} Save Changes
+    </button>
+</form>
+
+
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/application/form/application.js" %}
+</script>
+
+<style>
+    .content-800 .input-group-text{
+        width: 180px;
+        font-weight: bold;
+    }
+</style>
+
+{%endblock%}

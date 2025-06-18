@@ -198,6 +198,29 @@ class EnvHelper:
             return alt
         return value
 
+    #
+    # REMEMBER/RETRIEVE
+    # (same as store/recall, but for the session duration rather than request)
+    # ##########################################################################
+
+    def remember(self, value, ignore_levels=0):
+        """
+        Store the result of a function for the duration of the session.
+        Note: If the stored response is mutable, changes made to the returned value will affect the cached instance as well
+        """
+        self.set_session_variable(self._get_cache_key(ignore_levels), value)
+        return value
+
+    def retrieve(self, alt=None, ignore_levels=0):
+        """
+        Retrieve a stored result from a function run earlier in the session
+        Note: If the stored response is mutable, changes made to the returned value will affect the cached instance as well
+        """
+        value = self.set_session_variable(self._get_cache_key(ignore_levels))
+        if value is None:
+            return alt
+        return value
+
     @staticmethod
     def _get_cache_key(ignore_levels=0):
         """

@@ -17,13 +17,14 @@
                     Profile
                 </a>
             </li>
-
+            {%if "referrals"|feature:True%}
             <li>
                 <a class="dropdown-item" href="{% url 'base:referral_dashboard' %}">
                     {%icon bi-chat-heart%}
                     Referral Dashboard
                 </a>
             </li>
+            {%endif%}
 
             {%if can_impersonate %}
                 {# Link to Remove Current Impersonation ########}

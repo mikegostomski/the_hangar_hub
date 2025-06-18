@@ -96,7 +96,7 @@ class Invitation(models.Model):
         else:
             inviter = Auth.lookup_user_profile(self.invited_by)
             if email_service.send(
-                subject=f"Invitation to join {self.airport.identifier} on The Hanger Hub",
+                subject=f"Invitation to join {self.airport.identifier} on The Hangar Hub",
                 sender=inviter.email,
                 sender_display_name=inviter.display_name,
                 to=self.email,

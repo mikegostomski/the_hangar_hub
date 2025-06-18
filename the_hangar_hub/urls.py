@@ -29,12 +29,12 @@ airport_paths = [
     path('<slug:airport_identifier>', airport.welcome,                                  name='welcome'),
 ]
 
-admin_paths = [
+administration_paths = [
     path('invitations', administration.invitation_dashboard,                         name='invitation_dashboard'),
     path('invitations/send', administration.send_invitation,                         name='send_invitation'),
 ]
 
-airport_manager_paths = [
+manager_paths = [
     path('<slug:airport_identifier>/claim', manage.claim_airport,                       name='claim'),
     path('<slug:airport_identifier>', manage.my_airport,                                name='airport'),
     path('<slug:airport_identifier>/update', manage.update_airport,                     name='update_airport'),
@@ -47,11 +47,15 @@ airport_manager_paths = [
     path('<slug:airport_identifier>/hangars/<hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
 ]
 
-airport_application_paths = [
+application_paths = [
     path('', application.form,                                               name='form'),
+    path('<int:application_id>', application.form,                           name='resume'),
+    path('<slug:airport_identifier>', application.form,                      name='airport_form'),
+    path('save/<int:application_id>', application.save,                      name='save'),
+    path('submit/<int:application_id>', application.form,                    name='submit'),
 ]
 
-airport_tenant_paths = [
+tenant_paths = [
     path('<slug:airport_identifier>/tenant/hangar/<hangar_id>', tenant.my_hangar,  name='hangar'),
 ]
 
@@ -75,8 +79,8 @@ urlpatterns = [
 
     re_path('', include((public_paths, 'the_hangar_hub'), namespace='hub')),
     re_path('airport/', include((airport_paths, 'the_hangar_hub'), namespace='airport')),
-    re_path('manage/', include((airport_manager_paths, 'the_hangar_hub'), namespace='manage')),
-    re_path('apply/', include((airport_application_paths, 'the_hangar_hub'), namespace='apply')),
-    re_path('tenant/', include((airport_tenant_paths, 'the_hangar_hub'), namespace='tenant')),
-    re_path('administration/', include((admin_paths, 'the_hangar_hub'), namespace='administration')),
+    re_path('manage/', include((manager_paths, 'the_hangar_hub'), namespace='manage')),
+    re_path('apply/', include((application_paths, 'the_hangar_hub'), namespace='apply')),
+    re_path('tenant/', include((tenant_paths, 'the_hangar_hub'), namespace='tenant')),
+    re_path('administration/', include((administration_paths, 'the_hangar_hub'), namespace='administration')),
 ]

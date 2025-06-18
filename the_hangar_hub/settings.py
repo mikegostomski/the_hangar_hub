@@ -89,8 +89,7 @@ TEMPLATES = [
                 'the_hangar_hub.context_processors.airport',
             ],
             'libraries':{
-                # If the_hangar_hub had a taglib, it would need to be defined here:
-                # 'the_hangar_hub_taglib': 'the_hangar_hub.templatetags.the_hangar_hub_taglib',
+                'hub_taglib': 'the_hangar_hub.templatetags.hub_taglib',
             }
         },
     },

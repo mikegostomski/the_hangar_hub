@@ -1,5 +1,7 @@
 from django.shortcuts import redirect, render
 from django.http import HttpResponseForbidden, HttpResponseRedirect, HttpResponse
+
+from base.classes.breadcrumb import Breadcrumb
 from ...services import auth_service, error_service, message_service, utility_service
 from base.models import Contact, Address, Phone
 from base.decorators import require_authority, require_authentication
@@ -119,6 +121,8 @@ def profile(request):
     current_user = Auth.current_user_profile()
     authorities = current_user.authorities
     emails = current_user.allauth_email_records()
+
+    Breadcrumb.add("My Profile", "base:profile", append_only=True)
 
     return render(request, 'base/contact/profile.html', {
         'contact': contact,

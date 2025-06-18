@@ -96,6 +96,10 @@ class UserProfile:
         self.get_contact_instance()
         return self._cached_contact
 
+    def phone_number(self):
+        return self.contact().phone_number()
+
+
     def has_authority(self, authority_list):
         """
         Does this user have the specified authority?

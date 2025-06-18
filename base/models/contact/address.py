@@ -31,6 +31,11 @@ class Address(models.Model):
 
     country = models.CharField(max_length=30, blank=True, null=True)
 
+    def summary(self):
+        streets = ", ".join([x for x in [self.street_1, self.street_2, self.street_3] if x])
+        csz = f"{self.city}, {self.state} {self.zip_code}".strip()
+        return f"{streets}, {csz}"
+
     def address_type(self):
         return self.address_types().get(self.atype)
 
@@ -149,3 +154,9 @@ class Address(models.Model):
             return None
         except Exception as ee:
             error_service.record(ee, [address_id, contact])
+
+    def __str__(self):
+        return self.summary()
+
+    def __repr__(self):
+        return str(self)
