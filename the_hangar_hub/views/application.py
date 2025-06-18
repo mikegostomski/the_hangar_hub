@@ -92,6 +92,12 @@ def submit(request, application_id):
         issues.append("There was an error submitting your application.")
 
     if issues:
+        msg = ["There were issues submitting your application:<ul>"]
+        for ii in issues:
+            msg.append(f"<li>{ii}</li>")
+        msg.append("</ul>")
+        message_service.post_error("".join(msg))
+
         return redirect("apply:resume", application.id)
     else:
         return HttpResponse("Go to application review page")
