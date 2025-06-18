@@ -39,7 +39,7 @@
         </tr>
         <tr>
             <th scope="row">Public Email Address</th>
-            <td><input type="text" class="form-control" name="info_email" value="{{airport.info_email}}" onchange="update_airport_data($(this));" /></td>
+            <td><input type="text" class="form-control" name="info_email" value="{{airport.info_email|default:''}}" onchange="update_airport_data($(this));" /></td>
             <td class="ajax-status-container">&nbsp;</td>
         </tr>
     </table>

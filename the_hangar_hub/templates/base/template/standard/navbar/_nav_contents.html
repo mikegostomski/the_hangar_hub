@@ -44,6 +44,8 @@
 
     <li class="dropdown-divider"></li>
 
+
+
     <li class="dropdown-header">
         Maintenance
     </li>
@@ -55,6 +57,8 @@
     </li>
 
     <li class="dropdown-divider"></li>
+
+
 
     {%if managed_airport_identifiers%}
         {%for identifier in managed_airport_identifiers%}
@@ -68,10 +72,13 @@
                 <a href="{%url 'manage:buildings' identifier%}" class="dropdown-item">Manage Hangars</a>
             </li>
             <li>
-                <span class="dropdown-item">Manage Tenants</span>
+                <a href="{%url 'apply:preferences' identifier%}" class="dropdown-item">Application Preferences</a>
             </li>
             <li>
-                <span class="dropdown-item">Manage Waitlist</span>
+                <span class="dropdown-item">Applications</span>
+            </li>
+            <li>
+                <span class="dropdown-item">Waitlist</span>
             </li>
         {%endfor%}
     {%endif%}

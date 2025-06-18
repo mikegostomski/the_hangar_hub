@@ -28,7 +28,7 @@ class Rental(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="rentals")
+    tenant = models.ForeignKey("the_hangar_hub.Tenant", on_delete=models.CASCADE, related_name="rentals")
     hangar = models.ForeignKey('the_hangar_hub.Hangar', on_delete=models.CASCADE, related_name="rentals")
 
     start_date = models.DateTimeField(null=True, blank=True)

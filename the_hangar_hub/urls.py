@@ -52,7 +52,9 @@ application_paths = [
     path('<int:application_id>', application.form,                           name='resume'),
     path('<slug:airport_identifier>', application.form,                      name='airport_form'),
     path('save/<int:application_id>', application.save,                      name='save'),
-    path('submit/<int:application_id>', application.form,                    name='submit'),
+    path('submit/<int:application_id>', application.submit,                  name='submit'),
+    path('preferences/<slug:airport_identifier>', application.preferences,        name='preferences'),
+    path('preferences/<slug:airport_identifier>/save', application.save_preferences,        name='save_preferences'),
 ]
 
 tenant_paths = [

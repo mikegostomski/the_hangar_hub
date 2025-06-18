@@ -1,7 +1,6 @@
 from django.db import models
 from base.classes.util.log import Log
 from datetime import datetime, timezone
-from django.db.models import Q
 
 from the_hangar_hub.models.tenant import Rental
 
@@ -43,7 +42,7 @@ class Hangar(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name="hangars")
+    building = models.ForeignKey("the_hangar_hub.Building", on_delete=models.CASCADE, related_name="hangars")
     code = models.CharField(max_length=30)
     capacity = models.IntegerField(default=1)
     electric = models.BooleanField(default=False)

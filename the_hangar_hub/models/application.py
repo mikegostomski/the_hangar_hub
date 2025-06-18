@@ -1,10 +1,8 @@
 from django.db import models
 from base.classes.util.log import Log
 from base.models import Phone, Address
-from the_hangar_hub.models.airport import Airport
-from the_hangar_hub.models.hangar import Hangar
 from django.contrib.auth.models import User
-
+from datetime import datetime, timezone
 
 log = Log()
 
@@ -16,23 +14,23 @@ class HangarApplication(models.Model):
     status_code = models.CharField(max_length=1, default="N")
     status_change_date = models.DateTimeField(auto_now_add=True)
 
-    airport = models.ForeignKey(Airport, models.CASCADE, related_name="applications", db_index=True)
+    airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="applications", db_index=True)
     user = models.ForeignKey(User, models.CASCADE, related_name="applications", db_index=True)
 
-    preferred_email = models.EmailField(blank=True, null=True)
-    preferred_phone = models.ForeignKey(Phone, models.CASCADE, related_name="applications", blank=True, null=True)
-    mailing_address = models.ForeignKey(Address, models.CASCADE, related_name="applications", blank=True, null=True)
+    preferred_email = models.EmailField(verbose_name="Email Address", blank=True, null=True)
+    preferred_phone = models.ForeignKey(Phone, models.CASCADE, verbose_name="Phone Number", related_name="applications", blank=True, null=True)
+    mailing_address = models.ForeignKey(Address, models.CASCADE, verbose_name="Address", related_name="applications", blank=True, null=True)
 
-    hangar_type_code = models.CharField(max_length=1, default="F")
-    aircraft_type_code = models.CharField(max_length=2, default="A")
+    hangar_type_code = models.CharField(verbose_name="Hangar Type", max_length=1, default="F")
+    aircraft_type_code = models.CharField(verbose_name="Aircraft Type", max_length=2, default="A")
 
     # Aircraft Data (optional because an applicant may be in the market for a plane)
-    aircraft_make = models.CharField(max_length=30, blank=True, null=True)
-    aircraft_model = models.CharField(max_length=30, blank=True, null=True)
-    aircraft_wingspan = models.IntegerField(blank=True, null=True)
-    aircraft_height = models.IntegerField(blank=True, null=True)
-    registration_number = models.CharField(max_length=10, blank=True, null=True)
-    plane_notes = models.TextField(blank=True, null=True)
+    aircraft_make = models.CharField(verbose_name="Aircraft Make", max_length=30, blank=True, null=True)
+    aircraft_model = models.CharField(verbose_name="Aircraft Model", max_length=30, blank=True, null=True)
+    aircraft_wingspan = models.IntegerField(verbose_name="Wingspan", blank=True, null=True)
+    aircraft_height = models.IntegerField(verbose_name="Height", blank=True, null=True)
+    registration_number = models.CharField(verbose_name="Registration Number", max_length=10, blank=True, null=True)
+    plane_notes = models.TextField(verbose_name="Notes", blank=True, null=True)
 
     # Application Fee (optional)
     fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
@@ -40,16 +38,32 @@ class HangarApplication(models.Model):
     fee_payment_method = models.CharField(max_length=30, blank=True, null=True)
     fee_notes = models.TextField(blank=True, null=True)
 
+    def change_status(self, new_status):
+        self.status_code = new_status
+        self.status_change_date = datetime.now(timezone.utc)
+
+    @property
     def preferred_phone_id(self):
         return self.preferred_phone.id if self.preferred_phone else None
 
+    @property
     def mailing_address_id(self):
         return self.mailing_address.id if self.mailing_address else None
+
+    @property
+    def is_active(self):
+        return self.status_code in ["N", "I", "S", "R"]
+
+    @property
+    def is_incomplete(self):
+        return self.status_code in ["N", "I"]
 
     @staticmethod
     def status_options():
         return {
             "N": "New",
+            "I": "Incomplete",
+            "S": "Submitted",
             "R": "Reviewed",
             "A": "Accepted",
             "D": "Denied",
@@ -87,8 +101,6 @@ class HangarApplication(models.Model):
     def aircraft_type(self):
         return self.aircraft_type_options().get(self.aircraft_type_code) or self.aircraft_type_code
 
-
-
     @classmethod
     def get(cls, ii):
         try:
@@ -112,7 +124,7 @@ class HangarOffer(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    hangar = models.ForeignKey(Hangar, models.CASCADE, related_name="offers", db_index=True)
+    hangar = models.ForeignKey("the_hangar_hub.Hangar", models.CASCADE, related_name="offers", db_index=True)
 
     status_code = models.CharField(max_length=1, default="A")
     status_change_date = models.DateTimeField(auto_now_add=True)

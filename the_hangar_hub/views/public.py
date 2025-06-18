@@ -8,13 +8,28 @@ from base.services.message_service import post_error
 from the_hangar_hub.decorators import require_airport
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.invitation import Invitation
-from the_hangar_hub.services import airport_service
+from the_hangar_hub.services import airport_service, tenant_service
 log = Log()
 env = EnvHelper()
 
 def home(request):
     Breadcrumb.clear()
-    return render(request, "the_hangar_hub/public/home.html")
+
+    if request.user.is_authenticated:
+        # Look for incomplete applications
+        log.debug("LOOKING...")
+        incomplete_application = tenant_service.get_incomplete_applications()
+        incomplete_application = incomplete_application[0] if incomplete_application else None
+    else:
+        incomplete_application = None
+
+
+    return render(
+        request, "the_hangar_hub/public/home.html",
+        {
+            "incomplete_application": incomplete_application,
+        }
+    )
 
 
 def invitation_landing(request, invitation_code):

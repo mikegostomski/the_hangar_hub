@@ -15,7 +15,7 @@
 <br />
 <br />
 
-<form method="post" action="{%url 'apply:submit' application.id%}" id="application-form">
+<form method="post" action="{%url 'apply:submit' application.id%}" id="application-form" onsubmit="setAjaxLoadDiv();">
     {%csrf_token%}
     <div class="content-800">
         <h2>Personal Data</h2>
@@ -100,6 +100,9 @@
 
     <button type="button" class="btn btn-secondary" onclick="save_changes();">
         {%icon bi-floppy%} Save Changes
+    </button>
+    <button type="submit" class="btn btn-success">
+        {%icon bi-send%} Submit Application
     </button>
 </form>
 

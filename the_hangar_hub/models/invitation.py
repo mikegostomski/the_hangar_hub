@@ -14,7 +14,7 @@ class Invitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    airport = models.ForeignKey(Airport, models.CASCADE, related_name="invites", blank=False, null=False, db_index=True)
+    airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="invites", blank=False, null=False, db_index=True)
     email = models.CharField(max_length=128, blank=False, null=False, db_index=True)
     verification_code = models.CharField(max_length=30, blank=False, null=False)
     role_code = models.CharField(max_length=8, blank=False, null=False)

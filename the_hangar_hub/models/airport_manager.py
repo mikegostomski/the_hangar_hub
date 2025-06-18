@@ -13,7 +13,7 @@ class AirportManager(models.Model):
     status_code = models.CharField(max_length=1, blank=False, null=False, default="A")
     status_change_date = models.DateTimeField(auto_now_add=True)
 
-    airport = models.ForeignKey(Airport, models.CASCADE, related_name="management", blank=False, null=False, db_index=True)
+    airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="management", blank=False, null=False, db_index=True)
     user = models.ForeignKey(User, models.CASCADE, related_name="manages", blank=False, null=False, db_index=True)
 
     @property

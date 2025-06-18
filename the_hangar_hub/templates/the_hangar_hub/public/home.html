@@ -15,7 +15,7 @@
     <div class="row">
         <div class="col-sm-4 mb-3 mb-sm-0">
             <div class="card">
-                <img src="{% static 'images/hangar_space.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
+                <img src="{% static 'images/application.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
                 <div class="card-body">
                     <h5 class="card-title">Hangar Applications</h5>
                     <p class="card-text">
@@ -24,7 +24,11 @@
                             <li>Review and modify previous submissions</li>
                         </ul>
                     </p>
-                    <a href="{%url 'apply:form'%}" class="btn btn-primary">Apply Now</a>
+                    {%if incomplete_application%}
+                        <a href="{%url 'apply:resume' incomplete_application.id%}" class="btn btn-primary">Resume Application</a>
+                    {%else%}
+                        <a href="{%url 'apply:form'%}" class="btn btn-primary">Apply Now</a>
+                    {%endif%}
                 </div>
             </div>
         </div>
@@ -46,6 +50,7 @@
         </div>
         <div class="col-sm-4">
             <div class="card">
+                <img src="{% static 'images/hangar_space.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
                 <div class="card-body">
                     <h5 class="card-title">Management</h5>
                     <p class="card-text">
