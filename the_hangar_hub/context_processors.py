@@ -19,8 +19,8 @@ def airport(request):
     rentals = tenant_service.get_tenant_rentals()
 
     model = {
-        "is_manager": bool(managed_airports),
-        "is_tenant": bool(rentals),
+        "is_a_manager": bool(managed_airports),
+        "is_a_tenant": bool(rentals),
         "managed_airport_identifiers": managed_airports,
         "my_rentals": rentals,
     }

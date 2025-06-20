@@ -1,0 +1,107 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Applications: {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+    <h1>Applications for {{request.airport.identifier}}</h1>
+    <br />
+    <br />
+
+    <h2>Awaiting Your Review</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Applicant</th>
+            <th scope="col">Application Date</th>
+            <th scope="col">Hangar Type</th>
+            <th scope="col">Aircraft</th>
+            <th scope="col">Email</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Actions</th>
+        </tr>
+    {%for application in unreviewed_applications%}
+        <tr>
+            <td>{{application.user.first_name}} {{application.user.last_name}}</td>
+            <td>{{application.status_change_date}}</td>
+            <td>{{application.hangar_type|default:''}}</td>
+            <td>{{application.aircraft_make|default:''}} {{application.aircraft_model|default:''}}</td>
+            <td>{{application.preferred_email|default:''}}</td>
+            <td>{{application.preferred_phone.formatted_number|default:''}}</td>
+            <td>
+                <a href="{%url 'apply:review' application.id%}">{%icon bi-search title="View Application"%}</a>
+            </td>
+        </tr>
+    {%empty%}
+        <tr>
+            <td colspan="7" class="text-center">
+                <em class="text-success">There are no applications to review.</em>
+            </td>
+        </tr>
+    {%endfor%}
+    </table>
+    <br />
+    <br />
+
+
+    {%if reviewed_applications%}
+    <h2>Active Applications</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Applicant</th>
+            <th scope="col">Application Date</th>
+            <th scope="col">Hangar Type</th>
+            <th scope="col">Aircraft</th>
+            <th scope="col">Email</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Actions</th>
+        </tr>
+    {%for application in reviewed_applications%}
+        <tr>
+            <td>{{application.user.first_name}} {{application.user.last_name}}</td>
+            <td>{{application.status_change_date}}</td>
+            <td>{{application.hangar_type|default:''}}</td>
+            <td>{{application.aircraft_make|default:''}} {{application.aircraft_model|default:''}}</td>
+            <td>{{application.preferred_email|default:''}}</td>
+            <td>{{application.preferred_phone.formatted_number|default:''}}</td>
+            <td>
+                <a href="{%url 'apply:review' application.id%}">{%icon bi-search title="View Application"%}</a>
+            </td>
+        </tr>
+    {%endfor%}
+    </table>
+    <br />
+    <br />
+    {%endif%}
+
+    {%if incomplete_applications%}
+    <h2>Incomplete Applications</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Applicant</th>
+            <th scope="col">Application Started</th>
+            <th scope="col">Hangar Type</th>
+            <th scope="col">Aircraft</th>
+            <th scope="col">Email</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Actions</th>
+        </tr>
+    {%for application in incomplete_applications%}
+        <tr>
+            <td>{{application.user.first_name}} {{application.user.last_name}}</td>
+            <td>{{application.status_change_date}}</td>
+            <td>{{application.hangar_type|default:''}}</td>
+            <td>{{application.aircraft_make|default:''}} {{application.aircraft_model|default:''}}</td>
+            <td>{{application.preferred_email|default:''}}</td>
+            <td>{{application.preferred_phone.formatted_number|default:''}}</td>
+            <td>
+                <a href="{%url 'apply:review' application.id%}">{%icon bi-search title="View Application"%}</a>
+            </td>
+        </tr>
+    {%endfor%}
+    </table>
+    <br />
+    <br />
+    {%endif%}
+
+
+{%endblock%}

@@ -521,3 +521,32 @@ def add_tenant(request, airport_identifier, hangar_id):
         Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
     return redirect("manage:hangar",airport_identifier, hangar.code)
+
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def application_dashboard(request, airport_identifier):
+    log.trace([airport_identifier])
+    airport = request.airport
+
+    unreviewed = []
+    reviewed = []
+    incomplete = []
+    for application in airport.applications.filter(status_code__in=["S", "R", "I"]):
+        if application.status_code == "S":
+            unreviewed.append(application)
+        elif application.status_code == "R":
+            reviewed.append(application)
+        elif application.status_code == "I":
+            incomplete.append(application)
+
+    Breadcrumb.add("Application Dashboard", ["manage:application_dashboard", airport.identifier], reset=True)
+    return render(
+        request, "the_hangar_hub/airport/management/applications/dashboard.html",
+        {
+            "unreviewed_applications": unreviewed,
+            "reviewed_applications": reviewed,
+            "incomplete_applications": incomplete,
+        }
+    )

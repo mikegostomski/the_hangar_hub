@@ -10,6 +10,7 @@ from the_hangar_hub.services import airport_service, tenant_service
 from the_hangar_hub.models.airport import Airport
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
+from the_hangar_hub.models.application import HangarApplication
 
 log = Log()
 env = EnvHelper()
@@ -29,30 +30,23 @@ def require_airport(after_selection_url=None):
             # Clear any previous post-airport-selection URL
             env.set_session_variable("thh-after-ap-selection-url", None)
 
-            # If airport already exists in the request, it was already processed in the middleware
+            # Middleware would have already processed any obvious airport
             if hasattr(request, "airport") and type(request.airport) is Airport:
                 return view_func(request, *args, **kwargs)
 
-            get_parameter = request.GET.get("airport_identifier")
-            post_parameter = request.POST.get("airport_identifier")
-            airport_kwarg = kwargs.get("airport_identifier")
-            saved_airport = airport_service.get_airport_selection()
+            # Since airport was not found, check for an application (which contains an airport)
+            application_kwarg = kwargs.get("application_id")
+            if application_kwarg:
+                ha = HangarApplication.get(application_kwarg)
+                if ha:
+                    request.airport = ha.airport
+                    request.airport.activate_timezone()
+                    airport_service.save_airport_selection(ha.airport.identifier)
+                    return view_func(request, *args, **kwargs)
 
-            selected_airport = get_parameter or post_parameter or airport_kwarg or saved_airport
-            if selected_airport:
-                request.airport = Airport.get(selected_airport)
-
-                # If invalid airport identifier was included in the URL
-                if selected_airport in request.path and not request.airport:
-                    invalid_path_id = selected_airport
-                    selected_airport = None
-                    airport_service.save_airport_selection(selected_airport)
-
-            # If found, save it and render the view
-            if hasattr(request, "airport") and request.airport:
-                request.airport.activate_timezone()
-                log.debug(f"Returning view func: {view_func}")
-                return view_func(request, *args, **kwargs)
+            # Since airport was not found, make sure there is no airport_identifier in the URL
+            # If there is, it must be an invalid airport
+            invalid_path_id = kwargs.get("airport_identifier")
 
             # If identifier was not found or was invalid
             # Look for records of this user at an airport

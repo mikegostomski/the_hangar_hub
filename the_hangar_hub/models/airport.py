@@ -50,6 +50,9 @@ class Airport(models.Model):
         except Hangar.DoesNotExist:
             return None
 
+    def get_unreviewed_applications(self):
+        return self.applications.filter(status_code="S")
+
     def application_preferences(self):
         try:
             return self.application_prefs.get()

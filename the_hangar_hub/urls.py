@@ -45,6 +45,7 @@ manager_paths = [
     path('<slug:airport_identifier>/buildings/<building_id>/add', manage.add_hangar,    name='add_hangar'),
     path('<slug:airport_identifier>/hangars/<hangar_id>', manage.one_hangar,                name='hangar'),
     path('<slug:airport_identifier>/hangars/<hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
+    path('<slug:airport_identifier>/application/dashboard', manage.application_dashboard,     name='application_dashboard'),
 ]
 
 application_paths = [
@@ -53,6 +54,9 @@ application_paths = [
     path('<slug:airport_identifier>', application.form,                      name='airport_form'),
     path('save/<int:application_id>', application.save,                      name='save'),
     path('submit/<int:application_id>', application.submit,                  name='submit'),
+    path('review/<int:application_id>', application.review_application,      name='review'),
+    path('change/<int:application_id>', application.change_status,           name='change_status'),
+    path('delete/<int:application_id>', application.delete_application,           name='delete'),
     path('preferences/<slug:airport_identifier>', application.preferences,        name='preferences'),
     path('preferences/<slug:airport_identifier>/save', application.save_preferences,        name='save_preferences'),
 ]

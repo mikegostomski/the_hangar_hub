@@ -105,6 +105,72 @@ def submit(request, application_id):
 
 @require_authentication()
 @require_airport()
+def review_application(request, application_id):
+    application = _get_application_for_review(request, application_id)
+    if not application:
+        return redirect("hub:home")
+
+    is_manager = airport_service.is_airport_manager(airport=application.airport)
+    is_applicant = application.user == Auth.current_user()
+
+    Breadcrumb.add(f"Application #{application.id}", ["apply:review", application.id])
+    return render(
+        request, "the_hangar_hub/airport/application/review/application_review.html",
+        {
+            "application": application,
+            "is_manager": is_manager,
+            "is_applicant": is_applicant,
+            "airport_preferences": application.airport.application_preferences(),
+        }
+    )
+
+
+
+@require_authentication()
+@require_airport()
+def change_status(request, application_id):
+    application = _get_application_for_review(request, application_id)
+    if not application:
+        return HttpResponseForbidden()
+
+    new_status = request.POST.get("new_status")
+    if not new_status:
+        message_service.post_error("Invalid status was requested")
+        return HttpResponseForbidden()
+    elif new_status not in application.status_options():
+        message_service.post_error("Invalid status was requested.")
+        return HttpResponseForbidden()
+
+    application.change_status(new_status)
+    application.save()
+    return HttpResponse(application.status)
+
+
+@require_authentication()
+@require_airport()
+def delete_application(request, application_id):
+    application = _get_application_for_review(request, application_id)
+    if not application:
+        return redirect("hub:home")
+
+    is_manager = airport_service.is_airport_manager(airport=application.airport)
+    is_applicant = application.user == Auth.current_user()
+
+    Auth.audit(
+        "D", "APPLICATION",
+        reference_code="HangerApplication", reference_id=application.id,
+        comments=f"Deleted Application: {application.user} at {application.airport.identifier}"
+    )
+    application.delete()
+
+    if is_manager:
+        return redirect("manage:application_dashboard", request.airport.identifier)
+    else:
+        return redirect("hub:home")
+
+
+@require_authentication()
+@require_airport()
 @require_airport_manager()
 def preferences(request, airport_identifier):
     airport = request.airport
@@ -145,18 +211,33 @@ def save_preferences(request, airport_identifier):
 
 
 
-def _get_user_application(request, application_id):
+def _get_application(request, application_id):
     airport = request.airport
-    applicant = Auth.current_user_profile()
     application = HangarApplication.get(application_id)
     if not application:
         message_service.post_error("Application could not be found.")
     elif application.airport != airport:
         message_service.post_error("Application was not found.")
-    elif application.user != applicant.user:
-        message_service.post_error("Application was not found")
     else:
         return application
+    return None
+
+def _get_user_application(request, application_id):
+    applicant = Auth.current_user_profile()
+    application = _get_application(request, application_id)
+    if application and application.user == applicant.user:
+        return application
+    message_service.post_error("The specified application does not belong to you.")
+    return None
+
+def _get_application_for_review(request, application_id):
+    user = Auth.current_user()
+    application = _get_application(request, application_id)
+    if application and application.user == user:
+        return application
+    elif application and airport_service.is_airport_manager(user, application.airport):
+        return application
+    message_service.post_error("Application was not found")
     return None
 
 def _save_application_fields(request, application):

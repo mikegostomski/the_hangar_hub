@@ -3,6 +3,7 @@ from base.classes.util.log import Log
 from base.models import Phone, Address
 from django.contrib.auth.models import User
 from datetime import datetime, timezone
+from base.classes.auth.session import Auth
 
 log = Log()
 
@@ -13,6 +14,7 @@ class HangarApplication(models.Model):
 
     status_code = models.CharField(max_length=1, default="N")
     status_change_date = models.DateTimeField(auto_now_add=True)
+    submission_date = models.DateTimeField(blank=True, null=True)
 
     airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="applications", db_index=True)
     user = models.ForeignKey(User, models.CASCADE, related_name="applications", db_index=True)
@@ -39,8 +41,15 @@ class HangarApplication(models.Model):
     fee_notes = models.TextField(blank=True, null=True)
 
     def change_status(self, new_status):
+        Auth.audit(
+            "U", "STATUS_CHANGE",
+            reference_code="HangarApplication", reference_id=self.id,
+            previous_value=self.status_code, new_value=new_status
+        )
         self.status_code = new_status
         self.status_change_date = datetime.now(timezone.utc)
+        if new_status == "S":
+            self.submission_date = datetime.now(timezone.utc)
 
     @property
     def preferred_phone_id(self):
@@ -100,6 +109,7 @@ class HangarApplication(models.Model):
     @property
     def aircraft_type(self):
         return self.aircraft_type_options().get(self.aircraft_type_code) or self.aircraft_type_code
+
 
     @classmethod
     def get(cls, ii):
