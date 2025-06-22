@@ -116,6 +116,7 @@ class HangarApplication(models.Model):
         try:
             return cls.objects.get(pk=ii)
         except cls.DoesNotExist:
+            log.debug(f"DID NOT FIND APPLICATION #{ii} ({type(ii)})")
             return None
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")

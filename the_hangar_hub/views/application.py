@@ -8,7 +8,7 @@ from base.classes.auth.session import Auth
 from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
-from base.services import message_service, utility_service, email_service
+from base.services import message_service, utility_service, email_service, contact_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service, tenant_service
 from base.fixtures.timezones import timezones
@@ -17,6 +17,7 @@ from base.classes.breadcrumb import Breadcrumb
 from the_hangar_hub.decorators import require_airport, require_airport_manager
 from the_hangar_hub.models.application import HangarApplication
 import re
+from base.models.contact.phone import Phone
 
 log = Log()
 
@@ -49,6 +50,7 @@ def form(request, airport_identifier=None, application_id=None):
             "application": application,
             "applicant": applicant,
             "airport_preferences": airport_preferences,
+            'phone_options': Phone.phone_types(),
         }
     )
 
@@ -253,6 +255,13 @@ def _save_application_fields(request, application):
             "registration_number", "plane_notes"
         ]:
             setattr(application, attr, request.POST.get(attr) or None)
+
+        # If no phones in profile, user had a set of phone inputs instead of a select menu
+        if request.POST.get("phone_number"):
+            preferred_phone = contact_service.add_phone_from_request(request, application.user.contact)
+            if preferred_phone:
+                application.preferred_phone = preferred_phone
+
         application.save()
         return True
     except Exception as ee:

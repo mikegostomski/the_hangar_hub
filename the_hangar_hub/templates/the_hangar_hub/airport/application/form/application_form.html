@@ -32,10 +32,29 @@
         {%endif%}
 
         {%if "preferred_phone" not in airport_preferences.ignored_fields%}
-        <div class="input-group mb-3">
-            <label class="input-group-text" for="preferred_phone">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
-            {%select_menu options=applicant.contact.phone_number_options value=application.preferred_phone_id name="preferred_phone" id="preferred_phone" class="form-select" nullable=False%}
-        </div>
+            {%if applicant.contact.phone_number_options%}
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="preferred_phone">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+                    {%select_menu options=applicant.contact.phone_number_options value=application.preferred_phone_id name="preferred_phone" id="preferred_phone" class="form-select" nullable=False%}
+                </div>
+            {%else%}
+                <fieldset class="input-group mb-3">
+                    <legend class="input-group-text">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</legend>
+
+                    <label for="phone_type" class="visually-hidden">Phone Type</label>
+                    {%select_menu options=phone_options nullable=False name="phone_type" id="phone_type" class="form-select" style="width:40px;"%}
+
+                    <label for="phone_prefix" class="visually-hidden">Country Code</label>
+                    <input type="text" name="phone_prefix" id="phone_prefix" placeholder="1-" size="1" class="form-control" />
+
+                    <label for="phone_number" class="visually-hidden">10-Digit Phone Number</label>
+                    <input type="tel" name="phone_number" id="phone_number" placeholder="10-digit phone" class="form-control" style="width:120px;" />
+
+                    <label for="phone_ext" class="visually-hidden">Extension</label>
+                    <input type="text" name="phone_ext" id="phone_ext" placeholder="extension" size="5" class="form-control" />
+
+                </fieldset>
+            {%endif%}
         {%endif%}
 
         {%if "mailing_address" not in airport_preferences.ignored_fields%}
@@ -148,6 +167,11 @@
         color: red;
         font-size: 1.2em;
         margin-left: 3px;
+    }
+
+    fieldset .form-control, fieldset .form-select {
+
+        height: 100%;
     }
 </style>
 

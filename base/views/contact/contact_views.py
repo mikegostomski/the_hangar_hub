@@ -2,7 +2,7 @@ from django.shortcuts import redirect, render
 from django.http import HttpResponseForbidden, HttpResponseRedirect, HttpResponse
 
 from base.classes.breadcrumb import Breadcrumb
-from ...services import auth_service, error_service, message_service, utility_service
+from ...services import auth_service, error_service, message_service, utility_service, contact_service
 from base.models import Contact, Address, Phone
 from base.decorators import require_authority, require_authentication
 from django.db.models import Q
@@ -181,23 +181,12 @@ def update_phone(request):
 
     # ADD A NEW PHONE
     if 'phone_id' not in request.POST:
-        log.info(f"Adding phone for {contact}")
-
-        pt = request.POST.get('phone_type')
-        pp = request.POST.get('phone_prefix')
-        pn = request.POST.get('phone_number')
-        pe = request.POST.get('phone_ext')
-
-        # Check for entry of area code into prefix
-        if len(pp) == 3 and len(pn) == 7:
-            pn = f"{pp}{pn}"
-            pp = ''
-
-        p = Phone()
-        p.contact = contact
-        if p.set_phone(pt, pp, pn, pe):
-            p.save()
-            return render(request, 'base/contact/_phone.html', {'phone': p, 'show_type': True, 'newline': True})
+        new_phone = contact_service.add_phone_from_request(request, contact)
+        if new_phone:
+            return render(
+                request, 'base/contact/_phone.html',
+                {'phone': new_phone, 'show_type': True, 'newline': True}
+            )
         else:
             return HttpResponseForbidden()
 
