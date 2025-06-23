@@ -58,10 +58,41 @@
         {%endif%}
 
         {%if "mailing_address" not in airport_preferences.ignored_fields%}
-        <div class="input-group mb-3">
-            <label class="input-group-text" for="mailing_address">Mailing Address {%if "mailing_address" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
-            {%select_menu options=applicant.contact.address_options value=application.mailing_address_id name="mailing_address" id="mailing_address" class="form-select" nullable=False%}
-        </div>
+            {%if applicant.contact.address_options%}
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="mailing_address">Mailing Address {%if "mailing_address" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+                    {%select_menu options=applicant.contact.address_options value=application.mailing_address_id name="mailing_address" id="mailing_address" class="form-select" nullable=False%}
+                </div>
+            {%else%}
+                <div class="input-group mb-3">
+                    <label for="address_type" class="input-group-text">Address Type</label>
+                    {%select_menu options=address_options nullable=False name="address_type" id="address_type" class="form-select"%}
+                </div>
+                <div class="input-group mb-3">
+                    <label for="street_1" class="input-group-text">Street Line 1</label>
+                    <input type="text" name="street_1" id="street_1" placeholder="Street Line 1" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="street_2" class="input-group-text">Street Line 2</label>
+                    <input type="text" name="street_2" id="street_2" placeholder="Street Line 2" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="street_3" class="input-group-text">Street Line 3</label>
+                    <input type="text" name="street_3" id="street_3" placeholder="Street Line 3" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="city" class="input-group-text">City</label>
+                    <input type="text" name="city" id="city" placeholder="City" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="state" class="input-group-text">State</label>
+                    <input type="text" name="state" id="state" placeholder="State" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="zip_code" class="input-group-text">Zip Code</label>
+                    <input type="text" name="zip_code" id="zip_code" placeholder="Zip Code" class="form-control" />
+                </div>
+            {%endif%}
         {%endif%}
 
         If you need to update your personal information, you may do so in your profile.

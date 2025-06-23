@@ -2,6 +2,7 @@ from base.classes.util.log import Log
 from base.models import Contact
 from base.classes.auth.session import Auth
 from base.models.contact.phone import Phone
+from base.models.contact.address import Address
 
 log = Log()
 
@@ -70,3 +71,36 @@ def add_phone_from_request(request, contact=None):
             return p
     else:
         return None
+
+
+def add_address_from_request(request, contact=None):
+    if contact is None:
+        user = Auth.current_user()
+        contact = user.contact
+    log.info(f"Adding address for {contact}")
+
+    a = Address()
+    a.contact = contact
+    if a.set_all(
+        request.POST.get('address_type'),
+        request.POST.get('street_1'),
+        request.POST.get('street_2'),
+        request.POST.get('street_3'),
+        request.POST.get('city'),
+        request.POST.get('state'),
+        request.POST.get('zip_code'),
+        request.POST.get('country'),
+    ):
+        # Check for duplicate
+        try:
+            existing = Address.objects.get(
+                contact=contact,
+                street_1=a.street_1, street_2=a.street_2, street_3=a.street_3,
+                city=a.city, state=a.state, zip_code=a.zip_code, country=a.country
+            )
+            del a
+            return existing
+        except Address.DoesNotExist:
+            a.save()
+            return a
+    return None

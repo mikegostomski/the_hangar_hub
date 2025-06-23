@@ -6,6 +6,7 @@ import the_hangar_hub.models
 from base.classes.util.log import Log
 from base.classes.auth.session import Auth
 from base.services.message_service import post_error
+from the_hangar_hub.asgi import application
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from base.services import message_service, utility_service, email_service, contact_service
@@ -18,6 +19,7 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 from the_hangar_hub.models.application import HangarApplication
 import re
 from base.models.contact.phone import Phone
+from base.models.contact.address import Address
 
 log = Log()
 
@@ -40,6 +42,9 @@ def form(request, airport_identifier=None, application_id=None):
         # Look for existing Incomplete application for this user/airport
         application = HangarApplication.start(airport, applicant.user)
 
+    elif application.status_code in ["S", "R", "A", "D"]:
+        return redirect("apply:review", application.id)
+
     airport_preferences = application.airport.application_preferences()
 
     Breadcrumb.add("Hangar Application", ["apply:resume", application.id], reset=True)
@@ -51,6 +56,7 @@ def form(request, airport_identifier=None, application_id=None):
             "applicant": applicant,
             "airport_preferences": airport_preferences,
             'phone_options': Phone.phone_types(),
+            'address_options': Address.address_types(),
         }
     )
 
@@ -102,7 +108,7 @@ def submit(request, application_id):
 
         return redirect("apply:resume", application.id)
     else:
-        return HttpResponse("Go to application review page")
+        return redirect("apply:review", application.id)
 
 
 @require_authentication()
@@ -115,7 +121,7 @@ def review_application(request, application_id):
     is_manager = airport_service.is_airport_manager(airport=application.airport)
     is_applicant = application.user == Auth.current_user()
 
-    Breadcrumb.add(f"Application #{application.id}", ["apply:review", application.id])
+    Breadcrumb.add(f"Application #{application.id}", ["apply:review", application.id], reset=True)
     return render(
         request, "the_hangar_hub/airport/application/review/application_review.html",
         {
@@ -261,6 +267,11 @@ def _save_application_fields(request, application):
             preferred_phone = contact_service.add_phone_from_request(request, application.user.contact)
             if preferred_phone:
                 application.preferred_phone = preferred_phone
+        # If no address in profile, user had a set of address inputs instead of a select menu
+        if request.POST.get("address_type"):
+            mailing_address = contact_service.add_address_from_request(request, application.user.contact)
+            if mailing_address:
+                application.mailing_address = mailing_address
 
         application.save()
         return True

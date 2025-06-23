@@ -231,20 +231,8 @@ def update_address(request):
 
     # ADD A NEW ADDRESS
     if 'address_id' not in request.POST:
-        log.info(f"Adding address for {contact}")
-        a = Address()
-        a.contact = contact
-        if a.set_all(
-            request.POST.get('address_type'),
-            request.POST.get('street_1'),
-            request.POST.get('street_2'),
-            request.POST.get('street_3'),
-            request.POST.get('city'),
-            request.POST.get('state'),
-            request.POST.get('zip_code'),
-            request.POST.get('country'),
-        ):
-            a.save()
+        new_address = contact_service.add_address_from_request(request, contact)
+        if new_address:
             return render(request, 'base/contact/_address.html', {'address': a})
         else:
             return HttpResponseForbidden()
