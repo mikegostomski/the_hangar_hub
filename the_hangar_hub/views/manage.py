@@ -531,22 +531,25 @@ def application_dashboard(request, airport_identifier):
     airport = request.airport
 
     unreviewed = []
-    reviewed = []
+    waitlist = []
     incomplete = []
-    for application in airport.applications.filter(status_code__in=["S", "R", "I"]):
+    for application in airport.applications.filter(status_code__in=["S", "L", "I"]):
         if application.status_code == "S":
             unreviewed.append(application)
-        elif application.status_code == "R":
-            reviewed.append(application)
+        elif application.status_code == "L":
+            waitlist.append(application)
         elif application.status_code == "I":
             incomplete.append(application)
+
+    if waitlist:
+        waitlist.sort(key=lambda x: x.wl_sort_string)
 
     Breadcrumb.add("Application Dashboard", ["manage:application_dashboard", airport.identifier], reset=True)
     return render(
         request, "the_hangar_hub/airport/management/applications/dashboard.html",
         {
             "unreviewed_applications": unreviewed,
-            "reviewed_applications": reviewed,
+            "waitlist": waitlist,
             "incomplete_applications": incomplete,
         }
     )

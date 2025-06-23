@@ -22,7 +22,7 @@ The Hangar Hub: Hangar Application -
     {%endif%}
 </h1>
 
-<div class="content-800">
+<div class="content-800 content-block">
     <span class="xlg">{{request.airport.display_name}} ({{request.airport.identifier}})</span>
     <br />
     <br />
@@ -37,9 +37,8 @@ The Hangar Hub: Hangar Application -
         {%endif%}
     </div>
 </div>
-<br />
 
-    <div class="content-800">
+    <div class="content-800 content-block">
         <h2>Personal Data</h2>
         <div class="input-group mb-3">
             <label class="input-group-text" for="applicant_name">Applicant Name</label>
@@ -68,10 +67,8 @@ The Hangar Hub: Hangar Application -
         {%endif%}
 
     </div>
-    <br />
-    <br />
 
-    <div class="content-800">
+    <div class="content-800 content-block">
         <h2>Aircraft Data</h2>
         {%if "aircraft_type_code" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
@@ -116,10 +113,8 @@ The Hangar Hub: Hangar Application -
         {%endif%}
 
     </div>
-    <br />
-    <br />
 
-    <div class="content-800">
+    <div class="content-800 content-block">
         <h2>Other Information</h2>
 
         {%if "hangar_type_code" not in airport_preferences.ignored_fields%}
@@ -128,26 +123,72 @@ The Hangar Hub: Hangar Application -
             <input type="text" id="hangar_type_code" class="form-control" value="{{application.hangar_type}}" readonly />
         </div>
         {%endif%}
-        {%if "plane_notes" not in airport_preferences.ignored_fields%}
+        {%if "applicant_notes" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="plane_notes">Notes {%if "plane_notes" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
-            <textarea name="plane_notes" id="plane_notes" class="form-control" readonly>{{application.plane_notes|default:''}}</textarea>
+            <label class="input-group-text" for="applicant_notes">Applicant Notes {%if "applicant_notes" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <textarea name="applicant_notes" id="applicant_notes" class="form-control" readonly>{{application.applicant_notes|default:''}}</textarea>
         </div>
         {%endif%}
     </div>
-    <br />
-    <br />
 
 
-    <div class="content-800">
+    {%if is_manager%}
+    <form method="post" action="{%url 'apply:submit_review' application.id%}">
+        {%csrf_token%}
+        <div class="content-800 content-block">
+            <h2>Airport Management Review</h2>
+
+            <fieldset>
+                <legend class="visually-hidden">Decision</legend>
+                <label>
+                    <input type="radio" name="decision" value="S" {%if application.status_code == "S"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Decide Later
+                </label><br />
+                <label>
+                    <input type="radio" name="decision" value="L" {%if application.status_code == "L"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Add to Waitlist
+                </label><br />
+                <label>
+                    <input type="radio" name="decision" value="A" {%if application.status_code == "A"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Assign a Hangar
+                </label><br />
+                <label>
+                    <input type="radio" name="decision" value="R" {%if application.status_code == "R"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Reject this Application
+                </label><br />
+            </fieldset>
+            <br />
+
+            <div class="input-group mb-3 {%if application.status_code != 'L'%}hidden{%endif%}" id="amr-wl-group">
+                <label class="input-group-text" for="wl_group_code">Waitlist Priority</label>
+                {%with wl_priority=application.wl_group_code|default:"S"%}
+                {%select_menu options=application.wl_group_options value=wl_priority class="form-select" id="wl_group_code" name="wl_group_code" nullable=False%}
+                {%endwith%}
+            </div>
+            <div class="input-group mb-3" id="amr-public">
+                <label class="input-group-text" for="manager_notes_public">Response to Applicant</label>
+                <textarea name="manager_notes_public" id="manager_notes_public" class="form-control">{{application.manager_notes_public|default:''}}</textarea>
+            </div>
+            <div class="input-group mb-3" id="amr-private">
+                <label class="input-group-text" for="manager_notes_private">Internal Notes</label>
+                <textarea name="manager_notes_private" id="manager_notes_private" class="form-control" rows="6">{{application.manager_notes_private|default:''}}</textarea>
+            </div>
+
+            <button class="btn btn-success">
+                {%icon bi-floppy%} Save Review
+            </button>
+
+        </div>
+    </form>
+    {%endif%}
+
+
+    <div class="content-800 content-block">
         {%if is_applicant%}
             <button class="btn btn-danger" onclick="withdraw_application();">Withdraw Application</button>
-        {%elif is_manager%}
-            <button class="btn btn-success" onclick="mark_reviewed();">Mark Reviewed</button>
+
         {%endif%}
     </div>
-    <br />
-    <br />
 
 <script type="text/javascript">
 {%include 'the_hangar_hub/airport/application/review/application.js'%}

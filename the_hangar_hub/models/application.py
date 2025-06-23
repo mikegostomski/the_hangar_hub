@@ -4,6 +4,7 @@ from base.models import Phone, Address
 from django.contrib.auth.models import User
 from datetime import datetime, timezone
 from base.classes.auth.session import Auth
+from base.classes.util.date_helper import DateHelper
 
 log = Log()
 
@@ -32,7 +33,10 @@ class HangarApplication(models.Model):
     aircraft_wingspan = models.IntegerField(verbose_name="Wingspan", blank=True, null=True)
     aircraft_height = models.IntegerField(verbose_name="Height", blank=True, null=True)
     registration_number = models.CharField(verbose_name="Registration Number", max_length=10, blank=True, null=True)
-    plane_notes = models.TextField(verbose_name="Notes", blank=True, null=True)
+
+    applicant_notes = models.TextField(verbose_name="Applicant Notes", blank=True, null=True)
+    manager_notes_public = models.TextField(verbose_name="Manager Notes", blank=True, null=True)
+    manager_notes_private = models.TextField(verbose_name="Internal Notes", blank=True, null=True)
 
     # Application Fee (optional)
     fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
@@ -40,16 +44,38 @@ class HangarApplication(models.Model):
     fee_payment_method = models.CharField(max_length=30, blank=True, null=True)
     fee_notes = models.TextField(blank=True, null=True)
 
+    # Waitlist (when status_code == "L")
+    wl_group_code = models.CharField(max_length=1, verbose_name="Priority", blank=True, null=True)
+    wl_index = models.IntegerField(blank=True, null=True)
+
+    @property
+    def wl_sort_string(self):
+        sub_date = DateHelper(self.submission_date).timestamp()
+        return f"{self.wl_group_code}-{self.wl_index or 'z'}-{sub_date}"
+
     def change_status(self, new_status):
+        if self.status_code == new_status:
+            log.info(f"Status not changed (was already {self.status_code})")
+            return
+
         Auth.audit(
             "U", "STATUS_CHANGE",
             reference_code="HangarApplication", reference_id=self.id,
             previous_value=self.status_code, new_value=new_status
         )
-        self.status_code = new_status
-        self.status_change_date = datetime.now(timezone.utc)
+
+        # If no longer on the waitlist
+        if self.status_code == "L":
+            self.wl_group = None
+            self.wl_index = None
+
+        # If just submitted
         if new_status == "S":
             self.submission_date = datetime.now(timezone.utc)
+
+        # Set the new status
+        self.status_code = new_status
+        self.status_change_date = datetime.now(timezone.utc)
 
     @property
     def preferred_phone_id(self):
@@ -73,9 +99,9 @@ class HangarApplication(models.Model):
             "N": "New",
             "I": "Incomplete",
             "S": "Submitted",
-            "R": "Reviewed",
             "A": "Accepted",
-            "D": "Denied",
+            "R": "Rejected",
+            "L": "Waitlisted",
             "W": "Withdrawn",
         }
 
@@ -110,6 +136,18 @@ class HangarApplication(models.Model):
     def aircraft_type(self):
         return self.aircraft_type_options().get(self.aircraft_type_code) or self.aircraft_type_code
 
+    @staticmethod
+    def wl_group_options():
+        return {
+            "A": "Urgent",
+            "B": "High Priority",
+            "C": "Standard",
+            "D": "Low Priority",
+        }
+
+    @property
+    def wl_group(self):
+        return self.wl_group_options().get(self.wl_group_code) or self.wl_group_code
 
     @classmethod
     def get(cls, ii):

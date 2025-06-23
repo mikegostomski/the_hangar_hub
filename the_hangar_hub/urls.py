@@ -60,11 +60,13 @@ application_paths = [
 
 
     path('review/<int:application_id>', application.review_application,      name='review'),
+    path('review/<int:application_id>/submit', application.submit_review,     name='submit_review'),
     path('change/<int:application_id>', application.change_status,           name='change_status'),
     path('delete/<int:application_id>', application.delete_application,           name='delete'),
 
     path('preferences/<slug:airport_identifier>', application.preferences,        name='preferences'),
     path('preferences/<slug:airport_identifier>/save', application.save_preferences,        name='save_preferences'),
+
 ]
 
 tenant_paths = [

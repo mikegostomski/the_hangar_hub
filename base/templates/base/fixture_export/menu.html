@@ -1,0 +1,109 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Fixture Export Menu{%endblock%}
+{% block main_content %}
+    <h1>Fixture Export Menu</h1>
+    Select which models (tables) you would like exported to a JSON fixture<br />
+    <br />
+
+    <form action="{%url 'base:fixture_export'%}" method="post" onsubmit="notify_messages();">
+        {%csrf_token%}
+
+        <table class="table table-condensed table-striped table-hover">
+        {%for app_name, models in app_models.items%}
+        {%if models%}
+            <tr aria-hidden="true">
+                <td colspan="4" style="background-color:#0f2b4f;color:white;font-weight:bold;font-size:1.5em;">{{app_name}}</td>
+            </tr>
+            <tr class="{{app_name}}">
+                <th scope="col"><span class="visually-hidden">Application</span></th>
+                <th scope="col" style="text-align:center;">
+                    Export<br />
+                    <span class="fake_link" onclick="select($(this), '{{app_name|slugify}}');">All</span> &nbsp;
+                    <span class="fake_link" onclick="select($(this), '{{app_name|slugify}}');">None</span>
+                </th>
+                <th scope="col">Model Name</th>
+                <th scope="col" style="text-align:right;">Number of Records</th>
+            </tr>
+            {%for model in models%}
+                <tr class="{{app_name}}">
+                    <td>
+                        <span class="visually-hidden">{{app_name}}</span>
+                    </td>
+                    <td align="center">
+                        <label>
+                            <input type="checkbox" name="app_model" value="{{app_name}}|{{model.0}}" class="{{app_name|slugify}}" />
+                            <span class="visually-hidden">Export {{model.0}}</span>
+                        </label>
+                    </td>
+                    <td onclick="$(this).closest('tr').find('input[type=checkbox]').click();">
+                        {{model.0}}
+                    </td>
+                    <td align="right" onclick="$(this).closest('tr').find('input[type=checkbox]').click();">
+                        {%format_decimal model.1 comma=True decimal=False%}
+                    </td>
+                </tr>
+            {%empty%}
+                <tr aria-hidden="true">
+                    <td colspan="4">
+                        <em class="text-muted">No Models</em>
+                    </td>
+                </tr>
+            {%endfor%}
+        {%else%}
+            <tr aria-hidden="true">
+                <td colspan="4" style="background-color:#50719a;color:white;font-weight:bold;font-size:1.5em;">
+                    {{app_name}} &nbsp; <em style="font-size:.7em;">(has no models)</em>
+                </td>
+            </tr>
+        {%endif%}
+        {%endfor%}
+        </table>
+        <br />
+
+        <label for="since_date">Optional: Select records since this date:</label>
+        <input type="date" name="since_date" id="since_date" class="form-control" />
+        <em>
+            If a date is provided, only records with a timestamp greater than or equal to this date will be exported.<br />
+            For models with no <b>date_created</b> field, all rows will be exported.
+        </em>
+        <br />
+        <br />
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-success btn-block">Submit</button>
+        </div>
+
+    </form>
+
+<style>
+    .table-condensed td{
+        padding: 3px;
+    }
+    span.fake_link{
+        font-size: .7em;
+        color: blue;
+        text-decoration: underline;
+        font-weight: normal;
+        cursor: pointer;
+    }
+</style>
+
+<script type="text/javascript">
+    function select(el, sel_class){
+        let checked = el.html() == "All"
+        $("."+sel_class).prop("checked", checked);
+    }
+
+    function notify_messages(){
+        {%js_alert icon="fa-download" title="Download in Progress"%}
+            The data is being exported, and should appear as a downloaded file in your browser.<br />
+            <br />
+            The page will not reload, and you will remain on the export menu.
+        {%end_js_alert%}
+        clearStaleMessages();
+
+    }
+</script>
+{% endblock %}

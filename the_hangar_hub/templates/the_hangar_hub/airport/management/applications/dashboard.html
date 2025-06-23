@@ -43,11 +43,11 @@
     <br />
 
 
-    {%if reviewed_applications%}
-    <h2>Active Applications</h2>
+    <h2>Waitlist</h2>
     <table class="table">
         <tr>
             <th scope="col">Applicant</th>
+            <th scope="col">Priority</th>
             <th scope="col">Application Date</th>
             <th scope="col">Hangar Type</th>
             <th scope="col">Aircraft</th>
@@ -55,9 +55,10 @@
             <th scope="col">Phone</th>
             <th scope="col">Actions</th>
         </tr>
-    {%for application in reviewed_applications%}
+    {%for application in waitlist%}
         <tr>
             <td>{{application.user.first_name}} {{application.user.last_name}}</td>
+            <td>{{application.wl_group}}</td>
             <td>{{application.status_change_date}}</td>
             <td>{{application.hangar_type|default:''}}</td>
             <td>{{application.aircraft_make|default:''}} {{application.aircraft_model|default:''}}</td>
@@ -71,7 +72,6 @@
     </table>
     <br />
     <br />
-    {%endif%}
 
     {%if incomplete_applications%}
     <h2>Incomplete Applications</h2>

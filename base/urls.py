@@ -66,6 +66,8 @@ urlpatterns = [
 
     # # Data Export
     path('export', views.export_db, name='export_db'),
+    path('export/menu', views.fixture_export_menu, name='fixture_export_menu'),
+    path('export/action', views.fixture_export_action, name='fixture_export'),
 
     # Authentication and CAS login/logout endpoints
     path('stop_impersonating', views.stop_impersonating, name='stop_impersonating'),

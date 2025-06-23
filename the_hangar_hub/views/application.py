@@ -2,18 +2,14 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
 
-import the_hangar_hub.models
 from base.classes.util.log import Log
 from base.classes.auth.session import Auth
 from base.services.message_service import post_error
-from the_hangar_hub.asgi import application
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from base.services import message_service, utility_service, email_service, contact_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service, tenant_service
-from base.fixtures.timezones import timezones
-from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
 from the_hangar_hub.decorators import require_airport, require_airport_manager
 from the_hangar_hub.models.application import HangarApplication
@@ -152,6 +148,30 @@ def review_application(request, application_id):
     )
 
 
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def submit_review(request, application_id):
+    application = _get_application_for_review(request, application_id)
+    if not application:
+        return redirect("manage:application_dashboard")
+
+    # Update application status
+    application.change_status(request.POST.get("decision"))
+
+    # If notes were added
+    application.manager_notes_public = request.POST.get("manager_notes_public")
+    application.manager_notes_private = request.POST.get("manager_notes_private")
+
+    # If added to waitlist
+    if application.status_code == "L":
+        application.wl_group_code = request.POST.get("wl_group_code")
+
+    application.save()
+
+    return redirect("manage:application_dashboard", application.airport.identifier)
+
+
 
 @require_authentication()
 @require_airport()
@@ -281,7 +301,7 @@ def _save_application_fields(request, application):
             "hangar_type_code", "aircraft_type_code",
             "aircraft_make", "aircraft_model",
             "aircraft_wingspan", "aircraft_height",
-            "registration_number", "plane_notes"
+            "registration_number", "applicant_notes"
         ]:
             setattr(application, attr, request.POST.get(attr) or None)
 

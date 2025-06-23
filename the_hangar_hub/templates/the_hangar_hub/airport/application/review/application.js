@@ -4,6 +4,29 @@
 function mark_reviewed(){
     _change_status('R');
 }
+
+
+
+function amr_selection(el){
+    let public_note_container = $("#amr-public")
+    let private_note_container = $("#amr-private")
+    let wl_group_container = $("#amr-wl-group")
+    let selected_value = el.val();
+
+    if(selected_value == "L"){
+        wl_group_container.removeClass("hidden");
+    }
+    else{
+        wl_group_container.addClass("hidden");
+    }
+
+}
+
+
+
+
+
+
 {%endif%}
 
 function withdraw_application(){

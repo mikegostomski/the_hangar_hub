@@ -165,10 +165,10 @@
             {%select_menu options=application.hangar_type_options value=application.hangar_type_code name="hangar_type_code" id="hangar_type_code" class="form-select" nullable=False%}
         </div>
         {%endif%}
-        {%if "plane_notes" not in airport_preferences.ignored_fields%}
+        {%if "applicant_notes" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="plane_notes">Notes {%if "plane_notes" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
-            <textarea name="plane_notes" id="plane_notes" class="form-control">{{application.plane_notes|default:''}}</textarea>
+            <label class="input-group-text" for="applicant_notes">Notes {%if "applicant_notes" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <textarea name="applicant_notes" id="applicant_notes" class="form-control">{{application.applicant_notes|default:''}}</textarea>
         </div>
         {%endif%}
     </div>

@@ -4,91 +4,81 @@
     <a class="dropdown-item" href="/">Home</a>
 </li>
 
+
 <li class="dropdown-divider"></li>
 
 
-
-
-
 <li class="dropdown-header">
-
+    Tenant Services
 </li>
 <li>
     <a href="{%url 'apply:dashboard'%}" class="dropdown-item">Hangar Applications</a>
 </li>
-
-
-
-{% if user.is_authenticated %}
-
-    {%if 'administrator'|has_authority:True%}
-        <li class="dropdown-header">
-            Invitations
-        </li>
-        <li>
-            <a href="{%url 'administration:invitation_dashboard'%}" class="dropdown-item">Invitation Dashboard</a>
-        </li>
-    {%endif%}
-
-    {%if is_tenant%}
-        <li class="dropdown-header">
-            My Hangars
-        </li>
-        {%for rental in my_rentals%}
-        <li>
-            <a href="{%url 'tenant:hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
-        </li>
-        {%endfor%}
-    {%endif%}
-
-
-
-
+{% if user.is_authenticated and is_tenant%}
     <li class="dropdown-header">
-        Hangar Waitlist
+        My Hangars
     </li>
+    {%for rental in my_rentals%}
     <li>
-        <div class="dropdown-item">Application</div>
+        <a href="{%url 'tenant:hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
     </li>
-    <li>
-        <span class="dropdown-item">Status</span>
-    </li>
+    {%endfor%}
+{%endif%}
+
+
+{%if 'administrator'|has_authority:True%}
 
     <li class="dropdown-divider"></li>
 
-
-
     <li class="dropdown-header">
-        Maintenance
+        Administration
     </li>
+
     <li>
-        <div class="dropdown-item">Report an Issue</div>
+        <a href="{%url 'administration:invitation_dashboard'%}" class="dropdown-item">Invitation Dashboard</a>
     </li>
-    <li>
-        <span class="dropdown-item">Something Else?</span>
-    </li>
+
+{%endif%}
+
+{% if user.is_authenticated%}
 
     <li class="dropdown-divider"></li>
 
+    <li class="dropdown-header">
+        Management Services
+    </li>
 
 
-    {%if managed_airport_identifiers%}
-        {%for identifier in managed_airport_identifiers%}
+
+    {%if managed_airports%}
+        {%for airport in managed_airports%}
             <li class="dropdown-header">
-                Administration: {{identifier}}
+                Administration: {{airport.identifier}}
+            </li>
+
+            <li>
+                <a href="{%url 'manage:application_dashboard' airport.identifier%}" class="dropdown-item">
+                    Application Dashboard
+                    {%with unreviewed_applications=airport.get_unreviewed_applications%}
+                        {%if unreviewed_applications%}
+                            <span class="badge text-bg-danger">{{unreviewed_applications|length}}</span>
+
+                        {%endif%}
+                    {%endwith%}
+                </a>
+            </li>
+
+
+            <li>
+                <a href="{%url 'manage:airport' airport.identifier%}" class="dropdown-item">Manage Airport</a>
             </li>
             <li>
-                <a href="{%url 'manage:airport' identifier%}" class="dropdown-item">Manage Airport</a>
+                <a href="{%url 'manage:buildings' airport.identifier%}" class="dropdown-item">Manage Hangars</a>
             </li>
             <li>
-                <a href="{%url 'manage:buildings' identifier%}" class="dropdown-item">Manage Hangars</a>
+                <a href="{%url 'apply:preferences' airport.identifier%}" class="dropdown-item">Application Preferences</a>
             </li>
-            <li>
-                <a href="{%url 'apply:preferences' identifier%}" class="dropdown-item">Application Preferences</a>
-            </li>
-            <li>
-                <a href="{%url 'manage:application_dashboard' identifier%}" class="dropdown-item">Application Dashboard</a>
-            </li>
+
             <li>
                 <span class="dropdown-item">Waitlist</span>
             </li>

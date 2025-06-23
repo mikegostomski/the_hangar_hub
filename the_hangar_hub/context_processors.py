@@ -15,14 +15,14 @@ def airport(request):
     if request.path.startswith("/accounts/"):
         return {}
 
-    managed_airports = airport_service.managed_airport_identifiers()
+    managed_airports = airport_service.managed_airports()
     rentals = tenant_service.get_tenant_rentals()
     open_applications = application_service.get_active_applications()
 
     model = {
         "is_a_manager": bool(managed_airports),
         "is_a_tenant": bool(rentals),
-        "managed_airport_identifiers": managed_airports,
+        "managed_airports": managed_airports,
         "my_rentals": rentals,
         "open_applications": len(open_applications),
     }

@@ -20,10 +20,12 @@ def get_applications(user=None):
         if result is not None:
             return result
     user = Auth().lookup_user(user) if user else Auth.current_user()
-    apps = HangarApplication.objects.filter(user=user).order_by("-last_updated")
-    if use_recall:
-        env.store(apps)
-    return apps
+    if user and user.id:
+        apps = HangarApplication.objects.filter(user=user).order_by("-last_updated")
+        if use_recall:
+            env.store(apps)
+        return apps
+    return []
 
 
 def get_active_applications(user=None):
