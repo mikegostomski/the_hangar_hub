@@ -45,7 +45,14 @@ def change_airport_link(context, *args, **kwargs):
     # Where to go to lookup airport
     url = "hub:search"
 
-    # Link will just be an edit icon (with .visually-hidden text)
-    icon = html_generating.IconNode(['icon', 'bi-pencil-square', 'text-info', 'title="Change Airport"']).render(context)
+    # An additional action may be needed (delete incomplete application)
+    oc = kwargs.get("onclick")
+    oc = f""" onclick="{oc}" """ if oc else ""
 
-    return mark_safe(f"""<a href="{reverse(url)}">{icon}</a>""")
+    # Render as an icon by default, or a button if specified in kwargs
+    if kwargs.get("button"):
+        return mark_safe(f"""<a class="btn btn-info" href="{reverse(url)}"{oc}>Change Airport</a>""")
+    else:
+        # Link will just be an edit icon (with .visually-hidden text)
+        icon = html_generating.IconNode(['icon', 'bi-pencil-square', 'text-info', 'title="Change Airport"']).render(context)
+        return mark_safe(f"""<a href="{reverse(url)}"{oc}>{icon}</a>""")

@@ -17,11 +17,27 @@ from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
 from the_hangar_hub.decorators import require_airport, require_airport_manager
 from the_hangar_hub.models.application import HangarApplication
-import re
+from the_hangar_hub.services import application_service
 from base.models.contact.phone import Phone
 from base.models.contact.address import Address
 
 log = Log()
+
+
+@require_authentication()
+def dashboard(request):
+    applications = HangarApplication.objects.filter(user=Auth.current_user())
+
+    Breadcrumb.add(f"Application Dashboard", "apply:dashboard", reset=True)
+    return render(
+        request, "the_hangar_hub/airport/application/dashboard/application_dashboard.html",
+        {
+            "applications": applications,
+        }
+    )
+
+
+
 
 @require_authentication()
 @require_airport()
@@ -31,6 +47,7 @@ def form(request, airport_identifier=None, application_id=None):
     application = None
 
     if application_id:
+        log.debug(f"Retrieve application #{application_id}")
         application = _get_user_application(request, application_id)
         if not application:
             message_service.post_error("The specified application could not be found.")
@@ -47,7 +64,8 @@ def form(request, airport_identifier=None, application_id=None):
 
     airport_preferences = application.airport.application_preferences()
 
-    Breadcrumb.add("Hangar Application", ["apply:resume", application.id], reset=True)
+    Breadcrumb.add(f"Application Dashboard", "apply:dashboard", reset=True)
+    Breadcrumb.add("Hangar Application", ["apply:resume", application.id])
     return render(
         request, "the_hangar_hub/airport/application/form/application_form.html",
         {
@@ -108,7 +126,7 @@ def submit(request, application_id):
 
         return redirect("apply:resume", application.id)
     else:
-        return redirect("apply:review", application.id)
+        return redirect("apply:dashboard")
 
 
 @require_authentication()
@@ -116,12 +134,13 @@ def submit(request, application_id):
 def review_application(request, application_id):
     application = _get_application_for_review(request, application_id)
     if not application:
-        return redirect("hub:home")
+        return redirect("apply:dashboard")
 
     is_manager = airport_service.is_airport_manager(airport=application.airport)
     is_applicant = application.user == Auth.current_user()
 
-    Breadcrumb.add(f"Application #{application.id}", ["apply:review", application.id], reset=True)
+    Breadcrumb.add(f"Application Dashboard", "apply:dashboard", reset=True)
+    Breadcrumb.add(f"Application #{application.id}", ["apply:review", application.id])
     return render(
         request, "the_hangar_hub/airport/application/review/application_review.html",
         {
@@ -159,7 +178,7 @@ def change_status(request, application_id):
 def delete_application(request, application_id):
     application = _get_application_for_review(request, application_id)
     if not application:
-        return redirect("hub:home")
+        return redirect("apply:dashboard")
 
     is_manager = airport_service.is_airport_manager(airport=application.airport)
     is_applicant = application.user == Auth.current_user()
@@ -174,7 +193,7 @@ def delete_application(request, application_id):
     if is_manager:
         return redirect("manage:application_dashboard", request.airport.identifier)
     else:
-        return redirect("hub:home")
+        return redirect("apply:dashboard")
 
 
 @require_authentication()
@@ -224,8 +243,11 @@ def _get_application(request, application_id):
     application = HangarApplication.get(application_id)
     if not application:
         message_service.post_error("Application could not be found.")
-    elif application.airport != airport:
-        message_service.post_error("Application was not found.")
+    elif application.airport != request.airport:
+        request.airport = application.airport
+        airport_service.save_airport_selection(application.airport)
+        log.warning("Application airport did not match session airport")
+        return application
     else:
         return application
     return None
@@ -235,7 +257,8 @@ def _get_user_application(request, application_id):
     application = _get_application(request, application_id)
     if application and application.user == applicant.user:
         return application
-    message_service.post_error("The specified application does not belong to you.")
+    elif application:
+        message_service.post_error("The specified application does not belong to you.")
     return None
 
 def _get_application_for_review(request, application_id):

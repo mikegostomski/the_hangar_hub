@@ -118,5 +118,4 @@ def _post_airport_selection_redirect(airport):
         return redirect(next_url)
     else:
         log.debug("No next URL was found. Sending to welcome page")
-        return redirect("airport:home")
         return redirect("airport:welcome", airport.identifier)

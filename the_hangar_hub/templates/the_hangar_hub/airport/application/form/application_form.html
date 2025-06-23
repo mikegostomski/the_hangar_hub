@@ -8,12 +8,17 @@
 
 <h1>Hangar Application</h1>
 
-<div class="content-800">
+<div class="content-800 content-block">
     <span class="xlg">{{airport.display_name}} ({{airport.identifier}})</span>
-    {%change_airport_link 'apply:airport_form' 'IDENTIFIER'%}
+
+    <br />
+    {%icon bi-geo-alt%} {{airport.city}}, {{airport.state}}<br />
+    {%if airport.info_email%}
+        {%icon bi-envelope-at%} {{airport.info_email}}<br />
+    {%endif%}
+    <br />
+    {%change_airport_link 'apply:airport_form' 'IDENTIFIER' onclick="delete_application_in_background();" button=True%}
 </div>
-<br />
-<br />
 
 <form method="post" action="{%url 'apply:submit' application.id%}" id="application-form" onsubmit="setAjaxLoadDiv();">
     {%csrf_token%}

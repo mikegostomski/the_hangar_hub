@@ -20,3 +20,16 @@ function delete_application(){
 function _delete_application(){
     document.location.href="{%url 'apply:delete' application.id%}";
 }
+
+function delete_application_in_background(){
+    $.ajax({
+        type: "GET",
+        url: "{%url 'apply:delete' application.id%}",
+        beforeSend: function(){
+            console.log("Deleting incomplete application...")
+        },
+        success: function(data){
+            console.log("Incomplete application deleted.")
+        }
+    });
+}

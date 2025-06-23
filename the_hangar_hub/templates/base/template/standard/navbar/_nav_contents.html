@@ -7,6 +7,18 @@
 <li class="dropdown-divider"></li>
 
 
+
+
+
+<li class="dropdown-header">
+
+</li>
+<li>
+    <a href="{%url 'apply:dashboard'%}" class="dropdown-item">Hangar Applications</a>
+</li>
+
+
+
 {% if user.is_authenticated %}
 
     {%if 'administrator'|has_authority:True%}

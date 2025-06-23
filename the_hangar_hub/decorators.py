@@ -32,6 +32,7 @@ def require_airport(after_selection_url=None):
 
             # Middleware would have already processed any obvious airport
             if hasattr(request, "airport") and type(request.airport) is Airport:
+                log.debug(f"From middleware: {request.airport} ({request.airport.identifier})")
                 return view_func(request, *args, **kwargs)
 
             # Since airport was not found, check for an application (which contains an airport)
