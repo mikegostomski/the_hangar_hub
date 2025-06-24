@@ -14,6 +14,7 @@ from the_hangar_hub.models import Tenant
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
+from the_hangar_hub.models.application import HangarApplication
 from base.services import message_service, utility_service, email_service, date_service
 from base.decorators import require_authority, require_authentication
 from the_hangar_hub.services import airport_service
@@ -531,25 +532,91 @@ def application_dashboard(request, airport_identifier):
     airport = request.airport
 
     unreviewed = []
-    waitlist = []
     incomplete = []
-    for application in airport.applications.filter(status_code__in=["S", "L", "I"]):
+    for application in airport.applications.filter(status_code__in=["S", "I"]):
         if application.status_code == "S":
             unreviewed.append(application)
-        elif application.status_code == "L":
-            waitlist.append(application)
         elif application.status_code == "I":
             incomplete.append(application)
-
-    if waitlist:
-        waitlist.sort(key=lambda x: x.wl_sort_string)
 
     Breadcrumb.add("Application Dashboard", ["manage:application_dashboard", airport.identifier], reset=True)
     return render(
         request, "the_hangar_hub/airport/management/applications/dashboard.html",
         {
             "unreviewed_applications": unreviewed,
-            "waitlist": waitlist,
             "incomplete_applications": incomplete,
         }
+    )
+
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def change_wl_priority(request, airport_identifier):
+    log.trace([airport_identifier])
+
+    application = HangarApplication.get(request.POST.get("application_id"))
+    if not application:
+        message_service.post_error("Application not found. Could not update priority.")
+        return HttpResponseForbidden()
+    elif application.airport != request.airport:
+        message_service.post_error("Application is for a different airport. If you are working in multiple tabs, try refreshing the page.")
+        return HttpResponseForbidden()
+
+    new_priority = request.POST.get("new_priority")
+    if new_priority is None or new_priority not in application.wl_group_options():
+        message_service.post_error("Invalid priority selection. Could not update priority.")
+        return HttpResponseForbidden()
+
+    Auth.audit(
+        "U", "WAITLIST", "Updated priority", previous_value=application.wl_group_code, new_value=new_priority
+    )
+    application.wl_group_code = new_priority
+    application.wl_index = None
+    application.save()
+
+    return render(
+        request, "the_hangar_hub/airport/management/applications/_waitlist.html",
+        {}
+    )
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def change_wl_index(request, airport_identifier):
+    log.trace([airport_identifier])
+
+    application_id = request.POST.get("application_id")
+    restore_ind = request.POST.get("restore_defaults")
+
+    if restore_ind == "Y":
+        request.airport.get_waitlist().reindex_applications(group_code=None, restore_default=True)
+        # If just doing a restore and not changing a specific application, nothing more to do.
+        if not application_id:
+            return HttpResponse("ok")
+
+    # ToDo: Change to up/down arrow interface rather than int field
+    
+    application = HangarApplication.get(application_id)
+    if not application:
+        message_service.post_error("Application not found. Could not update index.")
+        return HttpResponseForbidden()
+    elif application.airport != request.airport:
+        message_service.post_error("Application is for a different airport. If you are working in multiple tabs, try refreshing the page.")
+        return HttpResponseForbidden()
+
+    new_index = request.POST.get("new_index")
+    if not str(new_index).isnumeric():
+        message_service.post_error("Invalid index selection. Could not update index.")
+        return HttpResponseForbidden()
+
+    Auth.audit(
+        "U", "WAITLIST", "Updated index", previous_value=application.wl_group_code, new_value=new_index
+    )
+    application.wl_index = new_index
+    application.save()
+
+    return render(
+        request, "the_hangar_hub/airport/management/applications/_waitlist.html",
+        {}
     )

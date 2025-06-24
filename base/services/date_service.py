@@ -18,7 +18,9 @@ def string_to_date(date_string, source_timezone=None):
     if date_string is None:
         return None
 
-    if str(date_string).lower() == "now":
+    if type(date_string) is not str:
+        pass
+    elif date_string.lower() == "now":
         return datetime.now(timezone.utc)
     elif date_string.lower() == "yesterday":
         return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)

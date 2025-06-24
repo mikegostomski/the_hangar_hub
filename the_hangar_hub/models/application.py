@@ -53,6 +53,11 @@ class HangarApplication(models.Model):
         sub_date = DateHelper(self.submission_date).timestamp()
         return f"{self.wl_group_code}-{self.wl_index or 'z'}-{sub_date}"
 
+    @property
+    def wl_reset_sort_string(self):
+        sub_date = DateHelper(self.submission_date).timestamp()
+        return f"{self.wl_group_code}-{sub_date}"
+
     def change_status(self, new_status):
         if self.status_code == new_status:
             log.info(f"Status not changed (was already {self.status_code})")

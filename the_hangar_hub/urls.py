@@ -46,6 +46,8 @@ manager_paths = [
     path('<slug:airport_identifier>/hangars/<hangar_id>', manage.one_hangar,                name='hangar'),
     path('<slug:airport_identifier>/hangars/<hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
     path('<slug:airport_identifier>/application/dashboard', manage.application_dashboard,     name='application_dashboard'),
+    path('<slug:airport_identifier>/waitlist/prioritize', manage.change_wl_priority,     name='change_wl_priority'),
+    path('<slug:airport_identifier>/waitlist/index', manage.change_wl_index,     name='change_wl_index'),
 ]
 
 application_paths = [

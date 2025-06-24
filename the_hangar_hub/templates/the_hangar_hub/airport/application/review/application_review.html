@@ -161,7 +161,7 @@ The Hangar Hub: Hangar Application -
 
             <div class="input-group mb-3 {%if application.status_code != 'L'%}hidden{%endif%}" id="amr-wl-group">
                 <label class="input-group-text" for="wl_group_code">Waitlist Priority</label>
-                {%with wl_priority=application.wl_group_code|default:"S"%}
+                {%with wl_priority=application.wl_group_code|default:"C"%}
                 {%select_menu options=application.wl_group_options value=wl_priority class="form-select" id="wl_group_code" name="wl_group_code" nullable=False%}
                 {%endwith%}
             </div>

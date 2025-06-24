@@ -79,6 +79,14 @@ def add_address_from_request(request, contact=None):
         contact = user.contact
     log.info(f"Adding address for {contact}")
 
+    if not (
+            request.POST.get('street_1') or
+            request.POST.get('city') or
+            request.POST.get('state')
+    ):
+        log.info("No address was given")
+        return None
+
     a = Address()
     a.contact = contact
     if a.set_all(

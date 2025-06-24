@@ -20,6 +20,7 @@ The Hangar Hub: Hangar Application Dashboard
             <th scope="col">Airport</th>
             <th scope="col">Application Date</th>
             <th scope="col">Application Status</th>
+            <th scope="col">Waitlist Position</th>
             <th scope="col">Actions</th>
         </tr>
         {%for application in applications%}
@@ -27,6 +28,17 @@ The Hangar Hub: Hangar Application Dashboard
             <td>{{application.airport.identifier}}</td>
             <td>{{application.submission_date}}</td>
             <td>{{application.status}}</td>
+            <td>
+                {%with waitlist=application.airport.get_waitlist%}
+                    {%if waitlist.num_waiting == 0%}
+                        <em class="text-muted">N/A</em>
+                    {%elif waitlist.current_user_position == 0%}
+                        {%icon bi-watch title="Waiting for application review"%}
+                    {%else%}
+                        {{waitlist.current_user_position}} of {{waitlist.num_waiting}}
+                    {%endif%}
+                {%endwith%}
+            </td>
             <td>
                 {%if application.is_incomplete%}
                     <a href="{%url 'apply:resume' application.id%}">

@@ -4,6 +4,7 @@ from django.utils import timezone
 from zoneinfo import ZoneInfo
 from the_hangar_hub.models.hangar import Hangar
 from the_hangar_hub.models.application import HangarApplication
+from the_hangar_hub.classes.waitlist import Waitlist
 
 log = Log()
 
@@ -53,6 +54,9 @@ class Airport(models.Model):
     def get_unreviewed_applications(self):
         return self.applications.filter(status_code="S")
 
+    def get_waitlist(self):
+        return Waitlist(self)
+
     def application_preferences(self):
         try:
             return self.application_prefs.get()
@@ -74,6 +78,12 @@ class Airport(models.Model):
         except Exception as ee:
             log.error(f"Could not get airport: {ee}")
             return None
+
+    def __str__(self):
+        return f"Airport: {self.identifier} ({self.id})"
+
+    def __repr__(self):
+        return f"Airport: {self.identifier} ({self.id})"
 
 
 class HangarApplicationPreferences(models.Model):
