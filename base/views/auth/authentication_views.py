@@ -1,9 +1,10 @@
 from django.shortcuts import redirect, render
 from django.http import HttpResponseForbidden, HttpResponse
-from base.services import auth_service, error_service
+from base.services import auth_service
 from base.decorators import require_impersonation_authority, require_authentication
 from base.classes.util.env_helper import Log, EnvHelper
 from django.urls import reverse
+from base.models.utility.error import Error
 
 
 log = Log()
@@ -21,7 +22,7 @@ def stop_impersonating(request):
     try:
         return redirect(next_destination)
     except Exception as ee:
-        error_service.record(ee, next_destination)
+        Error.record(ee, next_destination)
     return redirect('/')
 
 
@@ -37,7 +38,7 @@ def start_impersonating(request):
     try:
         return redirect(next_destination)
     except Exception as ee:
-        error_service.record(ee, next_destination)
+        Error.record(ee, next_destination)
     return redirect('/')
 
 

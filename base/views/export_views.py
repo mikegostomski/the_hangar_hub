@@ -34,7 +34,7 @@ def fixture_export_action(request):
     selections = request.POST.getlist("app_model")
     if not selections:
         message_service.post_error("You must select some models to export")
-        return redirect("psu:export")
+        return redirect("base:export")
 
     # Allow selecting records since specified date
     # (when there are too many records to export, resulting in an out-of-memory error)
@@ -46,7 +46,7 @@ def fixture_export_action(request):
     for selection in selections:
         if "|" not in selection:
             message_service.post_error("Invalid selection!")
-            return redirect("psu:export")
+            return redirect("base:export")
 
         x = selection.split("|")
         app_name = x[0]

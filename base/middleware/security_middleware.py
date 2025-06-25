@@ -1,5 +1,5 @@
 from django.shortcuts import redirect
-from ..services import message_service, validation_service, auth_service
+from base.services import message_service, validation_service, auth_service
 from ..models.utility.xss_attempt import XssAttempt
 from django.urls import reverse
 from django.http import HttpResponseForbidden, HttpResponse

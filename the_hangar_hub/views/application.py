@@ -8,7 +8,7 @@ from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from base.services import message_service, utility_service, email_service, contact_service
-from base.decorators import require_authority, require_authentication
+from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service, tenant_service
 from base.classes.breadcrumb import Breadcrumb
 from the_hangar_hub.decorators import require_airport, require_airport_manager
@@ -21,6 +21,7 @@ log = Log()
 env = EnvHelper()
 
 
+@report_errors()
 @require_authentication()
 def dashboard(request):
     applications = HangarApplication.objects.filter(user=Auth.current_user())
@@ -36,6 +37,7 @@ def dashboard(request):
 
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 def form(request, airport_identifier=None, application_id=None):
@@ -76,6 +78,7 @@ def form(request, airport_identifier=None, application_id=None):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 def save(request, application_id):
@@ -88,6 +91,7 @@ def save(request, application_id):
         return HttpResponseForbidden()
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 def submit(request, application_id):
@@ -126,6 +130,7 @@ def submit(request, application_id):
         return redirect("apply:dashboard")
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 def review_application(request, application_id):
@@ -149,6 +154,7 @@ def review_application(request, application_id):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -174,6 +180,7 @@ def submit_review(request, application_id):
 
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 def change_status(request, application_id):
@@ -194,6 +201,7 @@ def change_status(request, application_id):
     return HttpResponse(application.status)
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 def delete_application(request, application_id):
@@ -216,6 +224,7 @@ def delete_application(request, application_id):
     else:
         return redirect("apply:dashboard")
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -228,6 +237,7 @@ def select_application(request, application_id):
     return redirect("manage:buildings", application.airport.identifier)
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -244,6 +254,7 @@ def preferences(request, airport_identifier):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()

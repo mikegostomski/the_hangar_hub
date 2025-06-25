@@ -220,6 +220,7 @@ class Auth:
     def save(self):
         self._clean_users()
         env.set_session_variable(session_var, self._to_dict())
+        env.set_session_variable("auth_user_description", str(self))
 
     def set_impersonated_user(self, user_data):
         if self.can_impersonate():

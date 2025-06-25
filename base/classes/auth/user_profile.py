@@ -1,5 +1,6 @@
 from base.classes.util.env_helper import Log, EnvHelper
-from base.services import utility_service, error_service
+from base.services import utility_service
+from base.models.utility.error import Error
 from base.classes.auth.dynamic_role import DynamicRole
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User, AnonymousUser
@@ -131,7 +132,7 @@ class UserProfile:
                 if authority_code.lower() in self.authorities:
                     return True
         except Exception as ee:
-            error_service.record(ee, "Error checking user authorities")
+            Error.record(ee, "Error checking user authorities")
 
         # False if not found
         return False
@@ -210,7 +211,7 @@ class UserProfile:
                         for pp in permissions:
                             self.authorities[pp.authority.code] = pp.authority.title
                 except Exception as ee:
-                    error_service.record(ee, f"Error retrieving permissions for {self.email}")
+                    Error.record(ee, f"Error retrieving permissions for {self.email}")
 
     def get_contact_instance(self):
         if self._cached_contact:

@@ -16,7 +16,7 @@ from the_hangar_hub.models.hangar import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
 from base.services import message_service, utility_service, email_service, date_service
-from base.decorators import require_authority, require_authentication
+from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service
 from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
@@ -30,6 +30,7 @@ log = Log()
 env = EnvHelper()
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 def claim_airport(request, airport_identifier):
@@ -99,6 +100,7 @@ def claim_airport(request, airport_identifier):
     return redirect("manage:airport", airport.identifier)
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -114,6 +116,8 @@ def my_airport(request, airport_identifier):
         }
     )
 
+
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -140,6 +144,7 @@ def update_airport(request, airport_identifier):
     return HttpResponse("ok")
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -182,6 +187,7 @@ def add_manager(request, airport_identifier):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -202,6 +208,7 @@ def my_buildings(request, airport_identifier):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -258,6 +265,7 @@ def add_building(request, airport_identifier):
     return redirect("manage:buildings", airport_identifier)
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -282,6 +290,7 @@ def my_hangars(request, airport_identifier, building_id):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -343,6 +352,7 @@ def add_hangar(request, airport_identifier, building_id):
     return redirect("manage:hangars", airport.identifier, building_id)
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -373,6 +383,7 @@ def one_hangar(request, airport_identifier, hangar_id):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -541,6 +552,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     return redirect("manage:hangar",airport_identifier, hangar.code)
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -566,6 +578,7 @@ def application_dashboard(request, airport_identifier):
     )
 
 
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()
@@ -597,6 +610,8 @@ def change_wl_priority(request, airport_identifier):
         {}
     )
 
+
+@report_errors()
 @require_authentication()
 @require_airport()
 @require_airport_manager()

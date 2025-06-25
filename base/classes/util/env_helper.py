@@ -21,7 +21,7 @@ class EnvHelper:
         request = self.request
         if request:
             pp = request.GET.items() if request.method == "GET" else request.POST.items()
-            return {kk: vv for kk, vv in pp}
+            return {kk: vv for kk, vv in pp if kk != "csrfmiddlewaretoken"}
         return {}
 
     @property

@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from django.shortcuts import redirect
-from ..services import date_service, error_service, message_service
-from ..decorators import require_authority
-from ..models import Feature
+from base.services import date_service, message_service
+from base.decorators import require_authority
+from base.models import Feature
 from django.http import HttpResponseForbidden, HttpResponse
 from base.classes.util.log import Log
 from datetime import datetime, timezone
+from base.models.utility.error import Error
 
 log = Log()
 allowable_role_list = ['~superuser']
@@ -69,7 +70,7 @@ def add_feature(request):
 
         nf.save()
     except Exception as ee:
-        error_service.unexpected_error("Unable to create new feature", ee)
+        Error.unexpected("Unable to create new feature", ee)
     return redirect('base:features')
 
 

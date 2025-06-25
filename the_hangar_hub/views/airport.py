@@ -15,7 +15,7 @@ from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service, utility_service, email_service, date_service
-from base.decorators import require_authority, require_authentication
+from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service
 from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
@@ -29,6 +29,7 @@ log = Log()
 env = EnvHelper()
 
 
+@report_errors()
 @require_authentication()  # ToDo: Maybe not required?
 @require_airport()
 def welcome(request, airport_identifier):

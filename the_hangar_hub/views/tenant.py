@@ -9,7 +9,7 @@ from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from base.services import message_service, utility_service, email_service
-from base.decorators import require_authority, require_authentication
+from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service, tenant_service
 from base.fixtures.timezones import timezones
 from decimal import Decimal
@@ -18,6 +18,8 @@ import re
 
 log = Log()
 
+
+@report_errors()
 @require_authentication()
 def my_hangar(request, airport_identifier, hangar_id):
     rental = tenant_service.get_hangar_rental(airport_identifier, hangar_id)

@@ -2,13 +2,14 @@ from django.shortcuts import redirect, render
 from django.http import HttpResponseForbidden, HttpResponseRedirect, HttpResponse
 
 from base.classes.breadcrumb import Breadcrumb
-from ...services import auth_service, error_service, message_service, utility_service, contact_service
+from ...services import auth_service, message_service, utility_service, contact_service
 from base.models import Contact, Address, Phone
 from base.decorators import require_authority, require_authentication
 from django.db.models import Q
 from django.core.paginator import Paginator
 from base.classes.auth.session import Auth
 from base.classes.util.env_helper import EnvHelper, Log
+from base.models.utility.error import Error
 
 log = Log()
 env = EnvHelper()
@@ -164,7 +165,7 @@ def update_contact(request):
             contact.save()
             return HttpResponse('success')
     except Exception as ee:
-        error_service.unexpected_error("Unable to save contact", ee)
+        Error.unexpected("Unable to save contact", ee)
 
     return HttpResponseForbidden()
 
@@ -233,7 +234,7 @@ def update_address(request):
     if 'address_id' not in request.POST:
         new_address = contact_service.add_address_from_request(request, contact)
         if new_address:
-            return render(request, 'base/contact/_address.html', {'address': a})
+            return render(request, 'base/contact/_address.html', {'address': new_address})
         else:
             return HttpResponseForbidden()
 

@@ -1,5 +1,5 @@
 from django.shortcuts import redirect
-from ..services import auth_service
+from base.services import auth_service
 from django.urls import reverse
 from base.classes.util.app_data import Log, EnvHelper, AppData
 

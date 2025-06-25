@@ -123,10 +123,10 @@ class CallerData:
 
             fn_list = [self.format_caller(caller)]
             try:
-                while not caller.filename.endswith("psu_base_interceptor_middleware.py"):
+                while not caller.filename.endswith("base_interceptor_middleware.py"):
                     depth += 1
                     caller = getframeinfo(stack()[depth][0])
-                    # Ignore Django core function. Only interested in PSU code
+                    # Ignore Django core function. Only interested in custom code
                     if "django/core" not in caller.filename:
                         fn_list.append(self.format_caller(caller))
             except Exception as ee:

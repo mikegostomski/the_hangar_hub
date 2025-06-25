@@ -28,7 +28,7 @@ class AppData:
     def get_app_code(self):
         """
         Get the app code of the current application
-        The app code is used to specify the current app in shared psu_base tables
+        The app code is used to specify the current app in shared base tables
         The app code is also used for determining permissions
         """
         app_code = env.recall()
@@ -64,7 +64,7 @@ class AppData:
 
             # Otherwise, use the last-known APP_CODE
             elif last_app:
-                # Sub-app code persists into generic (psu) pages until a new sub-app is visited
+                # Sub-app code persists into generic (base) pages until a new sub-app is visited
                 app_in_use = last_app
             # If no previous app is known, use the primary APP_CODE
             else:

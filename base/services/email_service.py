@@ -1,5 +1,6 @@
 from . import auth_service
-from . import message_service, error_service, date_service
+from . import message_service, date_service
+from base.models.utility.error import Error
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
 # from ..models.email import Email
@@ -198,7 +199,7 @@ def send(
 
     # Subject should never be empty.  If it is, log an error and exit.
     if not subject:
-        error_service.record("Email subject is empty!")
+        Error.record("Email subject is empty!")
         return False
 
     # Non-prod emails should always point out that they're from non-prod

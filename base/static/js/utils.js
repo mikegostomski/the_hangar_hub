@@ -76,7 +76,6 @@ function formatTelephone(phoneNumber){
         return formatted
     }
     catch(ee){
-        psuAlert(ee.toString());
         return phoneNumber
     }
 }

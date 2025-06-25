@@ -5,9 +5,29 @@ from urllib.parse import urlparse
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url
 from base.services import auth_service
+from base.models.utility.error import Error
 
 log = Log()
 env = EnvHelper()
+
+
+def report_errors():
+    """
+    Record any unhandled exceptions
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            try:
+                return view_func(request, *args, **kwargs)
+            except Exception as ee:
+                from base.models.utility.error import Error
+                Error.record(ee, view_func)
+                raise
+
+        return _wrapped_view
+    return decorator
+
 
 # ===                                ===
 # === AUTHENTICATION & AUTHORIZATION ===

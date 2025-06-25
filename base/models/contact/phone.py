@@ -1,9 +1,10 @@
 from django.db import models
 from base.classes.util.log import Log
-from base.services import utility_service, message_service, error_service
+from base.services import utility_service, message_service
 from base.models.contact.contact import Contact
 from collections import OrderedDict
 from base.services import validation_service
+from base.models.utility.error import Error
 
 log = Log()
 
@@ -78,7 +79,7 @@ class Phone(models.Model):
                 self.save()
             return True
         except Exception as ee:
-            error_service.unexpected_error("Unable to set preferred telephone number", ee)
+            Error.unexpected("Unable to set preferred telephone number", ee)
             return False
 
     def formatted_number(self):
@@ -112,7 +113,7 @@ class Phone(models.Model):
         except Phone.DoesNotExist:
             return None
         except Exception as ee:
-            error_service.record(ee, [phone_id, contact])
+            Error.record(ee, [phone_id, contact])
 
     def __str__(self):
         return self.formatted_number()

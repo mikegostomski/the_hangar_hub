@@ -2,7 +2,8 @@ from django.db import models
 from base.classes.util.log import Log
 from base.classes.util.date_helper import DateHelper
 from decimal import Decimal
-from base.services import utility_service, error_service, message_service, auth_service
+from base.services import utility_service, message_service, auth_service
+from base.models.utility.error import Error
 
 log = Log()
 
@@ -73,7 +74,7 @@ class Variable(models.Model):
             self.save()
             return True
         except Exception as ee:
-            error_service.unexpected_error("Unable to update variable", ee)
+            Error.unexpected("Unable to update variable", ee)
             return False
 
     @classmethod
@@ -93,7 +94,7 @@ class Variable(models.Model):
                         # Not updating version since this is a code-induced change
                         variable_instance.save()
                     except Exception as ee:
-                        error_service.record(ee, f"Update value of {variable_instance}")
+                        Error.record(ee, f"Update value of {variable_instance}")
                         variable_instance.current_value = variable_instance.previous_value
 
         # If not found, create a new Variable
@@ -260,6 +261,6 @@ class Variable(models.Model):
             # This is an auto-creation, do not save pidm of current user
             return new_variable
         except Exception as ee:
-            error_service.record(ee)
+            Error.record(ee)
 
         return None

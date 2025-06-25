@@ -1,8 +1,9 @@
 from django import template
 from django.db.models.query import QuerySet
-from ...services import utility_service, error_service, auth_service, icon_service
-from . import supporting_functions as support
-from ...context_processors import util as util_context
+from base.services import utility_service, auth_service, icon_service
+from base.models.utility.error import Error
+from base.templatetags.tag_processing import supporting_functions as support
+from base.context_processors import util as util_context
 from django.urls import reverse
 from random import randrange
 from base.classes.util.env_helper import EnvHelper, Log
@@ -157,7 +158,7 @@ class JsPrompt(template.Node):
                 "oncancel",
                 "cancel_btn_class",
             ]:
-                # jquery uses camelCase, but psu-base makes keys lowercase. Convert _ keys to camelCase
+                # jquery uses camelCase, but base taglib makes keys lowercase. Convert _ keys to camelCase
                 attr_name = utility_service.camelize(kk)
                 attr_val = (
                     vv if vv in ["true", "false"] or vv.isnumeric() else f"'{vv}'"
@@ -404,7 +405,7 @@ class SelectNode(template.Node):
 
             # If still a string, there will be issues. (this should be caught during development)
             if type(options) is str:
-                error_service.record(f"Invalid options given to %select_menu% tag", debug_info=options)
+                Error.record(f"Invalid options given to %select_menu% tag", debug_info=options)
 
         if nullable:
             pieces.append(
@@ -562,7 +563,7 @@ class IconNode(template.Node):
         #     library_base_class = "bx"
 
         else:
-            error_service.record(
+            Error.record(
                 f"Invalid Icon Library: {icon_provider}"
             )
             return ""

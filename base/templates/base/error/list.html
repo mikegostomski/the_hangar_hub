@@ -1,0 +1,162 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Error List{%endblock%}
+{% block main_content %}
+    <form method="get">
+        <label>
+            Search:
+            <input type="text" name="error_filter" value="{{error_filter|default:''}}" />
+        </label>
+        <input type="submit" value="Go">
+        &nbsp;
+        &nbsp;
+        <span>
+            <b>Search Hints</b>
+            {%icon fa-angle-double-down onclick="$(this).parent().addClass('hidden');$('#search-hints').removeClass('hidden');"%}
+        </span>
+    </form>
+
+    <div id="search-hints" class="hidden">
+        <div class="float-left" style="margin-right: 50px;">
+            <b>Search Hints:</b><br />
+            {%icon fa-info-circle fa-fw%} The following keywords may be used to specify an attribute to search (no space between the : and the word)<br />
+            <ul>
+                <li><span class="code">before:</span> - Errors prior to date</li>
+                <li><span class="code">since:</span> - Errors after date</li>
+                <li><span class="code">on:</span> - Errors on date</li>
+                <li><span class="code">user:</span> - Username or ID of person that caused the error</li>
+            </ul>
+            {%icon fa-info-circle fa-fw%} Words containing '/' will match against the URL of the request
+        </div>
+        <div class="float-left">
+            <b>Search Examples:</b><br />
+            <ul>
+                <li><span class="code">Access Denied since:16-JUN-2020</span></li>
+                <li><span class="code">Unknown on:2020-06-16</span></li>
+                <li><span class="code">user:988213600</span></li>
+            </ul>
+        </div>
+        <br style="clear:both;" />
+        <br />
+        <br />
+    </div>
+
+    <h1>Unexpected Errors</h1>
+    <table class="table table-condensed table-striped">
+        <tr>
+            {%sortable_th column="date_created" heading="Date"%}
+            <th scope="col">User</th>
+            <th scope="col">Technical Details</th>
+            <th scope="col">Error</th>
+            {%sortable_th column="status_code"%}
+        </tr>
+
+        {% for ee in app_errors%}
+        <tr>
+            <td class="sm" width="120">
+                {{ee.error_cd.banner_date}}<br />
+                {{ee.error_cd.time}}<br />
+                <em style="display:block;margin-top: 10px;">{{ee.error_cd.humanized}}</em>
+            </td>
+            <td>
+                {{ee.sso_user}}<br />
+                {%if ee.impersonated_user %}
+                    Impersonating: {{ee.impersonated_user}}<br />
+                {%endif%}
+                {%if ee.proxied_user %}
+                    Proxying: {{ee.proxied_user}}<br />
+                {%endif%}
+            </td>
+            <td class="code" style="font-size: .9em">
+                <div style="max-width: 600px;">
+                <b>Path:</b> {{ee.path}}<br />
+                <b>Parameters:</b> <div>{{ee.parameters_html}}</div><br />
+                <b>Browser:</b> <span class="code">{{ee.browser|default:'Unknown'}}</span><br />
+                <b>Raised From:</b> {{ee.code_detail}}<br />
+                {%if ee.stacktrace%}
+                    <div class="code">{{ee.stacktrace_html|safe}}</div>
+                {%endif%}
+                    </div>
+            </td>
+            <td>
+                {%if ee.error_friendly%}
+                    <div class="alert alert-danger">
+                        {%icon fa-bullhorn fa-fw title="Posted Error"%}
+                        {{ee.error_friendly_fa|safe}}
+                    </div>
+                {%endif%}
+
+                {%if ee.error_system%}
+                    <div class="alert code">
+                        {%icon fa-laptop fa-fw title="System Error"%}
+                        {{ee.error_system|safe}}
+                    </div>
+                {%endif%}
+                {%if ee.debug_info%}
+                    <div class="alert alert-warning code">
+                        {%icon fa-bug fa-fw title="Debug Info"%}
+                        {{ee.debug_info}}
+                    </div>
+                {%endif%}
+            </td>
+
+            <td>
+                {%select_menu error_id=ee.id onchange="set_status($(this));" value=ee.status_code options=status_options %}
+                <br />
+                <br />
+                <div class="text-center">
+                    <a href="{%url 'base:error_ignore' ee.id%}" class="btn btn-danger btn-sm">Ignore Similar</a>
+                </div>
+            </td>
+        </tr>
+        {%empty%}
+        <tr>
+            <td colspan="5">
+                <div class="xlg text-success" style="text-align:center">
+                    {%if error_filter%}
+                        {%icon fa-filter%} No errors matching: <span class="code">{{error_filter}}</span>
+                    {%else%}
+                        {%icon fa-smile-o%} All errors have been reviewed!
+                    {%endif%}
+
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {%pagination app_errors%}
+
+    <style>
+    </style>
+
+    <script type="text/javascript">
+        function set_status(menu){
+            error_id = menu.attr('error_id');
+            new_status = menu.val();
+            $.ajax({
+                type:   "POST",
+                url:    '{%url 'base:error_status'%}',
+                data:   { error_id: error_id, new_status: new_status, csrfmiddlewaretoken: '{{ csrf_token }}' },
+                beforeSend:function(){
+                    menu.removeClass('ajax-success');
+                    menu.removeClass('ajax-error');
+                    menu.addClass('ajax-pending');
+                    menu.after(getAjaxLoadImage());
+                },
+                success:function(data){
+                    menu.addClass('ajax-success');
+                },
+                error:function(){
+                    menu.addClass('ajax-error');
+                },
+                complete:function(){
+                    menu.removeClass('ajax-pending');
+                    clearAjaxLoadImage(menu.parent());
+                }
+            });
+        }
+    </script>
+
+{% endblock %}

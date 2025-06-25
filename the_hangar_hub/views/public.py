@@ -1,17 +1,18 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
-
 from base.classes.breadcrumb import Breadcrumb
 from base.classes.util.env_helper import Log, EnvHelper
 from base.services import auth_service, message_service
-from base.services.message_service import post_error
 from the_hangar_hub.decorators import require_airport
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.services import airport_service, tenant_service, application_service
+from base.decorators import report_errors
+
 log = Log()
 env = EnvHelper()
 
+@report_errors()
 def home(request):
     Breadcrumb.clear()
 
@@ -32,6 +33,7 @@ def home(request):
     )
 
 
+@report_errors()
 def invitation_landing(request, invitation_code):
     if not invitation_code:
         return redirect("hub:home")
@@ -64,6 +66,7 @@ def invitation_landing(request, invitation_code):
     )
 
 
+@report_errors()
 def search(request):
     log.trace()
     try:
@@ -90,12 +93,14 @@ def search(request):
     return HttpResponseForbidden()
 
 
+@report_errors()
 @require_airport()
 def select(request, airport_identifier):
     log.trace([airport_identifier])
     return _post_airport_selection_redirect(request.airport)
 
 
+@report_errors()
 def router(request):
     auth = auth_service.get_auth_instance()
     after_auth = env.get_session_variable("after_auth")

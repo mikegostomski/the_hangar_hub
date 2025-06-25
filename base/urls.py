@@ -43,16 +43,17 @@ urlpatterns = [
     path('modify_feature', views.modify_feature, name='modify_feature'),
     path('delete_feature', views.delete_feature, name='delete_feature'),
 
-    # # Audit Events
+    # Audit Events
     path('audit', views.audit_list, name='audit'),
     path('audit_xss', views.audit_xss_attempts, name='xss_list'),
     path('audit_xss_review', views.audit_xss_review_attempt, name='xss_dismiss'),
     path('xss', views.xss_prevention, name='xss_block'),
     path('xss_lock', views.xss_lock, name='xss_lock'),
 
-    # # Error logs
-    # path('errors', views.error_list, name='errors'),
-    # path('error_status', views.error_status, name='error_status'),
+    # Error logs
+    path("errors", views.error_list, name="errors"),
+    path("error_status", views.error_status, name="error_status"),
+    path("error_status/ignore/<int:error_id>", views.ignore_similar, name="error_ignore"),
 
     # # Testing pages
     # path('test', views.test_status, name='test'),

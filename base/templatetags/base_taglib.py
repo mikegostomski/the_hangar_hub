@@ -6,7 +6,7 @@
 from django.conf import settings
 from django import template
 from ..models import Feature
-from ..services import utility_service, auth_service, date_service, validation_service
+from base.services import utility_service, auth_service, date_service, validation_service
 from ..templatetags.tag_processing import html_generating, static_content
 from django.urls import reverse
 from decimal import Decimal

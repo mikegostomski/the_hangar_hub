@@ -268,7 +268,7 @@ def fa_to_bootstrap(class_name):
         if class_name.endswith("-o"):
             class_name = class_name[:-2]
 
-        # Convert any FA classes used by the psu-plugins so that they will work with either icon library
+        # Convert any FA classes used by the base-plugins so that they will work with either icon library
         class_name = {
             # Non-Icon Classes
             "fa-2x": "bi-2x",

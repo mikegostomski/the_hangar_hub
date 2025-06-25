@@ -1,0 +1,22 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+
+{%block title%}The Hangar Hub{%endblock%}
+
+{% block main_content %}
+<div class="content-1024 content-center text-center">
+
+    <h1 class="visually-hidden">Unexpected Error</h1>
+    <img src="{% static 'images/500.png' %}" alt="Image of a banged-up airplane looking dazed and confused" class="img-fluid img-rounded" /><br />
+    <span class="xlg">
+        I'm not sure what went wrong, but our developer has been alerted and will look into it.
+    </span><br />
+
+    <style>
+        .img-rounded{
+            border-radius: 7%;
+        }
+    </style>
+</div>
+{%endblock%}

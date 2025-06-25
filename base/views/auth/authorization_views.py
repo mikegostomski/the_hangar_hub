@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 from django.http import HttpResponseForbidden
-from ...services import utility_service, validation_service, message_service, error_service
+from ...services import utility_service, validation_service, message_service
 from ...decorators import require_authority
 from django.contrib.auth.models import User
 from base.models.auth.authority import Authority
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
+from base.models.utility.error import Error
 
 
 log = Log()
@@ -83,7 +84,7 @@ def add_authority(request):
             aa.description = description[:80]
             aa.save()
     except Exception as ee:
-        error_service.unexpected_error("Unable to save authority", ee)
+        Error.unexpected("Unable to save authority", ee)
         has_issues = True
 
     if has_issues:
@@ -132,7 +133,7 @@ def user_permissions(request, user_id):
                     permissions.append(pp)
 
     except Exception as ee:
-        error_service.unexpected_error("Unable to retrieve user permissions", ee)
+        Error.unexpected("Unable to retrieve user permissions", ee)
         return redirect('base:manage_users')
 
     return render(
@@ -168,7 +169,7 @@ def add_permission(request, user_id):
             "C", "PERMISSIONS", f"Grant '{authority.code}' to {user.username}"
         )
     except Exception as ee:
-        error_service.unexpected_error("Unable to grant user permission", ee)
+        Error.unexpected("Unable to grant user permission", ee)
 
     return redirect('base:user_permissions', user_id)
 
@@ -190,7 +191,7 @@ def delete_permission(request, permission_id):
         )
 
     except Exception as ee:
-        error_service.unexpected_error("Unable to revoke user permission", ee)
+        Error.unexpected("Unable to revoke user permission", ee)
 
     if user_id:
         return redirect('base:user_permissions', user_id)
@@ -209,6 +210,6 @@ def delete_user(request, user_id):
         else:
             message_service.post_error("User was not found and could not be deleted.")
     except Exception as ee:
-        error_service.unexpected_error("Unable to save authority", ee)
+        Error.unexpected("Unable to save authority", ee)
 
     return redirect('base:manage_users')

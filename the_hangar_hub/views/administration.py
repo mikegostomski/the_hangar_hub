@@ -15,7 +15,7 @@ from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service, utility_service, email_service, date_service
-from base.decorators import require_authority, require_authentication
+from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service
 from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
@@ -29,6 +29,7 @@ log = Log()
 env = EnvHelper()
 
 
+@report_errors()
 @require_authority("administrator")
 def invitation_dashboard(request):
     open_invitations = Invitation.objects.filter(status_code__in=["I", "S"])
@@ -43,6 +44,8 @@ def invitation_dashboard(request):
         }
     )
 
+
+@report_errors()
 @require_authority("administrator")
 def send_invitation(request):
 
@@ -61,7 +64,7 @@ def send_invitation(request):
     airport = Airport.get(airport_identifier)
     if not airport:
         suggestions = Airport.objects.filter(identifier__icontains=airport_identifier)
-        ss = f"<br> bi-lightbulb Did you mean: {", ".join([x.identifier for x in suggestions])}" if suggestions else ""
+        ss = f"<br> bi-lightbulb Did you mean: {', '.join([x.identifier for x in suggestions])}" if suggestions else ""
         message_service.post_error(f"bi-exclamation-triangle Airport identifier not found: {airport_identifier}{ss}")
         env.set_flash_scope("prefill", prefill)
         return redirect("administration:invitation_dashboard")

@@ -1,6 +1,6 @@
 from django.db.models import Q
 from base.models.utility.feature import Feature, FeatureToggle
-from base.services import error_service
+from base.models.utility.error import Error
 import re
 import hashlib
 import requests
@@ -297,7 +297,7 @@ def pagination_sort_info(
                     sort = sort + (default_sort[0],)
 
             except Exception as ee:
-                error_service.record(ee, f"Error updating default sort: {default_sort}")
+                Error.record(ee, f"Error updating default sort: {default_sort}")
                 sort = (specified_sort,)
 
         # If sort has not changed
@@ -334,9 +334,9 @@ def pagination_sort_info(
 
     # Sortable column header taglib needs to know the last-sorted column
     # This assumes only one sorted dataset is being displayed at a time
-    env.set_session_variable('psu_last_secondary_sorted_column', sort[1] if type(sort) is tuple and len(sort) > 1 else sort)
-    env.set_session_variable('psu_last_sorted_column', sort[0] if type(sort) is tuple else sort)
-    env.set_session_variable('psu_last_sorted_direction', order)
+    env.set_session_variable('base_last_secondary_sorted_column', sort[1] if type(sort) is tuple and len(sort) > 1 else sort)
+    env.set_session_variable('base_last_sorted_column', sort[0] if type(sort) is tuple else sort)
+    env.set_session_variable('base_last_sorted_direction', order)
 
     oo = "-" if order == "desc" else ""
     if type(sort) is tuple:

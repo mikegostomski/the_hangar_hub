@@ -2,7 +2,8 @@ from django.db import models
 from base.classes.util.log import Log
 from base.models.contact.contact import Contact
 from collections import OrderedDict
-from base.services import validation_service, message_service, error_service
+from base.services import validation_service, message_service
+from base.models.utility.error import Error
 
 log = Log()
 
@@ -153,7 +154,7 @@ class Address(models.Model):
         except Address.DoesNotExist:
             return None
         except Exception as ee:
-            error_service.record(ee, [address_id, contact])
+            Error.record(ee, [address_id, contact])
 
     def __str__(self):
         return self.summary()
