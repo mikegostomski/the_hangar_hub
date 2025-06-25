@@ -87,6 +87,51 @@
                 <td>{{rental.id}}</td>
             </tr>
         {%endfor%}
+        {%if selected_application%}
+        <form method="post" action="{%url 'manage:add_tenant' airport.identifier hangar.id%}">
+            {%csrf_token%}
+            <input type="hidden" name="application_id" value="{{selected_application.id}}" />
+            <tr>
+
+                <td>
+                    <label for="nt-first_name" class="visually-hidden">First Name</label>
+                    <input type="text" name="first_name" id="nt-first_name" placeholder="First Name" value="{{prefill.first_name|default:selected_application.user.first_name}}" />
+                </td>
+                <td>
+                    <label for="nt-last_name" class="visually-hidden">Last Name</label>
+                    <input type="text" name="last_name" id="nt-last_name" placeholder="Last Name" value="{{prefill.last_name|default:selected_application.user.last_name}}" />
+                </td>
+                <td>
+                    <label for="nt-email" class="visually-hidden">Email Address</label>
+                    <input type="email" name="email" id="nt-email" placeholder="Email Address" value="{{prefill.email|default:selected_application.preferred_email}}" />
+                </td>
+
+                <td>
+                    <label for="nt-start_date" class="visually-hidden">Start Date</label>
+                    <input type="date" name="start_date" id="nt-start_date" placeholder="Start Date" value="{{prefill.start_date|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-end_date" class="visually-hidden">End Date</label>
+                    <input type="date" name="end_date" id="nt-end_date" placeholder="End Date" value="{{prefill.end_date|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-rent" class="visually-hidden">Rent</label>
+                    <input type="text" name="rent" id="nt-rent" placeholder="Rent" value="{{prefill.rent|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-deposit" class="visually-hidden">Deposit</label>
+                    <input type="text" name="deposit" id="nt-deposit" placeholder="Deposit" value="{{prefill.deposit|default:''}}" />
+                </td>
+                <td>
+                    <label for="nt-notes" class="visually-hidden">notes</label>
+                    <textarea name="notes" id="nt-notes" placeholder="notes" rows="3">{{prefill.notes|default:selected_application.aircraft_description}}</textarea>
+                </td>
+                <td>
+                    <button type="submit" class="btn btn-success">Add</button>
+                </td>
+            </tr>
+        </form>
+        {%else%}
         <form method="post" action="{%url 'manage:add_tenant' airport.identifier hangar.id%}">
             {%csrf_token%}
             <tr>
@@ -127,6 +172,7 @@
                 </td>
             </tr>
         </form>
+        {%endif%}
     </table>
     {%if issues%}
         <div class="alert alert-danger">
@@ -186,4 +232,5 @@
     </table>
 </div>
 
+{%include "the_hangar_hub/airport/management/_selected_application.html"%}
 {%endblock%}

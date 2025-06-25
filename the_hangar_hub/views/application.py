@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
 
-from base.classes.util.log import Log
+from base.classes.util.env_helper import EnvHelper, Log
 from base.classes.auth.session import Auth
 from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
@@ -18,6 +18,7 @@ from base.models.contact.phone import Phone
 from base.models.contact.address import Address
 
 log = Log()
+env = EnvHelper()
 
 
 @require_authentication()
@@ -214,6 +215,17 @@ def delete_application(request, application_id):
         return redirect("manage:application_dashboard", request.airport.identifier)
     else:
         return redirect("apply:dashboard")
+
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def select_application(request, application_id):
+    application = _get_application_for_review(request, application_id)
+    if not application:
+        return redirect("manage:application_dashboard")
+
+    application.select()
+    return redirect("manage:buildings", application.airport.identifier)
 
 
 @require_authentication()

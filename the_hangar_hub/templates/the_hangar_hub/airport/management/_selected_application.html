@@ -1,0 +1,30 @@
+{% load base_taglib %}
+{%if selected_application%}
+{%with applicant=selected_application.applicant_profile%}
+    <div class="selected_application">
+        <b>Selected Application:</b><br />
+        {%icon bi-person-circle title="Applicant:"%} {{applicant.display_name}}<br />
+        {%icon bi-airplane title="Aircraft:"%} {{selected_application.aircraft_description}}<br />
+        {%if selected_application.aircraft_wingspan%}
+            {%icon bi-arrows title="Wingspan:"%} {{selected_application.aircraft_wingspan}}<br />
+        {%endif%}
+        {%if selected_application.aircraft_height%}
+            {%icon bi-arrows-vertical title="Aircraft Height:"%} {{selected_application.aircraft_height}}<br />
+        {%endif%}
+
+    </div>
+
+    <style>
+        div.selected_application{
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            border: 1px solid green;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 3px;
+            background-color: #f1ffeb;
+        }
+    </style>
+{%endwith%}
+{%endif%}

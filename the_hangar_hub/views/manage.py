@@ -395,6 +395,9 @@ def add_tenant(request, airport_identifier, hangar_id):
     deposit = request.POST.get("deposit")
     notes = request.POST.get("notes")
 
+    application_id = request.POST.get("application_id")
+    application = HangarApplication.get(application_id) if application_id else None
+
     if not email:
         issues.append("Email address is required")
 
@@ -440,18 +443,26 @@ def add_tenant(request, airport_identifier, hangar_id):
         env.set_flash_scope("prefill", prefill)
         return redirect("manage:hangar", airport.identifier, hangar_id)
 
-    # Look for existing user via email
+
     user = contact = tenant = None
-    existing_user_profile = Auth.lookup_user_profile(email)
-    if existing_user_profile.id:
-        user = existing_user_profile.user
-        contact = existing_user_profile.contact()
-        if not existing_user_profile.is_active:
-            try:
-                user.is_active = True
-                user.save()
-            except Exception as ee:
-                log.error(f"Unable to activate User: {user} ({ee})")
+
+    # If application was given, get user from it
+    if application:
+        user = application.user
+        contact = user.contact
+
+    else:
+        # Look for existing user via email
+        existing_user_profile = Auth.lookup_user_profile(email)
+        if existing_user_profile.id:
+            user = existing_user_profile.user
+            contact = existing_user_profile.contact()
+            if not existing_user_profile.is_active:
+                try:
+                    user.is_active = True
+                    user.save()
+                except Exception as ee:
+                    log.error(f"Unable to activate User: {user} ({ee})")
 
     # If not an existing user, look for existing contact record
     if not user:
@@ -511,11 +522,17 @@ def add_tenant(request, airport_identifier, hangar_id):
         rental.save()
 
         message_service.post_success("New tenant has been added")
+        if application:
+            application.deselect()
+            application.status_code = "A"
+            application.save()
     except Exception as ee:
         log.error(f"Error creating rental: {ee}")
         issues.append("Unable to create rental record.")
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
+
+
 
     # If not an existing user, send an invitation
     if not user:

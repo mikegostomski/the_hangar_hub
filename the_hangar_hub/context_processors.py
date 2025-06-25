@@ -18,6 +18,7 @@ def airport(request):
     managed_airports = airport_service.managed_airports()
     rentals = tenant_service.get_tenant_rentals()
     open_applications = application_service.get_active_applications()
+    selected_application = application_service.get_selected_application()
 
     model = {
         "is_a_manager": bool(managed_airports),
@@ -25,6 +26,7 @@ def airport(request):
         "managed_airports": managed_airports,
         "my_rentals": rentals,
         "open_applications": len(open_applications),
+        "selected_application": selected_application,
     }
 
     return model

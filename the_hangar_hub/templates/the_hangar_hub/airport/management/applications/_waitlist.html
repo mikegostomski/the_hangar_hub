@@ -47,6 +47,11 @@
             <td>{{application.preferred_phone.formatted_number|default:''}}</td>
             <td>
                 <a href="{%url 'apply:review' application.id%}">{%icon bi-search title="View Application"%}</a>
+                <a href="{%url 'apply:select' application.id%}">{%icon bi-house-add title="Assign Hangar"%}</a>
+
+
+
+
             </td>
         </tr>
     {%endfor%}

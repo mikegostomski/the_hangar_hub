@@ -14,6 +14,10 @@ class Tenant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
     contact = models.ForeignKey('base.Contact', on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
 
+    @property
+    def display_name(self):
+        return f"{self.user.first_name} {self.user.last_name}"
+
     @classmethod
     def get(cls, data):
         try:
@@ -36,6 +40,18 @@ class Rental(models.Model):
     rent = models.DecimalField(max_digits=10, decimal_places=2)
     deposit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+
+    def is_current(self):
+        now = datetime.now(timezone.utc)
+        return (self.start_date or now) <= now and (self.end_date is None or self.end_date > now)
+
+    def is_past(self):
+        now = datetime.now(timezone.utc)
+        return self.end_date and self.end_date < now
+
+    def is_future(self):
+        now = datetime.now(timezone.utc)
+        return self.start_date and self.start_date > now
 
     @classmethod
     def current_rentals(cls):

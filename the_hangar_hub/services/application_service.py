@@ -36,3 +36,16 @@ def get_incomplete_applications(user=None):
     log.debug(f"USER APPS: { [app for app in get_active_applications(user) if app.is_incomplete]}")
     return [app for app in get_active_applications(user) if app.is_incomplete]
 
+
+def get_selected_application():
+    """
+    If an application has been selected by the manager for hangar assignment, get that application
+    """
+    selected_application_id = env.get_session_variable("selected_application")
+    return HangarApplication.get(selected_application_id) if selected_application_id else None
+
+def clear_selected_application():
+    """
+    If an application has been selected by the manager for hangar assignment, forget that application
+    """
+    env.set_session_variable("selected_application", None)

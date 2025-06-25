@@ -15,6 +15,7 @@
                 Default Rent<br />
                 <em>The default rent when adding tenants</em>
             </th>
+            <th scope="col">Tenant(s)</th>
             <th scope="col" width="100">Capacity</th>
             <th scope="col" class="text-center" width="200">Has Electricity</th>
             <th scope="col" class="text-center">-</th>
@@ -25,6 +26,21 @@
                     <a href="{%url 'manage:hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
                 </td>
                 <td align="right">{%format_currency hangar.rent%}</td>
+                <td>
+                    {%for rental in hangar.current_rentals%}
+                        {{rental.tenant.display_name}}
+                    {%empty%}
+                        {%for future_rental in hangar.future_rentals%}
+                            <em>
+                            {%icon bi-clock title="Future Tenant"%} {{future_rental.tenant.display_name}}
+                            </em>
+
+                        {%empty%}
+                            <em class="text-muted">None</em>
+                        {%endfor%}
+                    {%endfor%}
+
+                </td>
                 <td align="right">{{hangar.capacity}}</td>
                 <td align="center">
                     {%if hangar.electricity%}
@@ -45,6 +61,7 @@
                 <label for="default_rent" class="visually-hidden">Default Rent</label>
                 <input type="text" id="default_rent" name="default_rent" placeholder="$0.00" class="form-control" />
             </td>
+            <td>&nbsp;</td>
             <td>
                 <label for="capacity" class="visually-hidden">Capacity</label>
                 <input type="number" id="capacity" name="capacity" placeholder="1" class="form-control" />
@@ -67,4 +84,5 @@
         Hangar Code: "A-[5]" would create hangars A-1 through A-5
     </div>
 
+    {%include "the_hangar_hub/airport/management/_selected_application.html"%}
 {%endblock%}

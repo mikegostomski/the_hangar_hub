@@ -1,5 +1,5 @@
 from django.db import models
-from base.classes.util.log import Log
+from base.classes.util.env_helper import EnvHelper, Log
 from base.models import Phone, Address
 from django.contrib.auth.models import User
 from datetime import datetime, timezone
@@ -7,6 +7,7 @@ from base.classes.auth.session import Auth
 from base.classes.util.date_helper import DateHelper
 
 log = Log()
+env = EnvHelper()
 
 
 class HangarApplication(models.Model):
@@ -18,7 +19,10 @@ class HangarApplication(models.Model):
     submission_date = models.DateTimeField(blank=True, null=True)
 
     airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="applications", db_index=True)
+
     user = models.ForeignKey(User, models.CASCADE, related_name="applications", db_index=True)
+    def applicant_profile(self):
+        return Auth.lookup_user_profile(self.user)
 
     preferred_email = models.EmailField(verbose_name="Email Address", blank=True, null=True)
     preferred_phone = models.ForeignKey(Phone, models.CASCADE, verbose_name="Phone Number", related_name="applications", blank=True, null=True)
@@ -33,6 +37,14 @@ class HangarApplication(models.Model):
     aircraft_wingspan = models.IntegerField(verbose_name="Wingspan", blank=True, null=True)
     aircraft_height = models.IntegerField(verbose_name="Height", blank=True, null=True)
     registration_number = models.CharField(verbose_name="Registration Number", max_length=10, blank=True, null=True)
+
+    @property
+    def aircraft_description(self):
+        if self.aircraft_make or self.aircraft_model:
+            return f"{self.aircraft_make} {self.aircraft_model}".strip()
+        if self.aircraft_type_code:
+            return f"{self.aircraft_type} (unknown make/model)"
+        return "Unknown aircraft type"
 
     applicant_notes = models.TextField(verbose_name="Applicant Notes", blank=True, null=True)
     manager_notes_public = models.TextField(verbose_name="Manager Notes", blank=True, null=True)
@@ -153,6 +165,14 @@ class HangarApplication(models.Model):
     @property
     def wl_group(self):
         return self.wl_group_options().get(self.wl_group_code) or self.wl_group_code
+
+    def select(self):
+        env.set_session_variable("selected_application", self.id)
+
+    def deselect(self):
+        cu = env.get_session_variable("selected_application")
+        if cu == self.id:
+            env.set_session_variable("selected_application", None)
 
     @classmethod
     def get(cls, ii):
