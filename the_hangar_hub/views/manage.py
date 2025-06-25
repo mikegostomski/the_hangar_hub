@@ -584,37 +584,71 @@ def change_wl_priority(request, airport_identifier):
 @require_airport()
 @require_airport_manager()
 def change_wl_index(request, airport_identifier):
-    log.trace([airport_identifier])
-
     application_id = request.POST.get("application_id")
-    restore_ind = request.POST.get("restore_defaults")
+    movement = request.POST.get("movement")
 
-    if restore_ind == "Y":
+    # If resetting to timestamp-based order
+    if movement == "reset":
         request.airport.get_waitlist().reindex_applications(group_code=None, restore_default=True)
-        # If just doing a restore and not changing a specific application, nothing more to do.
-        if not application_id:
-            return HttpResponse("ok")
 
-    # ToDo: Change to up/down arrow interface rather than int field
-    
-    application = HangarApplication.get(application_id)
-    if not application:
-        message_service.post_error("Application not found. Could not update index.")
-        return HttpResponseForbidden()
-    elif application.airport != request.airport:
-        message_service.post_error("Application is for a different airport. If you are working in multiple tabs, try refreshing the page.")
-        return HttpResponseForbidden()
 
-    new_index = request.POST.get("new_index")
-    if not str(new_index).isnumeric():
-        message_service.post_error("Invalid index selection. Could not update index.")
-        return HttpResponseForbidden()
+    # Otherwise, changing one application
+    else:
+        application = HangarApplication.get(application_id)
+        if not application:
+            message_service.post_error("Application not found. Could not update waitlist position.")
+            return HttpResponseForbidden()
+        elif application.airport != request.airport:
+            message_service.post_error("Application is for a different airport. If you are working in multiple tabs, try refreshing the page.")
+            return HttpResponseForbidden()
 
-    Auth.audit(
-        "U", "WAITLIST", "Updated index", previous_value=application.wl_group_code, new_value=new_index
-    )
-    application.wl_index = new_index
-    application.save()
+        waitlist = request.airport.get_waitlist()
+        current_position = application.wl_index
+        max_position = waitlist.applications_per_group().get(application.wl_group_code)
+
+        # Determine new position in waitlist
+        if movement == "top":
+            new_position = 1
+        elif movement == "up":
+            new_position = current_position - 1
+        elif movement == "down":
+            new_position = current_position + 1
+        else:
+            new_position = max_position
+        if new_position < 1:
+            new_position = 1
+        if new_position > max_position:
+            new_position = max_position
+
+        log.trace([airport_identifier, application_id, movement, current_position, new_position])
+
+        if new_position != current_position:
+
+            for app in waitlist.applications:
+                if app.wl_group_code != application.wl_group_code:
+                    continue
+                if app.id == application.id:
+                    app.wl_index = new_position
+                    app.save()
+                # If moved to top, all others above it must move down one
+                elif movement == "top":
+                    if app.wl_index < current_position:
+                        app.wl_index += 1
+                        app.save()
+                # If moved to bottom, all others below it must move up one
+                elif movement == "bottom":
+                    if app.wl_index > current_position:
+                        app.wl_index -= 1
+                        app.save()
+                # If moved up or down one, swap with the one above/below it
+                elif movement in ["up", "down"]:
+                    if app.wl_index == new_position:
+                        app.wl_index = current_position
+                        app.save()
+
+            Auth.audit(
+                "U", "WAITLIST", "Updated index", previous_value=current_position, new_value=new_position
+            )
 
     return render(
         request, "the_hangar_hub/airport/management/applications/_waitlist.html",

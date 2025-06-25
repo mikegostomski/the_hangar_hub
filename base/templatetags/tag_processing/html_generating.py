@@ -605,7 +605,14 @@ class IconNode(template.Node):
                 continue
             if kk == "style" and "background-color" not in vv:
                 vv = f"background-color:transparent;{vv}"
-            icon.append(f' {kk}="{vv}"')
+
+            # Data attributes need the '_' converted to '-'
+            if kk.startswith("data_"):
+                icon.append(f'{kk.replace("data_", "data-")}="{vv}"')
+            elif kk.startswith("aria_"):
+                icon.append(f'{kk.replace("aria_", "aria-")}="{vv}"')
+            else:
+                icon.append(f' {kk}="{vv}"')
 
         if "style" not in other_attributes.items():
             icon.append(' style="background-color:transparent;"')

@@ -21,6 +21,20 @@ class Waitlist:
                 return ii
         return 0
 
+    def priority_groups(self):
+        if not self.applications:
+            return {}
+        return list(self.applications[0].wl_group_options().keys())
+
+    def applications_per_group(self):
+        groups = self.priority_groups()
+        counts = {x: 0 for x in groups}
+        for aa in self.applications:
+            this_group = aa.wl_group_code
+            if this_group in groups:
+                counts[this_group] += 1
+        return counts
+
     def reindex_applications(self, group_code=None, restore_default=False):
         if not self.applications:
             return
@@ -31,7 +45,7 @@ class Waitlist:
         if group_code:
             groups = [group_code]
         else:
-            groups = list(self.applications[0].wl_group_options().keys())
+            groups = self.priority_groups()
 
         indexes = {x: 0 for x in groups}
         for aa in self.applications:
