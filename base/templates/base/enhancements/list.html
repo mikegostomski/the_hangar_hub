@@ -4,17 +4,72 @@
 {%block title%}Enhancement Requests{%endblock%}
 {% block main_content %}
     <h1>Enhancement Requests</h1>
+    <div class="content-800">
+        <b class="lg">Spotted a bug? Dreaming of a new feature? We want to hear from you!</b><br />
+        Together, we can make this platform more powerful, more intuitive, and more fun to use.<br />
+        <br />
+        <ul class="list-group">
+            <li class="list-group-item">
+                <b>{%icon bi-bug%} Report a Bug</b>
+                <div class="indent">
+                    Found something that’s not working quite right? Let us know so we can get it back on course.
+                </div>
+            </li>
+            <li class="list-group-item">
+                <b>{%icon bi-lightbulb%} Request a Feature</b>
+                <div class="indent">
+                    Have an idea that could improve your experience? Share it with the crew!
+                </div>
+            </li>
+            <li class="list-group-item">
+                <b>{%icon bi-hand-thumbs-up%} Vote & Prioritize</b>
+                <div class="indent">
+                    Browse ideas from other users, vote up the ones you love, and vote down the ones you don’t.
+                    Your feedback helps us focus on what matters most.
+                </div>
+            </li>
+        </ul>
+    </div>
 
+    <div class="content-800 content-block">
+        <h2>Submit a Request</h2>
+        <form method="post" action="{%url 'base:submit_enhancement_request'%}">
+            {%csrf_token%}
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="request_type_code">Request Type {%required%}</label>
+                {%select_menu options=request_type_options value=prefill.request_type_code class="form-select" id="request_type_code" name="request_type_code" null_label="Select type of request" onchange="request_type_changed($(this));"%}
+            </div>
+            <div id="er-fields" class="{%if not prefill%}hidden{%endif%}">
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="summary">Summary{%required%}</label>
+                    <input type="text" id="summary" name="summary" value="{{prefill.summary|default:''}}" class="form-control" placeholder="Up to 120 chars" maxlength="120" />
+                </div>
+
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="detail">Detailed Request</label>
+                    <textarea id="detail" name="detail" class="form-control" rows="6">{{prefill.detail|default:''}}</textarea>
+                </div>
+                <button type="submit" class="btn btn-success">{%icon bi-send%} Submit</button>
+            </div>
+        </form>
+    </div>
+
+
+
+    <h2>Submitted Ideas</h2>
+    {%if "developer"|has_authority:True%}
     <form method="get">
         <label>Search: <input type="text" name="enhance_filter" value="{{enhance_filter|default:''}}" /></label>
         <input type="submit" value="Go">
     </form>
+    {%endif%}
 
 
 
     <table class="table table-condensed table-striped">
         <tr>
             {%sortable_th column="date_created" heading="Date"%}
+            <th scope="col" class="text-center">Type</th>
             <th scope="col">Summary</th>
             <th scope="col">Details</th>
             <th scope="col">Votes</th>
@@ -26,14 +81,21 @@
                 {{er.date_created_helper.format}}<br />
                 <em class="text-muted">{{er.date_created_helper.humanized}}</em><br />
             </td>
-            <td>
-                {{er.summary}}
+            <td align="center">
+                {%if er.request_type_code == "B"%}
+                    {%icon bi-bug text-danger title=er.request_type%}
+                {%elif er.request_type_code == "F"%}
+                    {%icon bi-lightbulb text-warning title=er.request_type%}
+                {%else%}
+                    {%icon bi-person-raised-hand title=er.request_type%}
+                {%endif%}
             </td>
+            <td>{{er.summary}}</td>
             <td style="font-size: .9em">
                 {{er.detail}}
             </td>
-            <td>
-                {{er.votes_display}}
+            <td class="votes">
+                {%include "base/enhancements/_votes.html"%}
             </td>
         </tr>
         {% empty %}
@@ -44,6 +106,12 @@
     </table>
 
     {%pagination enhancements%}
-
-
+<style>
+    td.votes .btn{
+        padding: 3px 5px 1px 5px;
+    }
+</style>
+<script type="text/javascript">
+    {%include "base/enhancements/enhancements.js"%}
+</script>
 {% endblock %}

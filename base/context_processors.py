@@ -39,6 +39,9 @@ def util(request):
         # Breadcrumbs (can be set in the view with utility_service functions)
         'breadcrumbs': breadcrumbs,
 
+        # Forms (submission errors will put a "prefill" dict in flash scope to pre-populate the form)
+        "prefill": env.get_flash_scope("prefill"),
+
         # Posted messages at top of page by default. Setting option allows moving them to the bottom
         'posted_message_position': getattr(settings, 'POSTED_MESSAGE_POSITION', 'TOP').upper(),
 

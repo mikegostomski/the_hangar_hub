@@ -4,7 +4,7 @@
  *  Returns a spinning icon to indicate that something is happening
  */
 function getAjaxLoadImage(){
-    var icon = '<i class="bi bi-gear bi-pulse" aria-hidden="true" style="color:#6A7F10;"></i>';
+    var icon = '<i class="bi bi-hypnotize bi-spin" aria-hidden="true"></i>';
     var aria = '<span class="visually-hidden">Loading...</span>';
     var loadImg = '<span class="ajaxLoadImage">'+icon+aria+'</span>';
     return loadImg;
@@ -39,14 +39,10 @@ function clearAjaxLoadImage(container){
  *  Display a spinning icon in the center of the screen to indicate a full-page loading action/event
  */
 function setAjaxLoadDiv(){
-    var spinner = '<span class="ajaxLoading">'+getAjaxLoadImage()+'</span>';
-    var div = '<div class="ajaxLoading">'+spinner+'</div>';
-
-    clearAjaxLoadDiv();     //Remove any existing loadDiv
-    $('body').append(div);  //Append the loadDiv to the body
+    show_page_loading();
 }
 function clearAjaxLoadDiv(){
-    $(".ajaxLoading").remove();
+    hide_page_loading();
 }
 
 

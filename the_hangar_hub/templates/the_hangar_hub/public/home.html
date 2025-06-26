@@ -12,8 +12,7 @@
         <h1>Welcome</h1>
     {%endif%}
     <br />
-    <div class="row">
-        <div class="col-sm-4 mb-3 mb-sm-0">
+
             <div class="card">
                 <img src="{% static 'images/application.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
                 <div class="card-body">
@@ -31,10 +30,9 @@
                     {%endif%}
                 </div>
             </div>
-        </div>
-        <div class="col-sm-4">
+
             <div class="card">
-                <img src="{% static 'images/wait_list.png' %}" alt="Image of planes waiting to take off" class="card-img-top" />
+                <img src="{% static 'images/waitlist.png' %}" alt="Image of planes waiting to take off" class="card-img-top" />
                 <div class="card-body">
                     <h5 class="card-title">Waitlist</h5>
                     <p class="card-text">
@@ -47,8 +45,7 @@
                     <a href="#" class="btn btn-primary">Go somewhere</a>
                 </div>
             </div>
-        </div>
-        <div class="col-sm-4">
+
             <div class="card">
                 <img src="{% static 'images/hangar_space.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
                 <div class="card-body">
@@ -63,7 +60,37 @@
                     <a href="#" class="btn btn-primary">Go somewhere</a>
                 </div>
             </div>
-        </div>
-    </div>
+
+
+        {%if current_user.is_authenticated%}
+
+            <div class="card">
+                <img src="{% static 'images/maintenance.png' %}" alt="Image of an airplane having work done on it" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Enhancement Requests</h5>
+                    <p class="card-text">
+                        Spotted a bug? Dreaming of a new feature? We want to hear from you!
+                        <ul>
+                            <li>Request a new feature</li>
+                            <li>Submit a bug report</li>
+                            <li>Vote for other users' ideas</li>
+                        </ul>
+                    </p>
+                    <a href="{%url 'base:enhancement_requests'%}" class="btn btn-primary">Contribute</a>
+                </div>
+            </div>
+
+        {%endif%}
+
+
 </div>
+<style>
+    .card{
+        float: left;
+        max-width: 300px;
+        height: 475px;
+        margin-bottom: 20px;
+        margin-right: 20px;
+    }
+</style>
 {%endblock%}

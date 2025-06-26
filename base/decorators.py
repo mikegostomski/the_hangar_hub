@@ -21,7 +21,6 @@ def report_errors():
             try:
                 return view_func(request, *args, **kwargs)
             except Exception as ee:
-                from base.models.utility.error import Error
                 Error.record(ee, view_func)
                 raise
 

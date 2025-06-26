@@ -56,7 +56,9 @@ urlpatterns = [
     path("error_status/ignore/<int:error_id>", views.ignore_similar, name="error_ignore"),
 
     # Enhancement Requests
-    path("enhancement_requests", views.enhancement_requests, name="enhancement_requests"),
+    path("enhancement/list", views.enhancement_requests, name="enhancement_requests"),
+    path("enhancement/submit", views.submit_enhancement_request, name="submit_enhancement_request"),
+    path("enhancement/vote", views.enhancement_vote, name="enhancement_vote"),
 
 
     # # Testing pages

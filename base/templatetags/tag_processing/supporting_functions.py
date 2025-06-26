@@ -50,7 +50,10 @@ def process_args(p_args, context=None, p_allow_no_key=True):
                             for mm in matches:
                                 var_name = mm.replace("{", "").replace("}", "")
                                 var_str = template.Variable(var_name)
-                                var_val = var_str.resolve(context)
+                                try:
+                                    var_val = var_str.resolve(context)
+                                except:
+                                    var_val = None
                                 val = val.replace(mm, str(var_val))
                 except Exception as ee:
                     log.error(
@@ -60,7 +63,10 @@ def process_args(p_args, context=None, p_allow_no_key=True):
             # Non-quoted values must be converted to their true values
             else:
                 val_str = template.Variable(val)
-                val = val_str.resolve(context)
+                try:
+                    val = val_str.resolve(context)
+                except:
+                    val = None
 
         # If no key was given, and that is allowed
         elif p_allow_no_key:

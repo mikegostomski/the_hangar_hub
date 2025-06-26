@@ -1,0 +1,17 @@
+{% load base_taglib %}
+
+<div class="float-left">{{er.score}}</div>
+<div class="float-right">
+    {%with my_vote=er.cu_vote%}
+        {%if my_vote and my_vote.value > 0%}
+            {%icon bi-hand-thumbs-up text-muted title="You voted for this entry"%}
+        {%elif my_vote%}
+            {%icon bi-hand-thumbs-down text-muted title="You voted against this entry"%}
+        {%else%}
+            <button class="btn btn-sm btn-success mb-1" data-application_id="{{er.id}}" onclick="submit_vote($(this));">{%icon bi-hand-thumbs-up title="Vote Up"%}</button><br />
+            <button class="btn btn-sm btn-danger" data-application_id="{{er.id}}" onclick="submit_vote($(this));">{%icon bi-hand-thumbs-down title="Vote Down"%}</button>
+        {%endif%}
+    {%endwith%}
+</div>
+
+

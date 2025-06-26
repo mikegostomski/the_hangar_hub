@@ -323,6 +323,10 @@ def image(parser, token):
 # HTML-GENERATING CATEGORY
 # # # # # # # # # # # # # # # # # # #
 
+@register.simple_tag()
+def required():
+    return mark_safe(""" <span class="required" title="required" aria-hidden="true">*</span><span class="visually-hidden">required field</span>""")
+
 
 @register.inclusion_tag('base/components/pagination.html')
 def pagination(paginated_results):

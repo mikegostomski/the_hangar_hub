@@ -277,6 +277,22 @@
     margin: 50px 0;
 }
 
+/**
+ * FORMS
+ **********************************************************/
+.content-800 .input-group-text{
+    width: 190px;
+    font-weight: bold;
+}
+span.required{
+    color: red;
+    font-size: 1.2em;
+    margin-left: 3px;
+}
+fieldset .form-control, fieldset .form-select {
+    height: 100%;
+}
+
 
 /**
   * FOOTER

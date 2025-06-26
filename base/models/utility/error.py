@@ -176,8 +176,8 @@ class Error(models.Model):
             ee.path = str(path)[:128] if path else path
             ee.parameters = str(parameters)[:500] if parameters else parameters
             ee.code_detail = str(src)[:128] if src else src
-            ee.user = request.user
-            ee.auth_description = env.get_session_variable("auth_user_description")
+            ee.user = request.user if request.user.id else None
+            ee.auth_description = env.get_session_variable("auth_user_description") or "Anonymous"
             ee.browser = browser[:200] if browser else browser
             ee.error_friendly = str(error_display)[:128] if error_display else error_display
             ee.error_system = str(error_system)[:128] if error_system else error_system

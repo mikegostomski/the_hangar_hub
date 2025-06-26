@@ -47,21 +47,21 @@ The Hangar Hub: Hangar Application -
 
         {%if "preferred_email" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="preferred_email">Email Address {%if "preferred_email" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="preferred_email">Email Address {%if "preferred_email" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="email" id="preferred_email" value="{{application.preferred_email|default:''}}" class="form-control" readonly />
         </div>
         {%endif%}
 
         {%if "preferred_phone" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="preferred_phone">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="preferred_phone">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="text" id="preferred_phone" value="{{application.preferred_phone.formatted_number|default:''}}" class="form-control" readonly />
         </div>
         {%endif%}
 
         {%if "mailing_address" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="mailing_address">Mailing Address {%if "mailing_address" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="mailing_address">Mailing Address {%if "mailing_address" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <textarea id="mailing_address" class="form-control" readonly>{{application.mailing_address|default:''}}</textarea>
         </div>
         {%endif%}
@@ -72,42 +72,42 @@ The Hangar Hub: Hangar Application -
         <h2>Aircraft Data</h2>
         {%if "aircraft_type_code" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="aircraft_type_code">Category {%if "aircraft_type_code" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="aircraft_type_code">Category {%if "aircraft_type_code" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="text" id="aircraft_type_code" value="{{application.aircraft_type}}" class="form-control" readonly />
         </div>
         {%endif%}
 
         {%if "aircraft_make" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="aircraft_make">Make {%if "aircraft_make" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="aircraft_make">Make {%if "aircraft_make" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="text" name="aircraft_make" id="aircraft_make" value="{{application.aircraft_make|default:''}}" class="form-control" readonly/>
         </div>
         {%endif%}
 
         {%if "aircraft_model" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="aircraft_model">Model {%if "aircraft_model" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="aircraft_model">Model {%if "aircraft_model" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="text" name="aircraft_model" id="aircraft_model" value="{{application.aircraft_model|default:''}}" class="form-control" readonly />
         </div>
         {%endif%}
 
         {%if "registration_number" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="registration_number">Registration Number {%if "registration_number" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="registration_number">Registration Number {%if "registration_number" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="text" name="registration_number" id="registration_number" value="{{application.registration_number|default:''}}" class="form-control" readonly />
         </div>
         {%endif%}
 
         {%if "aircraft_wingspan" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="aircraft_wingspan">Wingspan ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_wingspan" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="aircraft_wingspan">Wingspan ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_wingspan" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="number" name="aircraft_wingspan" id="aircraft_wingspan" value="{{application.aircraft_wingspan|default:''}}"  class="form-control" readonly />
         </div>
         {%endif%}
 
         {%if "aircraft_height" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="aircraft_height">Height ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_height" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="aircraft_height">Height ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_height" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="number" name="aircraft_height" id="aircraft_height" value="{{application.aircraft_height|default:''}}"  class="form-control" readonly />
         </div>
         {%endif%}
@@ -119,13 +119,13 @@ The Hangar Hub: Hangar Application -
 
         {%if "hangar_type_code" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="hangar_type_code">Hangar Preference {%if "hangar_type_code" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="hangar_type_code">Hangar Preference {%if "hangar_type_code" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <input type="text" id="hangar_type_code" class="form-control" value="{{application.hangar_type}}" readonly />
         </div>
         {%endif%}
         {%if "applicant_notes" not in airport_preferences.ignored_fields%}
         <div class="input-group mb-3">
-            <label class="input-group-text" for="applicant_notes">Applicant Notes {%if "applicant_notes" in airport_preferences.required_fields%}<span class="required">*</span>{%endif%}</label>
+            <label class="input-group-text" for="applicant_notes">Applicant Notes {%if "applicant_notes" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
             <textarea name="applicant_notes" id="applicant_notes" class="form-control" readonly>{{application.applicant_notes|default:''}}</textarea>
         </div>
         {%endif%}
