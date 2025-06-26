@@ -1,0 +1,49 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Enhancement Requests{%endblock%}
+{% block main_content %}
+    <h1>Enhancement Requests</h1>
+
+    <form method="get">
+        <label>Search: <input type="text" name="enhance_filter" value="{{enhance_filter|default:''}}" /></label>
+        <input type="submit" value="Go">
+    </form>
+
+
+
+    <table class="table table-condensed table-striped">
+        <tr>
+            {%sortable_th column="date_created" heading="Date"%}
+            <th scope="col">Summary</th>
+            <th scope="col">Details</th>
+            <th scope="col">Votes</th>
+        </tr>
+
+        {% for er in enhancements%}
+        <tr>
+            <td class="sm" width="120">
+                {{er.date_created_helper.format}}<br />
+                <em class="text-muted">{{er.date_created_helper.humanized}}</em><br />
+            </td>
+            <td>
+                {{er.summary}}
+            </td>
+            <td style="font-size: .9em">
+                {{er.detail}}
+            </td>
+            <td>
+                {{er.votes_display}}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4"><em>No Enhancement Requests</em></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {%pagination enhancements%}
+
+
+{% endblock %}

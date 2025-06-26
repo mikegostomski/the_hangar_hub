@@ -7,4 +7,5 @@ from base.models.utility.feature import Feature
 from base.models.utility.variable import Variable
 from base.models.utility.xss_attempt import XssAttempt
 from base.models.utility.error import Error
+from base.models.utility.enhancement_requests import EnhancementRequest, EnhancementVote
 from .referral import Referral
