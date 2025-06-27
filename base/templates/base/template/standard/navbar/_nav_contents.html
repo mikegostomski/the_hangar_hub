@@ -1,9 +1,11 @@
 {% load base_taglib %}
+{%if include_home%}
+    <li>
+        <a class="dropdown-item" href="/">Home</a>
+    </li>
+    <li class="dropdown-divider"></li>
+{%endif%}
 
-<li>
-    <a class="dropdown-item" href="/">Home</a>
-</li>
-<li class="dropdown-divider"></li>
 <li class="dropdown-header">
     Hey There
 </li>

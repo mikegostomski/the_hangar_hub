@@ -47,10 +47,9 @@
     padding: 5px;
     padding-left: 9px;
 }
-.navbar-content a.dropdown-item{
-    display: block;
-    width: 100%;
-    color: inherit;
+.navbar-content .dropdown-item::before{
+    content: "\f309";
+    font-family: 'bootstrap-icons';
 }
 .navbar-content a.dropdown-item:hover{
     background-color: lighten($navbar_bg_color, 5%);

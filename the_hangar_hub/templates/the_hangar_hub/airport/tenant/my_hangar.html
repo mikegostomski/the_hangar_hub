@@ -4,10 +4,61 @@
 {%block title%}My Hangar: {{hangar.code}}{%endblock%}
 
 {% block main_content %}
-<h1>{{hangar.code}}</h1>
+<h1>Hangar {{hangar.code}}</h1>
 
-<div class="content-block">
+<div class="content-1024 content-block">
+    <h2>Rental Agreement(s)</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Start Date</th>
+            <th scope="col">End Date</th>
+            <th scope="col">Rent</th>
+            <th scope="col">Deposit</th>
+            <th scope="col">Notes</th>
+        </tr>
+        {%for rental in rentals%}
+            <tr>
+                <td>{{rental.start_date}}</td>
+                <td>{{rental.end_date}}</td>
+                <td>{%format_currency rental.rent%}</td>
+                <td>{%format_currency rental.deposit%}</td>
+                <td>{{rental.notes}}</td>
+            </tr>
+        {%endfor%}
+    </table>
+</div>
 
+<div class="content-1024 content-block">
+    <h2>Payment Center</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Payment Date</th>
+            <th scope="col">Payment Amount</th>
+            <th scope="col">Payment Method</th>
+        </tr>
+        <tr>
+            <td colspan="3"><em class="text-muted">No Payment History</em></td>
+        </tr>
+    </table>
+
+    <span class="btn btn-primary">Make a Payment</span>
+    <span class="btn btn-primary">Manage Auto-Pay</span>
+</div>
+
+<div class="content-1024 content-block">
+    <h2>Maintenance Requests</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Request Date</th>
+            <th scope="col">Summary</th>
+            <th scope="col">Status</th>
+        </tr>
+        <tr>
+            <td colspan="3"><em class="text-muted">No Maintenance History</em></td>
+        </tr>
+    </table>
+
+    <span class="btn btn-primary">Report a Maintenance Issue</span>
 </div>
 
 {%endblock%}

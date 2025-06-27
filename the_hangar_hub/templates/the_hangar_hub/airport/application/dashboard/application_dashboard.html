@@ -30,7 +30,9 @@ The Hangar Hub: Hangar Application Dashboard
             <td>{{application.status}}</td>
             <td>
                 {%with waitlist=application.airport.get_waitlist%}
-                    {%if waitlist.num_waiting == 0%}
+                    {%if application.status_code != "L"%}
+                        <em class="text-muted">-</em>
+                    {%elif waitlist.num_waiting == 0%}
                         <em class="text-muted">N/A</em>
                     {%elif waitlist.current_user_position == 0%}
                         {%icon bi-watch title="Waiting for application review"%}

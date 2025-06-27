@@ -1,3 +1,6 @@
+"""
+Pages that do not require authentication
+"""
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.breadcrumb import Breadcrumb
@@ -14,23 +17,31 @@ env = EnvHelper()
 
 @report_errors()
 def home(request):
+    """
+    Grab people's attention and let them know what this site does
+    """
     Breadcrumb.clear()
 
     if request.user.is_authenticated:
         # Look for incomplete applications
-        log.debug("LOOKING...")
         incomplete_application = application_service.get_incomplete_applications()
         incomplete_application = incomplete_application[0] if incomplete_application else None
+        return render(
+            request, "the_hangar_hub/public/home.html",
+            {
+                "incomplete_application": incomplete_application,
+            }
+        )
+
+
     else:
-        incomplete_application = None
+        return render(
+            request, "the_hangar_hub/public/public_landing_page.html",
+            {}
+        )
 
 
-    return render(
-        request, "the_hangar_hub/public/home.html",
-        {
-            "incomplete_application": incomplete_application,
-        }
-    )
+
 
 
 @report_errors()

@@ -20,22 +20,22 @@ def get_tenant_rentals(user=None):
     return None
 
 
-def get_hangar_rental(airport_identifier, hangar_identifier, user=None, post_error=True):
-    user = Auth().lookup_user(user) if user else Auth.current_user()
-    airport = Airport.get(airport_identifier)
-    hangar = rental = None
-    if airport:
-        hangar = airport.get_hangar(hangar_identifier)
-    if post_error and not hangar:
-        message_service.post_error("The specified hangar could not be found")
-        return None
-
-    if hangar:
-        try:
-            rental = Rental.current_rentals().get(hangar=hangar, tenant__user=user)
-            return rental
-        except Rental.DoesNotExist:
-            pass
-
-    message_service.post_error("The specified hangar rental could not be found")
-    return None
+# def get_hangar_rental(airport_identifier, hangar_identifier, user=None, post_error=True):
+#     user = Auth().lookup_user(user) if user else Auth.current_user()
+#     airport = Airport.get(airport_identifier)
+#     hangar = rental = None
+#     if airport:
+#         hangar = airport.get_hangar(hangar_identifier)
+#     if post_error and not hangar:
+#         message_service.post_error("The specified hangar could not be found")
+#         return None
+#
+#     if hangar:
+#         try:
+#             rental = Rental.current_rentals().get(hangar=hangar, tenant__user=user)
+#             return rental
+#         except Rental.DoesNotExist:
+#             pass
+#
+#     message_service.post_error("The specified hangar rental could not be found")
+#     return None

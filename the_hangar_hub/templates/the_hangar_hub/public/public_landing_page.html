@@ -1,0 +1,105 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+
+{%block title%}The Hangar Hub{%endblock%}
+
+{% block main_content %}
+<div class="content-1024 content-center">
+    <h1>Welcome to the Hangar Hub</h1>
+
+    <strong>Smarter Hangar Management for General Aviation</strong><br />
+
+
+            <div class="card">
+                <img src="{% static 'images/apply.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Hangar Applications</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Go paperless with an online hangar application process</li>
+                            <li>Eliminate data entry errors from handwritten forms</li>
+                            <li>Automatically keep applicants updated on the status of the application</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <img src="{% static 'images/waitlist.png' %}" alt="Image of planes waiting to take off" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Waitlist Management</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Prioritize applicants based on airport policies, aircraft type, etc</li>
+                            <li>Keep applicants in the loop with automatic notifications when their status changes</li>
+                            <li>Applicants can check their place in line anytime - no need to call!</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <img src="{% static 'images/payment.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Payment Center</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Keep tenants current with automated billing</li>
+                            <li>Tenants can manage auto-pay, or make one-time payments</li>
+                            <li>View payment history and create receipts any time</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+
+            <div class="card">
+                <img src="{% static 'images/leak.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Maintenance Tracking</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Notify affected tenants of planned maintenance</li>
+                            <li>Tenants may submit maintenance requests online</li>
+                            <li>Tenants can track the status of their requests</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+
+            <div class="card">
+                <img src="{% static 'images/logo/hh-logo-dark.png' %}" alt="Image of a hangar with a plane in it" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Report Generation</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Occupancy reports</li>
+                            <li>Revenue summaries</li>
+                            <li>Other types of reports???</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+<button class="btn btn-primary">{%icon bi-emoji-smile%} Here's a Button</button>
+<button class="btn btn-secondary">{%icon bi-emoji-smile%} Here's a Button</button>
+<button class="btn btn-default">{%icon bi-emoji-smile%} Here's a Button</button>
+<button class="btn btn-info">{%icon bi-emoji-smile%} Here's a Button</button>
+<button class="btn btn-success">{%icon bi-emoji-smile%} Here's a Button</button>
+<button class="btn btn-warning">{%icon bi-emoji-smile%} Here's a Button</button>
+<button class="btn btn-danger">{%icon bi-emoji-smile%} Here's a Button</button>
+
+
+</div>
+<style>
+    .card{
+        float: left;
+        max-width: 300px;
+        height: 475px;
+        margin-bottom: 20px;
+        margin-right: 20px;
+    }
+</style>
+{%endblock%}

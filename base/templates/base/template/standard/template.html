@@ -17,6 +17,7 @@
     {% block favicon %}
         <link rel="shortcut icon" href="{%static_content_url%}/images/favicon.ico" type="image/x-icon">
     {% endblock %}
+    {%include "base/template/standard/google_fonts.html"%}
     {% block head %}{% endblock %}
 
     {%jquery%}
@@ -44,6 +45,7 @@
     <link href="{%static 'css/ajax.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
     <link href="{%static 'css/legacy.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
     <link href="{%static 'css/main.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+    <link href="{%static 'css/app.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
 
     <script src="{%sass_src 'js/posted-messages.js'%}?v={%app_version%}"></script>
     <link href="{%sass_src 'css/template.scss'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
