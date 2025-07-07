@@ -86,7 +86,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'base.context_processors.util',
                 'base.context_processors.auth',
-                'the_hangar_hub.context_processors.airport',
+                'the_hangar_hub.context_processors.airport_data',
             ],
             'libraries':{
                 'hub_taglib': 'the_hangar_hub.templatetags.hub_taglib',

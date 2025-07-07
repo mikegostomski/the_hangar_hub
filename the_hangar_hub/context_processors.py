@@ -11,7 +11,7 @@ env = EnvHelper()
 app = AppData()
 
 
-def airport(request):
+def airport_data(request):
     if request.path.startswith("/accounts/"):
         return {}
 
@@ -19,8 +19,10 @@ def airport(request):
     rentals = tenant_service.get_tenant_rentals()
     open_applications = application_service.get_active_applications()
     selected_application = application_service.get_selected_application()
+    airport = request.airport if hasattr(request, "airport") else None
 
     model = {
+        "airport": airport,
         "is_a_manager": bool(managed_airports),
         "is_a_tenant": bool(rentals),
         "managed_airports": managed_airports,
@@ -28,6 +30,5 @@ def airport(request):
         "open_applications": len(open_applications),
         "selected_application": selected_application,
     }
-
     return model
 

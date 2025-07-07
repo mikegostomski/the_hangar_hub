@@ -1,12 +1,132 @@
 {% extends 'base/template/standard/template.html' %}
 {% load base_taglib %}
+{% load static %}
 
-{%block title%}The Hangar Hub: {{airport}}{%endblock%}
+{%block title%}Welcome to {{airport.display_name}}{%endblock%}
 
 {% block main_content %}
-<div class="content-800">
-    <h1>{{airport}}</h1>
-    <br />
-    Airport Landing Page...
+<div class="content-1024 content-center">
+    <h1>{{airport.display_name}}</h1>
+    <strong>Welcome, {{current_user.first_name}}</strong><br />
+
+    <div class="alert alert-info hobbs-alert">
+        <strong>Debug Data:</strong>
+            "is_manager": {{is_manager}},
+            "is_tenant": {{is_tenant}},
+            "on_waitlist": {{on_waitlist}},
+            "active_applications": {{active_applications}},
+    </div>
+
+    {%if is_manager%}
+
+
+            <div class="card">
+                <img src="{% static 'images/reports.png' %}" alt="Cartoon airplane analyzing a report" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Report Generation</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Occupancy reports</li>
+                            <li>Revenue summaries</li>
+                            <li>Other types of reports???</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+    {%endif%}
+
+    {%if active_applications%}
+            <div class="card">
+                <img src="{% static 'images/apply.png' %}" alt="Cartoon airplane applying for a hangar" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Hangar Applications</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Go paperless with an online hangar application process</li>
+                            <li>Eliminate data entry errors from handwritten forms</li>
+                            <li>Automatically keep applicants updated on the status of the application</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+    {%endif%}
+
+    {%if on_waitlist%}
+            <div class="card">
+                <img src="{% static 'images/waitlist.png' %}" alt="Planes waiting to take off" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Waitlist Management</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Prioritize applicants based on airport policies, aircraft type, etc</li>
+                            <li>Keep applicants in the loop with automatic notifications when their status changes</li>
+                            <li>Applicants can check their place in line anytime - no need to call!</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+    {%endif%}
+
+    {%if is_tenant%}
+
+            <div class="card">
+                <img src="{% static 'images/bs-cards/maintenance.png' %}" alt="Airplane with water dripping from hangar roof" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Maintenance Tracking</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Notify affected tenants of planned maintenance</li>
+                            <li>Tenants may submit maintenance requests online</li>
+                            <li>Tenants can track the status of their requests</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+
+            <div class="card">
+                <img src="{% static 'images/bs-cards/payment.png' %}" alt="Cartoon airplane holding a wad of cash" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Payment Center</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>Keep tenants current with automated billing</li>
+                            <li>Tenants can manage auto-pay, or make one-time payments</li>
+                            <li>View payment history and create receipts any time</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+
+    {%endif%}
+
+
+
+            <div class="card">
+                <img src="{% static 'images/bs-cards/enhance.png' %}" alt="Image of an airplane having work done on it" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Enhancement Requests</h5>
+                    <p class="card-text">
+                        Spotted a bug? Dreaming of a new feature? We want to hear from you!
+                        <ul>
+                            <li>Request a new feature</li>
+                            <li>Submit a bug report</li>
+                            <li>Vote for other users' ideas</li>
+                        </ul>
+                    </p>
+                    <a href="{%url 'base:enhancement_requests'%}" class="btn btn-primary">Contribute</a>
+                </div>
+            </div>
+
+
 </div>
+<style>
+    .card{
+        float: left;
+        max-width: 300px;
+        height: 475px;
+        margin-bottom: 20px;
+        margin-right: 20px;
+    }
+</style>
 {%endblock%}

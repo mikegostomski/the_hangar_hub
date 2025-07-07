@@ -23,22 +23,38 @@ def home(request):
     Breadcrumb.clear()
 
     if request.user.is_authenticated:
-        # Look for incomplete applications
-        incomplete_application = application_service.get_incomplete_applications()
-        incomplete_application = incomplete_application[0] if incomplete_application else None
-        return render(
-            request, "the_hangar_hub/public/home.html",
-            {
-                "incomplete_application": incomplete_application,
-            }
-        )
+        # If airport already selected, go to that airport's welcome page
+        if hasattr(request, "airport"):
+            return redirect("airport:welcome", request.airport.identifier)
 
+        # Look for an airport associated with this user...
 
-    else:
-        return render(
-            request, "the_hangar_hub/public/public_landing_page.html",
-            {}
-        )
+        # An incomplete hangar application could mean they are returning to complete it
+        incomplete_applications = application_service.get_incomplete_applications()
+        if incomplete_applications:
+            airport = incomplete_applications[0].airport
+            airport_service.save_airport_selection(airport)
+            return redirect("airport:welcome", airport.identifier)
+
+        # If an airport manager, go to that airport (first one if multiple)
+        managers = airport_service.managed_airports()
+        if managers:
+            airport = managers[0].airport
+            airport_service.save_airport_selection(airport)
+            return redirect("airport:welcome", airport.identifier)
+
+        # If a current tenant at an airport, go there (first one if multiple)
+        rentals = tenant_service.get_tenant_rentals()
+        if rentals:
+            airport = rentals[0].hangar.building.airport
+            airport_service.save_airport_selection(airport)
+            return redirect("airport:welcome", airport.identifier)
+
+    # Otherwise, just present a public landing page
+    return render(
+        request, "the_hangar_hub/public/public_landing_page.html",
+        {}
+    )
 
 
 

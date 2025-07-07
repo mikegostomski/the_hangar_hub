@@ -3,11 +3,71 @@ from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.airport_manager import AirportManager
+from the_hangar_hub.models.tenant import Rental
 from base.services import message_service
+from base.models.utility.error import Error
 
 
 log = Log()
 env = EnvHelper()
+
+
+def is_airport_manager(user=None, airport=None):
+    use_recall = user is None and airport is None
+    result = None
+    if use_recall:
+        result = env.recall()
+        if result is not None:
+            return result
+
+    user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
+    if can_query_user(user):
+        manages = AirportManager.objects.filter(user=user, status_code="A").select_related("user")
+        if airport:
+            manages = manages.filter(airport=airport)
+        result = bool([mgmt for mgmt in manages if mgmt.is_active])
+    else:
+        result = False
+    if use_recall:
+        env.store(result)
+    return result
+
+
+def is_tenant(user=None, airport=None):
+    return bool(get_airport_tenant_rentals(user, airport))
+
+
+def get_airport_tenant_rentals(user=None, airport=None):
+    use_recall = user is None and airport is None
+    if use_recall:
+        result = env.recall()
+        if result is not None:
+            return result
+
+    user = Auth().lookup_user(user) if user else Auth.current_user()
+    airport = env.request.airport if not airport else airport
+    if not (user and airport):
+        return None
+
+    try:
+        result = Rental.current_rentals().filter(tenant__user=user, airport=airport)
+        if use_recall:
+            env.store(result)
+    except Exception as ee:
+        result = None
+        Error.unexpected(
+            "Unable to retrieve current rental agreements", ee
+        )
+
+    return result
+
+
+
+
+
+
+
+
 
 def save_airport_selection(airport):
     env.set_session_variable(
@@ -32,25 +92,6 @@ def get_managers(airport=None, status=None):
     managers = managers.select_related("airport", "user")
     return managers
 
-def is_airport_manager(user=None, airport=None):
-    use_recall = user is None and airport is None
-    result = None
-    if use_recall:
-        result = env.recall()
-        if result is not None:
-            return result
-
-    user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
-    if can_query_user(user):
-        manages = AirportManager.objects.filter(user=user, status_code="A").select_related("user")
-        if airport:
-            manages = manages.filter(airport=airport)
-        result = bool([mgmt for mgmt in manages if mgmt.is_active])
-    else:
-        result = False
-    if use_recall:
-        env.store(result)
-    return result
 
 def get_managed_airport(airport_identifier, post_error=True):
     try:

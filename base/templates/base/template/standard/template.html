@@ -15,7 +15,7 @@
         {% block title %}{%app_name%}{% endblock %}
     </title>
     {% block favicon %}
-        <link rel="shortcut icon" href="{%static_content_url%}/images/favicon.ico" type="image/x-icon">
+        <link rel="shortcut icon" href="{%static '/images/favicon.ico'%}?app={%app_code%}&v={%app_version%}" type="image/x-icon">
     {% endblock %}
     {%include "base/template/standard/google_fonts.html"%}
     {% block head %}{% endblock %}

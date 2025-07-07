@@ -28,8 +28,8 @@ def get_applications(user=None):
     return []
 
 
-def get_active_applications(user=None):
-    return [app for app in get_applications(user) if app.is_active]
+def get_active_applications(user=None, airport=None):
+    return [app for app in get_applications(user) if app.is_active and (airport is None or app.airport == airport)]
 
 
 def get_incomplete_applications(user=None):
