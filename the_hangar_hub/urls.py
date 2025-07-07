@@ -79,6 +79,14 @@ manager_paths = [
     path('<slug:airport_identifier>/application/dashboard', manage.application_dashboard,     name='application_dashboard'),
     path('<slug:airport_identifier>/waitlist/prioritize', manage.change_wl_priority,     name='change_wl_priority'),
     path('<slug:airport_identifier>/waitlist/index', manage.change_wl_index,     name='change_wl_index'),
+    
+    # MAINTENANCE
+    path('<slug:airport_identifier>/maintenance', maintenance.manager_dashboard,  name='mx_dashboard'),
+    path('<slug:airport_identifier>/maintenance/request/view/<int:request_id>', maintenance.manager_request_view,  name='view_mx_request'),
+    path('<slug:airport_identifier>/maintenance/request/priority/<int:request_id>', maintenance.update_priority,  name='update_mx_priority'),
+    path('<slug:airport_identifier>/maintenance/request/status/<int:request_id>', maintenance.update_status,  name='update_mx_status'),
+    path('<slug:airport_identifier>/maintenance/request/comment/<int:request_id>', maintenance.post_comment,  name='post_mx_comment'),
+    path('<slug:airport_identifier>/maintenance/request/comment/visibility', maintenance.update_visibility,  name='mx_comment_visibility'),
 ]
 
 # Hangar Tenant Paths
@@ -88,7 +96,7 @@ tenant_paths = [
     path('<slug:airport_identifier>/maintenance/request/<slug:hangar_id>', maintenance.tenant_request,  name='mx_request_form'),
     path('<slug:airport_identifier>/maintenance/request/<slug:hangar_id>/post', maintenance.tenant_request_submit,  name='submit_mx_request'),
     path('<slug:airport_identifier>/maintenance/request/view/<int:request_id>', maintenance.tenant_request_view,  name='view_mx_request'),
-    path('<slug:airport_identifier>/maintenance/request/comment/<int:request_id>', maintenance.post_comment,  name='post_comment'),
+    path('<slug:airport_identifier>/maintenance/request/comment/<int:request_id>', maintenance.post_comment,  name='post_mx_comment'),
 
     # HANGAR
     path('<slug:airport_identifier>/hangar/<slug:hangar_id>', tenant.my_hangar,  name='hangar'),

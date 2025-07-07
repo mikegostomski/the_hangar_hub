@@ -89,3 +89,13 @@
 .xxl{
     font-size: xx-large;
 }
+
+
+.alert-xs{
+    --bs-alert-padding-x: 5px;
+    --bs-alert-padding-y: 1px;
+}
+.alert-sm{
+    --bs-alert-padding-x: 8px;
+    --bs-alert-padding-y: 3px;
+}

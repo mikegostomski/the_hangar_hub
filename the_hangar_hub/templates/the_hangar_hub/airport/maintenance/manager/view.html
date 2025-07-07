@@ -10,15 +10,23 @@
         <h2>{{mx_request.summary}}</h2>
         {%humanized_date mx_request.date_created%}<br />
         <br />
-        <strong>Priority:</strong> {{mx_request.priority}}<br />
-        <strong>Status:</strong> {{mx_request.status}}<br />
-
         {%if mx_request.notes%}
         <div class="content-800">
             <strong>More Information:</strong><br />
             {{mx_request.notes}}
         </div>
         {%endif%}
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="priority_code">Priority:</label>
+            {%select_menu options=mx_request.priority_options value=mx_request.priority_code id="priority_code" class="form-select" onchange="update_priority($(this));" nullable=False%}
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="status_code">Status:</label>
+            {%select_menu options=mx_request.status_options value=mx_request.status_code id="status_code" class="form-select" onchange="update_status($(this));" nullable=False%}
+        </div>
+
     </div>
 
     <div class="content-800 content-block">
@@ -28,6 +36,7 @@
         </div>
         <script type="text/javascript">
             {%include "the_hangar_hub/airport/maintenance/comments/comment.js"%}
+            {%include "the_hangar_hub/airport/maintenance/manager/maintenance.js"%}
         </script>
     </div>
 

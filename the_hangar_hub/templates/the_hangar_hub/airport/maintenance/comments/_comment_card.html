@@ -5,6 +5,13 @@
             {%if mx_comment%}
                 {%icon bi-person-badge%} {{mx_comment.user.username}}<br />
                 {%humanized_date mx_comment.date_created%}<br />
+                {%if is_airport_manager%}
+                    {%if mx_comment.visibility_code == "I"%}
+                        <span class="badge text-bg-danger" style="cursor:pointer;" onclick="make_public({{mx_comment.id}}, $(this));">{%icon bi-eye-slash%} Internal</span>
+                    {%else%}
+                        <div class="badge text-bg-primary" style="cursor:pointer;" onclick="make_private({{mx_comment.id}}, $(this));">{%icon bi-eye%} Public</div>
+                    {%endif%}
+                {%endif%}
             {%else%}
                 {%icon bi-person-badge%} {{current_user.username}}<br />
                 {%icon bi-calendar%} {{now|date:preferred_date_format}}<br />
@@ -17,6 +24,19 @@
                     <p class="card-text">{{mx_comment.comment}}</p>
                 {%else%}
                     <textarea name="comment" id="new_comment" class="form-control" rows="5"></textarea>
+                    <fieldset>
+                        <legend class="visually-hidden">Comment Visibility</legend>
+                        <label>
+                            <input type="radio" name="visibility_code" value="I" checked />
+                            Internal Comment
+                        </label>
+                        &nbsp; &nbsp;
+                        <label>
+                            <input type="radio" name="visibility_code" value="P" />
+                            Public Comment
+                        </label>
+
+                    </fieldset>
                     <div style="text-align:right;margin-top:7px;">
                         <button type="button" class="btn btn-info" onclick="post_comment($(this));">
                             {%icon bi-floppy%} Save Comment

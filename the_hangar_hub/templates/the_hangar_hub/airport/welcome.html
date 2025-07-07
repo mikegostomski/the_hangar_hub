@@ -19,9 +19,23 @@
 
     {%if is_manager%}
 
+            <div class="card">
+                <img src="{% static 'images/bs-cards/maintenance.png' %}" alt="Airplane with water dripping from hangar roof" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Hangar Maintenance</h5>
+                    <p class="card-text">
+                        <ul>
+                            <li>xxx</li>
+                        </ul>
+                    </p>
+                    <div class="text-center">
+                        <a href="{%url 'manage:mx_dashboard' request.airport.identifier%}" class="btn btn-info">Maintenance Dashboard</a>
+                    </div>
+                </div>
+            </div>
 
             <div class="card">
-                <img src="{% static 'images/reports.png' %}" alt="Cartoon airplane analyzing a report" class="card-img-top" />
+                <img src="{% static 'images/bs-cards/reporting.png' %}" alt="Cartoon airplane analyzing a report" class="card-img-top" />
                 <div class="card-body">
                     <h5 class="card-title">Report Generation</h5>
                     <p class="card-text">
@@ -81,7 +95,7 @@
                         </ul>
                     </p>
                     <div class="text-center">
-                        <a href="" class="btn btn-info">Maintenance Dashboard</a>
+                        <a href="{%url 'tenant:mx_dashboard'%}" class="btn btn-info">Maintenance Dashboard</a>
                     </div>
                 </div>
             </div>

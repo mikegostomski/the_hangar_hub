@@ -1,0 +1,77 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Maintenance Dashboard{%endblock%}
+
+{% block main_content %}
+<h1>Maintenance Dashboard</h1>
+
+{%if new_requests%}
+    <div class="content-1024 content-block">
+        <h2 class="text-danger">New Maintenance Requests</h2>
+        <table class="table">
+            <tr>
+                <th scope="col">Hangar</th>
+                <th scope="col">Summary</th>
+                <th scope="col">Request Date</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Status</th>
+            </tr>
+            {%for mx_request in new_requests%}
+                <tr>
+                    <td>
+                        <a href="{%url 'manage:hangar' request.airport.identifier mx_request.hangar.code%}">{{mx_request.hangar.code}}</a>
+
+                    </td>
+                    <td>
+                        <a href="{%url 'manage:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
+                    </td>
+                    <td>{%humanized_date mx_request.date_created%}</td>
+                    <td>{{mx_request.priority}}</td>
+                    <td>{{mx_request.status}}</td>
+                </tr>
+            {%empty%}
+                <tr>
+                    <td colspan="3">
+                        <em class="text-muted">No Maintenance Requests</em>
+                    </td>
+                </tr>
+            {%endfor%}
+        </table>
+    </div>
+{%endif%}
+
+<div class="content-1024 content-block">
+    <h2>My Maintenance Requests</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Airport</th>
+            <th scope="col">Hangar</th>
+            <th scope="col">Summary</th>
+            <th scope="col">Request Date</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Status</th>
+        </tr>
+        {%for mx_request in requests%}
+            <tr>
+                <td>{{mx_request.hangar.building.airport.identifier}}</td>
+                <td>{{mx_request.hangar.code}}</td>
+                <td>
+                    <a href="{%url 'manage:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
+                </td>
+                <td>{%humanized_date mx_request.date_created%}</td>
+                <td>{{mx_request.priority}}</td>
+                <td>{{mx_request.status}}</td>
+            </tr>
+        {%empty%}
+            <tr>
+                <td colspan="3">
+                    <em class="text-muted">No Maintenance Requests</em>
+                </td>
+            </tr>
+        {%endfor%}
+    </table>
+</div>
+
+
+{%endblock%}

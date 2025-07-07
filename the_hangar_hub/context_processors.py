@@ -21,10 +21,20 @@ def airport_data(request):
     selected_application = application_service.get_selected_application()
     airport = request.airport if hasattr(request, "airport") else None
 
+    # Airport-specific data when an airport is selected
+    is_airport_manager = is_airport_tenant = False
+    if airport:
+        if managed_airports:
+            is_airport_manager = airport in managed_airports
+        if rentals:
+            is_airport_tenant = airport in [x.hangar.building.airport for x in rentals]
+
     model = {
         "airport": airport,
         "is_a_manager": bool(managed_airports),
+        "is_airport_manager": is_airport_manager,
         "is_a_tenant": bool(rentals),
+        "is_airport_tenant": is_airport_tenant,
         "managed_airports": managed_airports,
         "my_rentals": rentals,
         "open_applications": len(open_applications),

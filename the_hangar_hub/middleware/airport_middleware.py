@@ -23,6 +23,7 @@ class AirportMiddleware:
 
         if selected_airport:
             request.airport = Airport.get(selected_airport)
+            airport_service.save_airport_selection(request.airport)
 
             # If invalid airport identifier was included in the URL
             if selected_airport in request.path and not request.airport:

@@ -3,10 +3,11 @@ function post_comment(btn_el){
     let btn_container = btn_el.parent();
     $.ajax({
         type:   "POST",
-        url:    "{%url 'tenant:post_comment' request.airport.identifier mx_request.id%}",
+        url:    "{%url 'tenant:post_mx_comment' request.airport.identifier mx_request.id%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
-            comment: $("#new_comment").val()
+            comment: $("#new_comment").val(),
+            visibility_code: $("input[name='visibility_code']:checked").val()
         },
         beforeSend:function(){
             btn_container.html(getAjaxLoadImage());
