@@ -1,0 +1,29 @@
+{% load base_taglib %}
+<div class="card mb-3 {%if mx_comment.is_them%}text-bg-success float-right{%else%}text-bg-info float-left{%endif%}" style="width:95%;">
+    <div class="row g-0">
+        <div class="col-md-3" style="padding:10px;">
+            {%if mx_comment%}
+                {%icon bi-person-badge%} {{mx_comment.user.username}}<br />
+                {%humanized_date mx_comment.date_created%}<br />
+            {%else%}
+                {%icon bi-person-badge%} {{current_user.username}}<br />
+                {%icon bi-calendar%} {{now|date:preferred_date_format}}<br />
+            {%endif%}
+        </div>
+        <div class="col-md-9">
+            <div class="card-body">
+
+                {%if mx_comment%}
+                    <p class="card-text">{{mx_comment.comment}}</p>
+                {%else%}
+                    <textarea name="comment" id="new_comment" class="form-control" rows="5"></textarea>
+                    <div style="text-align:right;margin-top:7px;">
+                        <button type="button" class="btn btn-info" onclick="post_comment($(this));">
+                            {%icon bi-floppy%} Save Comment
+                        </button>
+                    </div>
+                {%endif%}
+            </div>
+        </div>
+    </div>
+</div><br style="clear:both" />

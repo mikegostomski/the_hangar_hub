@@ -13,10 +13,13 @@ log = Log()
 env = EnvHelper()
 
 
-def get_tenant_rentals(user=None):
+def get_tenant_rentals(user=None, airport=None):
     user = Auth().lookup_user(user) if user else Auth.current_user()
     if user and user.id:
-        return Rental.current_rentals().filter(tenant__user=user)
+        if airport:
+            return Rental.current_rentals().filter(tenant__user=user, hangar__building__airport=airport)
+        else:
+            return Rental.current_rentals().filter(tenant__user=user)
     return None
 
 

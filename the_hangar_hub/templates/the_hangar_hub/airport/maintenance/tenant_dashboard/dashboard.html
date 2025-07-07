@@ -1,0 +1,64 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Maintenance Dashboard{%endblock%}
+
+{% block main_content %}
+<h1>Maintenance Dashboard</h1>
+
+<div class="content-1024 content-block">
+    <h2>My Hangar(s)</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Airport</th>
+            <th scope="col">Hangar</th>
+            <th scope="col">Actions</th>
+        </tr>
+        {%for rental in rentals%}
+            <tr>
+                <td>{{rental.hangar.building.airport.identifier}}</td>
+                <td>{{rental.hangar.code}}</td>
+                <td>
+                    <a href="{%url 'tenant:mx_request_form' rental.hangar.building.airport.identifier rental.hangar.code%}" class="btn btn-info btn-sm">
+                        Request Maintenance
+                    </a>
+                </td>
+            </tr>
+        {%endfor%}
+    </table>
+</div>
+
+<div class="content-1024 content-block">
+    <h2>My Maintenance Requests</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Airport</th>
+            <th scope="col">Hangar</th>
+            <th scope="col">Summary</th>
+            <th scope="col">Request Date</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Status</th>
+        </tr>
+        {%for mx_request in requests%}
+            <tr>
+                <td>{{mx_request.hangar.building.airport.identifier}}</td>
+                <td>{{mx_request.hangar.code}}</td>
+                <td>
+                    <a href="{%url 'tenant:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
+                </td>
+                <td>{%humanized_date mx_request.date_created%}</td>
+                <td>{{mx_request.priority}}</td>
+                <td>{{mx_request.status}}</td>
+            </tr>
+        {%empty%}
+            <tr>
+                <td colspan="3">
+                    <em class="text-muted">No Maintenance Requests</em>
+                </td>
+            </tr>
+        {%endfor%}
+    </table>
+</div>
+
+
+{%endblock%}

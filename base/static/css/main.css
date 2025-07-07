@@ -96,3 +96,7 @@ will be displayed instead
 .upload-link-size {
     font-size: .8em;
 }
+
+.img-rounded{
+    border-radius: 7%;
+}

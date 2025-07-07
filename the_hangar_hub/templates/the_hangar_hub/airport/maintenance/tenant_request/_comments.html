@@ -1,0 +1,5 @@
+{% load base_taglib %}
+{%for comment in mx_request.public_comments%}
+    {%include "the_hangar_hub/airport/maintenance/tenant_request/_comment_card.html" with mx_comment=comment%}
+{%endfor%}
+{%include "the_hangar_hub/airport/maintenance/tenant_request/_comment_card.html"%}

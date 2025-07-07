@@ -16,8 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from the_hangar_hub.views import public, application, administration, airport, tenant, manage
+from the_hangar_hub.views import public, application, administration, airport, tenant, manage, maintenance
 
+# Accessible to non-authenticated users
 public_paths = [
     path('', public.home,                                          name='home'),
     path('airports', public.search,                                name='search'),
@@ -25,16 +26,44 @@ public_paths = [
     path('join/<invitation_code>', public.invitation_landing,      name='invitation_landing'),
 ]
 
-airport_paths = [
-    path('<slug:airport_identifier>', airport.welcome,                                  name='welcome'),
-]
-
+# Accessible to developers and site administrators
 administration_paths = [
     path('invitations', administration.invitation_dashboard,                         name='invitation_dashboard'),
     path('invitations/send', administration.send_invitation,                         name='send_invitation'),
 ]
 
+# Hangar Application Paths
+application_paths = [
+    path('dashboard', application.dashboard,      name='dashboard'),
+
+    # FORM
+    path('', application.form,                                               name='form'),
+    path('<int:application_id>', application.form,                           name='resume'),
+    path('<slug:airport_identifier>', application.form,                      name='airport_form'),
+    path('save/<int:application_id>', application.save,                      name='save'),
+    path('submit/<int:application_id>', application.submit,                  name='submit'),
+
+    # REVIEW SUBMISSIONS
+    path('review/<int:application_id>', application.review_application,      name='review'),
+    path('review/<int:application_id>/submit', application.submit_review,     name='submit_review'),
+    path('change/<int:application_id>', application.change_status,           name='change_status'),
+    path('delete/<int:application_id>', application.delete_application,           name='delete'),
+    path('select/<int:application_id>', application.select_application,           name='select'),
+
+    # AIRPORT PREFERENCES
+    path('preferences/<slug:airport_identifier>', application.preferences,        name='preferences'),
+    path('preferences/<slug:airport_identifier>/save', application.save_preferences,        name='save_preferences'),
+]
+
+# Airport-specific content
+airport_paths = [
+    path('<slug:airport_identifier>', airport.welcome,                                  name='welcome'),
+]
+
+
+# Airport Manager Paths
 manager_paths = [
+    # AIRPORT MANAGEMENT (building and hangar definitions/config)
     path('<slug:airport_identifier>/claim', manage.claim_airport,                       name='claim'),
     path('<slug:airport_identifier>', manage.my_airport,                                name='airport'),
     path('<slug:airport_identifier>/update', manage.update_airport,                     name='update_airport'),
@@ -43,50 +72,28 @@ manager_paths = [
     path('<slug:airport_identifier>/buildings/add', manage.add_building,                name='add_building'),
     path('<slug:airport_identifier>/buildings/<building_id>', manage.my_hangars,           name='hangars'),
     path('<slug:airport_identifier>/buildings/<building_id>/add', manage.add_hangar,    name='add_hangar'),
-    path('<slug:airport_identifier>/hangars/<hangar_id>', manage.one_hangar,                name='hangar'),
-    path('<slug:airport_identifier>/hangars/<hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
+    path('<slug:airport_identifier>/hangars/<slug:hangar_id>', manage.one_hangar,                name='hangar'),
+    path('<slug:airport_identifier>/hangars/<slug:hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
+
+    # APPLICATION/WAITLIST
     path('<slug:airport_identifier>/application/dashboard', manage.application_dashboard,     name='application_dashboard'),
     path('<slug:airport_identifier>/waitlist/prioritize', manage.change_wl_priority,     name='change_wl_priority'),
     path('<slug:airport_identifier>/waitlist/index', manage.change_wl_index,     name='change_wl_index'),
 ]
 
-application_paths = [
-    path('dashboard', application.dashboard,      name='dashboard'),
-
-    path('', application.form,                                               name='form'),
-    path('<int:application_id>', application.form,                           name='resume'),
-    path('<slug:airport_identifier>', application.form,                      name='airport_form'),
-
-    path('save/<int:application_id>', application.save,                      name='save'),
-    path('submit/<int:application_id>', application.submit,                  name='submit'),
-
-
-    path('review/<int:application_id>', application.review_application,      name='review'),
-    path('review/<int:application_id>/submit', application.submit_review,     name='submit_review'),
-    path('change/<int:application_id>', application.change_status,           name='change_status'),
-    path('delete/<int:application_id>', application.delete_application,           name='delete'),
-    path('select/<int:application_id>', application.select_application,           name='select'),
-
-    path('preferences/<slug:airport_identifier>', application.preferences,        name='preferences'),
-    path('preferences/<slug:airport_identifier>/save', application.save_preferences,        name='save_preferences'),
-
-]
-
+# Hangar Tenant Paths
 tenant_paths = [
-    path('<slug:airport_identifier>/tenant/hangar/<hangar_id>', tenant.my_hangar,  name='hangar'),
+    # MAINTENANCE
+    path('maintenance', maintenance.tenant_dashboard,  name='mx_dashboard'),
+    path('<slug:airport_identifier>/maintenance/request/<slug:hangar_id>', maintenance.tenant_request,  name='mx_request_form'),
+    path('<slug:airport_identifier>/maintenance/request/<slug:hangar_id>/post', maintenance.tenant_request_submit,  name='submit_mx_request'),
+    path('<slug:airport_identifier>/maintenance/request/view/<int:request_id>', maintenance.tenant_request_view,  name='view_mx_request'),
+    path('<slug:airport_identifier>/maintenance/request/comment/<int:request_id>', maintenance.post_comment,  name='post_comment'),
+
+    # HANGAR
+    path('<slug:airport_identifier>/hangar/<slug:hangar_id>', tenant.my_hangar,  name='hangar'),
 ]
 
-# app_paths = [
-#     # Component actions
-#     # path('airport/search', airport_search,                                              name='airport_search'),
-#     # ToDo: These may not be relevant anymore:
-#     path('airport/invitation/accept/<verification_code>', accept_invitation,            name='accept_invitation'),
-#     path('airport/invitation/accept', accept_invitation,                                name='invitation_link'),
-#     # Airport Views
-#     path('<slug:airport_identifier>/welcome', welcome,                                 name='welcome'),
-#     path('welcome', welcome,                                 name='welcome_x'),
-#     path('airport/select_x', select_airport,                                              name='select_airport_x'),
-# ]
 
 urlpatterns = [
     # Django and Plugin URLs

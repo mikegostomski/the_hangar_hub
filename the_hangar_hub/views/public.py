@@ -37,9 +37,9 @@ def home(request):
             return redirect("airport:welcome", airport.identifier)
 
         # If an airport manager, go to that airport (first one if multiple)
-        managers = airport_service.managed_airports()
-        if managers:
-            airport = managers[0].airport
+        managed_airports = airport_service.managed_airports()
+        if managed_airports:
+            airport = managed_airports[0]
             airport_service.save_airport_selection(airport)
             return redirect("airport:welcome", airport.identifier)
 

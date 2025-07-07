@@ -1,0 +1,71 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Maintenance Request Form: Hangar {{rental.hangar.code}}{%endblock%}
+
+{% block main_content %}
+<h1>Maintenance Request Form</h1>
+
+<form method="post" action="{%url 'tenant:submit_mx_request' request.airport.identifier rental.hangar.code%}" onsubmit="show_page_loading();">
+    {%csrf_token%}
+    <div class="content-800 content-block">
+        <h2>Hangar {{rental.hangar.code}}</h2>
+        <br />
+<!--        summary notes priority-->
+
+
+        <b>Please provide a brief summary that clearly describes the maintenance request.</b><br />
+        <small>
+
+            This summary will appear on the manager’s dashboard, so it should quickly communicate the nature of the issue
+            (e.g., “Hangar door won’t close” or “Light fixture not working”).
+            Use the optional notes section below to add any additional details.
+        </small>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="summary">Request Summary {%required%}</label>
+            <input type="text" id="summary" name="summary" value="{{prefill.summary|default:''}}" class="form-control" autofocus required />
+        </div>
+        <br />
+
+        <small>
+            If there’s anything else the maintenance team should know—like timing, severity, or past issues—please include it here.
+        </small>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="summary">More Information</label>
+            <textarea id="notes" name="notes" class="form-control" rows="6">{{prefill.notes|default:''}}</textarea>
+        </div>
+        <br />
+
+        <fieldset>
+            <legend class="visually-hidden">Priority Level</legend>
+            <b>Select the priority level for this request.</b><br />
+            <small>Choosing the right priority helps us respond appropriately and efficiently.</small><br />
+            <div class="indent" style="margin-top:10px;">
+                <label>
+                    <input type="radio" name="priority_code" value="U" {%if prefill.priority_code == "U"%}checked{%endif%} />
+                    <b>Urgent</b> – Immediate attention needed (e.g., safety risk or security issue)
+                </label><br />
+                <label>
+                    <input type="radio" name="priority_code" value="H" {%if prefill.priority_code == "H"%}checked{%endif%} />
+                    <b>High</b> – Disrupts normal use of the hangar
+                </label><br />
+                <label>
+                    <input type="radio" name="priority_code" value="M" {%if prefill.priority_code == "M" or not prefill.priority_code%}checked{%endif%} />
+                    <b>Medium</b> – Needs timely attention but not critical
+                </label><br />
+                <label>
+                    <input type="radio" name="priority_code" value="L" {%if prefill.priority_code == "L"%}checked{%endif%} />
+                    <b>Low</b> – Minor issue or cosmetic concern
+                </label><br />
+            </div>
+        </fieldset>
+
+        <br />
+        <button type="submit" class="btn btn-success">{%icon bi-send%} Submit</button>
+
+    </div>
+</form>
+
+
+
+{%endblock%}

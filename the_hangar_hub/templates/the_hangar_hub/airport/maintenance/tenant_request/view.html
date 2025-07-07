@@ -1,0 +1,35 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Maintenance Request: Hangar {{rental.hangar.code}}{%endblock%}
+
+{% block main_content %}
+<h1>Maintenance Request: Hangar {{rental.hangar.code}}</h1>
+
+    <div class="content-1024 content-block">
+        <h2>{{mx_request.summary}}</h2>
+        {%humanized_date mx_request.date_created%}<br />
+        <br />
+        <strong>Priority:</strong> {{mx_request.priority}}<br />
+        <strong>Status:</strong> {{mx_request.status}}<br />
+
+        {%if mx_request.notes%}
+        <div class="content-800">
+            <strong>More Information:</strong><br />
+            {{mx_request.notes}}
+        </div>
+        {%endif%}
+    </div>
+
+    <div class="content-800 content-block">
+        <h3>Comments:</h3>
+        <div id="comments-container">
+            {%include "the_hangar_hub/airport/maintenance/tenant_request/_comments.html"%}
+        </div>
+        <script type="text/javascript">
+            {%include "the_hangar_hub/airport/maintenance/tenant_request/comment.js"%}
+        </script>
+    </div>
+
+
+{%endblock%}

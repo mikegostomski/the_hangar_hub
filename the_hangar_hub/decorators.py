@@ -115,3 +115,50 @@ def require_airport_manager(redirect_url='/'):
     return decorator
 
 
+
+def require_airport_tenant():
+    """
+    Decorator for views that require the user to be an airport tenant
+
+    Displays a Restricted Access page if not a tenant
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+
+            # If not logged in, redirect to login
+            if not request.user.is_authenticated:
+                return decorator_sso_redirect(request)
+
+            # Get tenant rentals
+            rentals = tenant_service.get_tenant_rentals()
+            if not rentals:
+                return render(
+                    request, "the_hangar_hub/airport/error_pages/tenants_only.html",
+                    {"rentals": rentals}
+                )
+
+
+            # If airport identifier is in the path, must be tenant at that airport
+            if hasattr(request, "airport") and request.airport.identifier in request.path:
+                this_ap_rentals = []
+                for rental in rentals:
+                    if rental.hangar.building.airport.identifier == request.airport.identifier:
+                        this_ap_rentals.append(rental)
+                if this_ap_rentals:
+                    request.rentals = this_ap_rentals
+                    return view_func(request, *args, **kwargs)
+                else:
+                    return render(
+                        request, "the_hangar_hub/airport/error_pages/tenants_only.html",
+                        {"rentals": rentals}
+                    )
+
+            # If airport not in path, any rental is acceptable
+            request.rentals = rentals
+            return view_func(request, *args, **kwargs)
+
+        return _wrapped_view
+    return decorator
+
+

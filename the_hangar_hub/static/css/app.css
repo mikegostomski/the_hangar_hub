@@ -186,3 +186,50 @@ strong {
 | Link Blue          | `#5a6b89` |
 **/
 
+/* INFO - Muted blue */
+.text-bg-info {
+  background-color: #a6bdc4 !important;
+  color: #1f242e !important;
+}
+
+/* SUCCESS - Soft green */
+.text-bg-success {
+  background-color: #c4c9b2 !important;
+  color: #1f242e !important;
+}
+
+/* WARNING - Dusty gold */
+.text-bg-warning {
+  background-color: #e2c9a5 !important;
+  color: #1f242e !important;
+}
+
+/* DANGER - Faded rose */
+.text-bg-danger {
+  background-color: #d9a6a3 !important;
+  color: #1f242e !important;
+}
+
+/* PRIMARY - Steel blue */
+.text-bg-primary {
+  background-color: #6e8c94 !important;
+  color: #f6ebcc !important;
+}
+
+/* SECONDARY - Warm neutral */
+.text-bg-secondary {
+  background-color: #a1a7a8 !important;
+  color: #1f242e !important;
+}
+
+/* DARK - Nav bar tone */
+.text-bg-dark {
+  background-color: #1f242e !important;
+  color: #f6ebcc !important;
+}
+
+/* LIGHT - Cream tone */
+.text-bg-light {
+  background-color: #f6ebcc !important;
+  color: #1f242e !important;
+}
