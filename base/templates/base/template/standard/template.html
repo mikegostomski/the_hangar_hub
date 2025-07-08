@@ -1,5 +1,4 @@
 {% load base_taglib %}
-{% load sass_tags %}
 {% load static %}
 
 <!DOCTYPE html>
@@ -25,30 +24,21 @@
     {%icon_library%}
     {%jquery_confirm%}
 
-
     {## cdn_js 'utils.js' 'ajax.js' ##}
     {## cdn_css 'legacy.css' 'main.css' 'ajax.css' ##}
 
 
-    {%if is_development%}
-        <link href="{%sass_src 'css/template.scss'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
-    {%else%}
-
-    {%endif%}
 
     <script src="{%static 'js/utils.js'%}?v={%app_version%}"></script>
     <script src="{%static 'js/ajax.js'%}?v={%app_version%}"></script>
+    <script src="{%static 'js/posted-messages.js'%}?v={%app_version%}"></script>
     <script type="text/javascript">
         {%include "base/template/standard/template.js"%}
     </script>
 
-    <link href="{%static 'css/ajax.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
-    <link href="{%static 'css/legacy.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
-    <link href="{%static 'css/main.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
-    <link href="{%static 'css/app.css'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
+    <link href="{%static 'css/base.css'%}?app={%app_code%}&v={%app_version%}&n={{now|date:'dmyHis'}}" rel="stylesheet" type="text/css" />
+    <link href="{%static 'css/app.css'%}?app={%app_code%}&v={%app_version%}&n={{now|date:'dmyHis'}}" rel="stylesheet" type="text/css" />
 
-    <script src="{%sass_src 'js/posted-messages.js'%}?v={%app_version%}"></script>
-    <link href="{%sass_src 'css/template.scss'%}?app={%app_code%}&v={%app_version%}" rel="stylesheet" type="text/css" />
     <script type="text/javascript">
     $(document).ajaxComplete(function(e, xhr, settings){
         if (!settings.bypassGlobalComplete){
@@ -74,7 +64,6 @@
             <div class="footer-container">{%include "base/template/standard/footer/container.html"%}</div>
         </div>
     </div>
-    {%include "base/components/loading_indicator.html"%}
     {%smokescreen_spinner name="page_loading" message="Loading..." icon="bi-gear"%}
 </body>
 </html>

@@ -21,6 +21,7 @@ from the_hangar_hub.views import public, application, administration, airport, t
 # Accessible to non-authenticated users
 public_paths = [
     path('', public.home,                                          name='home'),
+    path('styles', public.style_samples,                           name='style_samples'),
     path('airports', public.search,                                name='search'),
     path('airports/<slug:airport_identifier>', public.select,      name='select'),
     path('join/<invitation_code>', public.invitation_landing,      name='invitation_landing'),

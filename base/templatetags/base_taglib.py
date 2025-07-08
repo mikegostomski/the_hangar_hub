@@ -455,14 +455,6 @@ def popup(parser, token):
     return html_generating.Popup(nodelist, tokens)
 
 
-@register.tag()
-def page_load_ind(parser, token):
-    """
-    Create a spinning icon over a non-dismiss-able smokescreen
-    """
-    return html_generating.PageLoadInd(token.split_contents())
-
-
 
 @register.inclusion_tag("base/components/_smokescreen_spinner.html", takes_context=True)
 def smokescreen_spinner(context, *args, **kwargs):

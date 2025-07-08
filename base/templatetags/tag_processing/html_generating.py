@@ -259,33 +259,6 @@ class Popup(template.Node):
             return f"""<div class="popup {classes} {hidden}" {div_attrs}>{body}</div>"""
 
 
-class PageLoadInd(template.Node):
-    """
-    Page load indicators always start out hidden.
-    Assign them an ID and then remove the "hidden" class to activate them.
-    """
-    def __init__(self, args):
-        self.args = args
-
-    def render(self, context):
-        attrs = support.process_args(self.args, context)
-
-        # If no text was provided, create some sr-only text
-        text = attrs.get("title") or attrs.get("label") or attrs.get("text") or "Loading..."
-        text = f"""<div class="loading-text">{text}</div>"""
-
-        # Add any specified attributes to the div tag
-        div_attrs = []
-        for kk, vv in attrs.items():
-            if kk.lower() not in ["text", "label", "title", "id"]:
-                div_attrs.append(f'{kk}="{vv}"')
-        div_attrs = " ".join(div_attrs) if div_attrs else ""
-
-        bi = """<span class="bi bi-arrow-repeat bi-spin bi-5x" aria-hidden="true"></span>"""
-        popup = f"""<div class="popup popup-loading" {div_attrs}>{text}{bi}</div>"""
-        return f"""<div class="smokescreen hidden" id="{attrs.get('id')}">{popup}</div>"""
-
-
 class SelectNode(template.Node):
     """Generates a select menu with automated option selection"""
     def __init__(self, args):

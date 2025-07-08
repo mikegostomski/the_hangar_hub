@@ -1,0 +1,23 @@
+/** Override this file in your app **/
+
+:root {
+    /**
+    --app-cream: #f6ebcc;
+    --app-teal: #6e8c94;
+    --app-light-blue: #a6bdc4;
+    --app-blue: #667c8a;
+    --app-green: #a3b18a;
+    --app-gold: #b88d3a;
+    --app-red: #b85d56;
+    --app-neutral: #f4f1e6;
+    --app-dark: #1f242e;
+    --app-info: #5a6b89;
+    --app-success: #6b8e23;
+    --app-warning: #d9983d;
+    --app-danger: #c26d63;
+
+    --app-font-heading: sans-serif;
+    --app-font-text: sans-serif;
+    --app-font-note: sans-serif;
+    **/
+}

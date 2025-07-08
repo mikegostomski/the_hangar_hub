@@ -57,6 +57,17 @@ def home(request):
     )
 
 
+@report_errors()
+def style_samples(request):
+    Breadcrumb.add("Start", "/", "bi-trash")
+    Breadcrumb.add("Then", "/")
+    Breadcrumb.add("Now", "hub:style_samples")
+    return render(
+        request, "the_hangar_hub/public/style_samples.html",
+        {}
+    )
+
+
 
 
 

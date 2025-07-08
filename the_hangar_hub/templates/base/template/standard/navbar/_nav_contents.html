@@ -8,14 +8,22 @@
 {%endif%}
 
 
-
+{% if not user.is_authenticated%}
 <li class="dropdown-header">
-    Tenant Services
-</li>
-<li>
-    <a href="{%url 'apply:dashboard'%}" class="dropdown-item">Hangar Applications</a>
-</li>
+        Public Services
+    </li>
+    <a href="{%url 'account_login'%}" class="dropdown-item">Log In</a>
+    <a href="{%url 'account_signup'%}" class="dropdown-item">Create Account</a>
+{%endif%}
+
+
 {% if user.is_authenticated and is_a_tenant%}
+    <li class="dropdown-header">
+        Tenant Services
+    </li>
+    <li>
+        <a href="{%url 'apply:dashboard'%}" class="dropdown-item">Hangar Applications</a>
+    </li>
     <li class="dropdown-header">
         My Hangars
     </li>
