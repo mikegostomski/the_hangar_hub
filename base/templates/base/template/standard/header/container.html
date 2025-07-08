@@ -4,15 +4,14 @@
 </div>
 <div class="header-icons">
     <div style="float: right;">
-        {%if "developer"|has_authority:True%}
+        <div style="padding-top: 0.375rem;">
+            {%include 'base/template/standard/header/_icons.html' %}
+        </div>
 
-        {%endif%}
-
-        {%icon bi-gear title="Settings"%}
         {%include 'base/template/standard/header/developer/_menu.html' %}
         {%include 'base/template/standard/header/settings/_menu.html' %}
     </div>
 </div>
-<div class="header-auth">
+<div class="header-auth" style="padding-top: 0.375rem;">
     {%include "base/template/standard/header/auth/container.html"%}
 </div>

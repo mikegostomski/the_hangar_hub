@@ -283,7 +283,7 @@ a.tile:hover {
 .template-container {
   display: grid;
   grid-gap: 0 0;
-  grid-template-rows: 100vh;
+  grid-template-rows: minmax(100vh, 100%);
   grid-template-columns: 250px 1fr;
   grid-template-areas: "navbar content";
   padding: 0;
@@ -357,10 +357,16 @@ a.tile:hover {
   cursor: default;
   background-color: inherit; }
 
+ #hamburger-menu .dropdown-divider {
+  display: none; }
+
 #hamburger-menu .dropdown-header {
   font-weight: bold;
   color: var(--base-color-navbar-bg);
-  font-size: 1em; }
+  font-size: 1em;
+  font-family: var(--app-font-heading);
+  padding-bottom: 0;
+  }
 
 #hamburger-menu .dropdown-item:hover {
   background-color: inherit; }
@@ -424,6 +430,10 @@ a.tile:hover {
 .header-icons {
   padding-right: 10px; }
 
+.header-icons .dropdown-item{
+    padding-left: 0;
+}
+
 .header-icons span, .header-icons div {
   display: inline-block;
   float: left;
@@ -459,6 +469,9 @@ a.tile:hover {
 
 .header-container .dropdown-menu a:hover {
   background-color: var(--base-color-navbar-bg);
+  color: var(--base-color-navbar-fg) }
+
+.header-container .dropdown-menu a:hover .bi {
   color: var(--base-color-navbar-fg) }
 
 .header-container .dropdown-toggle {
@@ -541,8 +554,9 @@ fieldset .form-control, fieldset .form-select {
   * FOOTER
   *********************************************************/
 .footer-container {
-  border-top: 1px solid #DDD;
-  color: #777;
+  border-top: 1px solid var(--base-color-header-border);
+  color: var(--base-color-header-fg);
+  background-color: var(--base-color-header-bg);
   padding: 10px;
   font-size: .9em; }
 
