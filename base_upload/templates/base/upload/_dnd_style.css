@@ -1,0 +1,45 @@
+.dnd-container {
+    position: relative;
+}
+
+.dnd-background {
+    margin: 3rem;
+    position: absolute;
+    top: 0;
+    left: 50px;
+    bottom: 0;
+    z-index: -1;
+    color: #BBB;
+    font-family: 'SquareSerifBook', serif;
+    font-size: 1.3em;
+}
+
+.dnd-input{
+    padding: 10px 25px 35px 25px;
+    border: 5px dashed #AAA;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.dnd-input-hover{
+    border-color: green;
+}
+
+.dnd-status-container{
+}
+.dnd-file-list{
+    max-width: 600px;
+}
+.dnd-file-list li{
+    border-bottom: 1px dotted #CCC;
+}
+.dnd-file-list .file_name{
+    display: inline;
+    float: left;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 90%;
+}
+.dnd-file-list .file_status{
+    display: inline;
+    float: right;
+}

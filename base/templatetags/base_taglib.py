@@ -3,11 +3,10 @@
 #   For browse-ability, all processing happens outside this file.
 #
 
-from django.conf import settings
 from django import template
-from ..models import Feature
+from base.models import Feature
 from base.services import utility_service, auth_service, date_service, validation_service
-from ..templatetags.tag_processing import html_generating, static_content
+from base.templatetags.tag_processing import html_generating, static_content
 from django.urls import reverse
 from decimal import Decimal
 from django.utils.html import mark_safe
@@ -60,9 +59,9 @@ def maxlen(model_instance, field_name):
 def absolute_url(context, *args, **kwargs):
     if args:
         reverse_args = args[1:] if len(args) > 1 else None
-        return f"{context['absolute_root_url']}{reverse(args[0], args=reverse_args)}"
+        return f"{env.absolute_root_url}{reverse(args[0], args=reverse_args)}"
     else:
-        return context["absolute_root_url"]
+        return env.absolute_root_url
 
 
 @register.simple_tag()

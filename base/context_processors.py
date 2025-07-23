@@ -10,11 +10,6 @@ app = AppData()
 
 
 def util(request):
-    # Build an absolute URL (for use in emails)
-    absolute_root_url = "{0}://{1}".format(request.scheme, request.get_host())
-    if 'http://' in absolute_root_url and not env.is_development:
-        absolute_root_url = absolute_root_url.replace('http://', 'https://')
-
     breadcrumbs = []
     for bc in Breadcrumb.get():
         breadcrumbs.append(Breadcrumb(bc))
@@ -25,9 +20,9 @@ def util(request):
     model = {
         'app_code': app_code,
         'app_version': app_version,
-        'absolute_root_url': absolute_root_url,
+        'absolute_root_url': env.absolute_root_url,
 
-        # The home URL (path) depends on existence of URL Context
+        # The home URL (path) depends on the existence of URL Context
         'home_url': '/',
         'custom_plugins': env.installed_plugins,
 

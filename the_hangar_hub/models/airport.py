@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from the_hangar_hub.models.hangar import Hangar
 from the_hangar_hub.models.application import HangarApplication
 from the_hangar_hub.classes.waitlist import Waitlist
+from base_upload.services import retrieval_service
 
 log = Log()
 
@@ -22,13 +23,29 @@ class Airport(models.Model):
 
     # Email displayed to users/tenants who need to contact the airport
     info_email = models.CharField(max_length=150, blank=True, null=True)
+    url = models.CharField(max_length=256, blank=True, null=True)
+
+
 
     # A referral code is required to claim a new airport
     referral_code = models.CharField(max_length=30, blank=True, null=True, db_index=True)
     status_code = models.CharField(max_length=1, default="I")
 
     def is_active(self):
+        """
+        Has this airport ever been active on The Hangar Hub?
+        """
         return self.status_code != "I"  # ToDo: revisit when more statuses exist
+
+    def is_current(self):
+        """
+        Is this airport active and current (paid-in-full)?
+        """
+        if not self.is_active():
+            return False
+
+        # Require a payment during initial development
+        return False
 
     def activate_timezone(self):
         if self.timezone:
@@ -62,6 +79,12 @@ class Airport(models.Model):
             return self.application_prefs.get()
         except HangarApplicationPreferences.DoesNotExist:
             return HangarApplicationPreferences.objects.create(airport=self)
+
+    def get_logo(self):
+        try:
+            return retrieval_service.get_all_files().get(tag="logo", foreign_table="Airport", foreign_key=self.id)
+        except:
+            return None
 
     @classmethod
     def get(cls, id_or_ident):

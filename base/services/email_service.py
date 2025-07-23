@@ -26,11 +26,10 @@ def get_context(util=True, auth=True):
 
 
 def get_absolute_url(*args):
-    context = get_context(util=True, auth=False)
     if args:
-        return f"{context['absolute_root_url']}{reverse(args[0], args=args[1:])}"
+        return f"{env.absolute_root_url}{reverse(args[0], args=args[1:])}"
     else:
-        return context['absolute_root_url']
+        return env.absolute_root_url
 
 
 def set_default_email(default_recipient):
@@ -44,7 +43,7 @@ def set_default_email(default_recipient):
 def send(
         subject=None,
         content=None,
-        sender=None,  # Can format: "Display Name <someone@pdx.edu>"
+        sender=None,  # Can format: "Display Name <someone@gmail.com>"
         to=None,
         cc=None,
         bcc=None,
@@ -54,7 +53,7 @@ def send(
         suppress_success_message=False,  # Do not notify user on successful send (but notify if send failed)
         suppress_status_messages=False,  # Do not notify user upon successful or failed send
         include_context=True,  # Include context included on all pages (current user, environment, etc)
-        sender_display_name=None,  # Shortcut for: "Display Name <someone@pdx.edu>",
+        sender_display_name=None,  # Shortcut for: "Display Name <someone@gmail.com>",
     limit_per_second=1,
     limit_per_minute=4,
     limit_per_hour=10,

@@ -1,5 +1,6 @@
 {% extends 'base/template/standard/template.html' %}
 {% load base_taglib %}
+{% load upload_taglib %}
 
 {%block title%}The Hangar Hub: Manage Airport - {{airport.identifier}}{%endblock%}
 
@@ -42,6 +43,30 @@
             <td><input type="text" class="form-control" name="info_email" value="{{airport.info_email|default:''}}" onchange="update_airport_data($(this));" /></td>
             <td class="ajax-status-container">&nbsp;</td>
         </tr>
+        <tr>
+            <th scope="row">Website Address</th>
+            <td><input type="text" class="form-control" name="url" value="{{airport.url|default:''}}" onchange="update_airport_data($(this));" /></td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
+        <tr>
+            <th scope="row">Logo</th>
+            <td>
+                <div class="float-left">
+                    {%include 'base/upload/_dnd_input.html' with input_name="logo_file" upload_url="manage:upload_logo" upload_url_arg=airport.identifier %}
+                    {%include 'base/upload/_dnd_assets.html'%}
+                </div>
+
+                <div class="float-right">
+                    {%with logo=airport.get_logo%}
+                    {%if logo%}
+                        {%display_image file=logo class="img-fluid" style="max-width:100px;max-height:100px;" %}
+                    {%endif%}
+                    {%endwith%}
+                </div>
+                <br style="clear:both;" />
+            </td>
+            <td class="ajax-status-container">&nbsp;</td>
+        </tr>
     </table>
 </div>
 
@@ -63,7 +88,7 @@
 
     <div class="content-800 content-center">
         <div class="input-group mb-3">
-            <input type="text" id="invitee" name="invitee" class="form-control initial-focus" placeholder="Username or Email Address" maxlength="128" />
+            <input type="text" id="invitee" name="invitee" class="form-control" placeholder="Username or Email Address" maxlength="128" />
             <button class="btn btn-success" type="button" onclick="invite_manager($(this));">
                 {%icon bi-send title="Submit"%}
             </button>

@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Resource stack for file uploads"
+Resources:
+  AppRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3-us-west-2.amazonaws.com/cloudformation-templates.xxx.com/some_file.yml
+      Parameters:
+        Name: xxx
+        VpcStackName: xxx
+  InstanceProfile:
+    Type: 'AWS::XXX::XxxProfile'
+    Properties:
+      InstanceProfileName: !Sub '${AWS::StackName}-Profile'
+      Roles:
+        - !GetAtt AppRole.Outputs.RoleName
+  Bucket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3-us-west-2.amazonaws.com/cloudformation-templates.xxx.com/xxxxxxx/s3/bucket.template.yml
+      Parameters:
+        BucketName: file-uploads
+        BucketRealm: xxx.com
+        BucketRegion: us-west-2
+        IamPrinicipleArn: !GetAtt AppRole.Outputs.RoleArn
+        EnableEncryption: true
+        KmsKey: !GetAtt AppRole.Outputs.KmsKeyArn
+        DeletionPolicy: Retain

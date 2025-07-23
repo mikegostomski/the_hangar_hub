@@ -1,30 +1,22 @@
-
-from the_hangar_hub.models.airport import Airport
-
 from base.fixtures.timezones import timezones
-
 from django.shortcuts import render, redirect
-from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
-import the_hangar_hub.models
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from the_hangar_hub.models import Tenant
-from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.hangar import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
-from base.services import message_service, utility_service, email_service, date_service
+from base.services import message_service, date_service
 from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service
-from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
-from django.contrib.auth.models import User
 import re
 from datetime import datetime, timezone
 from base.models.contact.contact import Contact
 from the_hangar_hub.decorators import require_airport, require_airport_manager
+from base_upload.services import upload_service, retrieval_service
 
 log = Log()
 env = EnvHelper()
@@ -127,6 +119,10 @@ def update_airport(request, airport_identifier):
     value = request.POST.get("value")
 
     try:
+        if not hasattr(airport, attribute):
+            message_service.post_error("Invalid airport attribute")
+            return HttpResponseForbidden()
+
         prev_value = getattr(airport, attribute)
         setattr(airport, attribute, value)
         airport.save()
@@ -142,6 +138,44 @@ def update_airport(request, airport_identifier):
         message_service.post_error(f"Could not update airport data: {ee}")
 
     return HttpResponse("ok")
+
+@report_errors()
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def upload_logo(request, airport_identifier):
+    airport = request.airport
+    uploaded_file = None
+    try:
+        if request.method == 'POST':
+            uploaded_file = upload_service.upload_file(
+                request.FILES['logo_file'],
+                tag=f"logo",
+                foreign_table="Airport", foreign_key=airport.id,
+                # specified_filename='airport_logo',
+                # parent_directory=f'airports/{airport.identifier}/logo'
+            )
+            log.info(f"Uploaded File: {uploaded_file}")
+
+        if uploaded_file:
+            Auth.audit(
+                "C", "AIRPORT",
+                f"Uploaded airport logo",
+                reference_code="Airport", reference_id=airport.id
+            )
+
+            # Update tags for any previous logos for this airport
+            for logo in retrieval_service.get_all_files().filter(
+                tag="logo", foreign_table="Airport", foreign_key=airport.id
+            ).exclude(id=uploaded_file.id):
+                logo.tag = "old_logo"
+                logo.save()
+
+            return HttpResponse("ok")
+    except Exception as ee:
+        message_service.post_error(f"Could not update airport data: {ee}")
+
+    return HttpResponseForbidden()
 
 
 @report_errors()

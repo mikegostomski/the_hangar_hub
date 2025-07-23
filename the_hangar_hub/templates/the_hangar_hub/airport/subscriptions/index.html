@@ -1,0 +1,60 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+
+{%block title%}Subscriptions{%endblock%}
+
+{% block main_content %}
+<div class="content-1024 content-center">
+    <h1>Subscriptions</h1>
+    <strong>Welcome, {{current_user.first_name}}</strong><br />
+
+    <div class="alert alert-info hobbs-alert">
+        <strong>Debug Data:</strong>
+            "is_manager": {{is_manager}},
+            "is_tenant": {{is_tenant}},
+            "on_waitlist": {{on_waitlist}},
+            "active_applications": {{active_applications}},
+    </div>
+
+    {%if is_manager%}
+    {%endif%}
+
+        {%for lookup_key, plan in prices.items%}
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">{{plan.recurring|title}}ly Plan</h2>
+                <p class="card-text">
+                    <span class="xxl">{%format_currency plan.amount_dollars%}/{{plan.recurring}}</span>
+                    <ul>
+                        <li>Hangar Management Features</li>
+                        <li>Online Hangar Applications</li>
+                        <li>Waitlist Management</li>
+                    </ul>
+                </p>
+                <div class="text-center">
+                    <form action="{%url 'airport:subscribe' airport.identifier%}" method="POST">
+                        {%csrf_token%}
+                        <input type="hidden" name="subscription_id" value="{{plan.id}}" />
+                        <button id="checkout-and-portal-button" type="submit" class="btn btn-info">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {%endfor%}
+
+
+
+
+
+</div>
+<style>
+    .card{
+        float: left;
+        max-width: 300px;
+        height: 475px;
+        margin-bottom: 20px;
+        margin-right: 20px;
+    }
+</style>
+{%endblock%}

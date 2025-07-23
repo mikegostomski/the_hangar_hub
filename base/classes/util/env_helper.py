@@ -329,6 +329,14 @@ class EnvHelper:
             return 'DEV'
 
     @property
+    def absolute_root_url(self):
+        # Build an absolute URL (for use in emails)
+        absolute_root_url = "{0}://{1}".format(self.request.scheme, self.request.get_host())
+        if 'http://' in absolute_root_url and not self.is_development:
+            absolute_root_url = absolute_root_url.replace('http://', 'https://')
+        return absolute_root_url
+
+    @property
     def request(self):
         return CrequestMiddleware.get_request()
 

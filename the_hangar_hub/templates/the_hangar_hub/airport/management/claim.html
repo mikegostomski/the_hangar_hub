@@ -1,7 +1,7 @@
 {% extends 'base/template/standard/template.html' %}
 {% load base_taglib %}
 
-{%block title%}The Hangar Hub: Manage Airport - {{airport.identifier}}{%endblock%}
+{%block title%}The Hangar Hub: Claim Airport - {{airport.identifier}}{%endblock%}
 
 {% block main_content %}
 <div class="content-800">
@@ -12,24 +12,11 @@
     </div>
     <br />
     <p>
-        The Hangar Hub is still in its early stages, and is currently accepting new airports upon request/invitation.
-        If you have a referral code, enter it in the form below. Otherwise, please request a referral code by emailing
-        xxx@xxx.xxx.
+        If you are a manager at {{airport.display_name}} and would like to begin using The Hanger Hub,
+        you can visit the
+        <a href="{%url 'airport:subscriptions' airport.identifier%}">Subscriptions</a>
+        page to start your free trial period.
     </p>
-
-    <form method="post" action="{%url 'manage:claim' airport.identifier%}">
-        {%csrf_token%}
-        <div class="input-group mb-3">
-            <label for="referral_code" class="visually-hidden">Referral Code</label>
-            <span class="input-group-text" id="basic-addon1">{%icon bi-upc-scan%}</span>
-            <input  type="text" id="referral_code" name="referral_code" class="form-control" />
-            <button class="btn btn-success" type="submit">
-                {%icon bi-send title="Submit"%}
-            </button>
-        </div>
-    </form>
-
-
 </div>
 
 <br />

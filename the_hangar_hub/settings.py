@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     # app ...
     'the_hangar_hub',
     'base',
+    'base_upload',
 
     # base dependencies
     'crequest',

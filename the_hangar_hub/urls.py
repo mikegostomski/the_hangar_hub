@@ -59,6 +59,10 @@ application_paths = [
 # Airport-specific content
 airport_paths = [
     path('<slug:airport_identifier>', airport.welcome,                                  name='welcome'),
+    path('<slug:airport_identifier>/subscriptions', airport.subscriptions,              name='subscriptions'),
+    path('<slug:airport_identifier>/subscribe',  airport.subscribe, name='subscribe'),
+    path('<slug:airport_identifier>/subscribe/fail',  airport.subscriptions, name='subscription_failure'),
+    path('<slug:airport_identifier>/subscribe/success',  airport.subscriptions, name='subscription_success'),
 ]
 
 
@@ -68,6 +72,7 @@ manager_paths = [
     path('<slug:airport_identifier>/claim', manage.claim_airport,                       name='claim'),
     path('<slug:airport_identifier>', manage.my_airport,                                name='airport'),
     path('<slug:airport_identifier>/update', manage.update_airport,                     name='update_airport'),
+    path('<slug:airport_identifier>/upload/logo', manage.upload_logo,                     name='upload_logo'),
     path('<slug:airport_identifier>/assign', manage.add_manager,                        name='add_manager'),
     path('<slug:airport_identifier>/buildings', manage.my_buildings,                       name='buildings'),
     path('<slug:airport_identifier>/buildings/add', manage.add_building,                name='add_building'),
@@ -109,6 +114,7 @@ urlpatterns = [
     re_path('^admin/', admin.site.urls),
     re_path('^accounts/', include('allauth.urls')),
     re_path('^base/', include(('base.urls', 'base'), namespace='base')),
+    re_path('^upload/', include(('base_upload.urls', 'base_upload'), namespace='upload')),
 
     re_path('', include((public_paths, 'the_hangar_hub'), namespace='hub')),
     re_path('airport/', include((airport_paths, 'the_hangar_hub'), namespace='airport')),

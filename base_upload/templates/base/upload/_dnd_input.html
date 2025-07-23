@@ -1,0 +1,23 @@
+{# Required: input_name, upload_url  #}
+{# Optional: input_id, upload_url_arg  #}
+{# NOTE: You must include 'base/upload/_dnd_assets.html' in your template #}
+<div id="{{input_name}}_upload_container" class="dnd-container" >
+    <div class="dnd-background">
+        ... or drag 'n drop
+    </div>
+    <input type="file" multiple="multiple"
+           name="{{input_name}}" id="{{input_id|default:input_name}}"
+           class="dnd-input"
+           {%if upload_url%}
+               {%if upload_url_arg%}
+                    onchange="handle_file_selection($(this), '{%url upload_url upload_url_arg%}');"
+               {%else%}
+                    onchange="handle_file_selection($(this), '{%url upload_url %}');"
+               {%endif%}
+           {%endif%}
+    />
+</div>
+<div id="{{input_name}}_files_container" class="dnd-status-container hidden">
+    <b>Uploaded Files:</b>
+    <ol class="dnd-file-list"></ol>
+</div>
