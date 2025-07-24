@@ -1,6 +1,5 @@
 from django.db import models
 from base.classes.util.log import Log
-from the_hangar_hub.models.airport import Airport
 from django.contrib.auth.models import User
 
 log = Log()
@@ -16,6 +15,13 @@ class AirportManager(models.Model):
     airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="management", blank=False, null=False, db_index=True)
     user = models.ForeignKey(User, models.CASCADE, related_name="manages", blank=False, null=False, db_index=True)
 
+    @staticmethod
+    def status_options():
+        return {
+            "A": "Active",
+            "I": "Inactive",
+        }
+
     @property
     def status(self):
         if not self.user.is_active:
@@ -24,12 +30,7 @@ class AirportManager(models.Model):
 
     @property
     def status_description(self):
-        if self.status == "A":
-            return "Active"
-        elif self.status == "I":
-            return "Inactive"
-        else:
-            return self.status
+        return self.status_options().get(self.status) or self.status
 
     @property
     def is_active(self):

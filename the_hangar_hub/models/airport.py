@@ -6,6 +6,8 @@ from the_hangar_hub.models.hangar import Hangar
 from the_hangar_hub.models.application import HangarApplication
 from the_hangar_hub.classes.waitlist import Waitlist
 from base_upload.services import retrieval_service
+from the_hangar_hub.services import stripe_service
+from base.models.utility.error import Error
 
 log = Log()
 
@@ -25,11 +27,23 @@ class Airport(models.Model):
     info_email = models.CharField(max_length=150, blank=True, null=True)
     url = models.CharField(max_length=256, blank=True, null=True)
 
-
+    # Stripe Customer Data
+    stripe_customer_id = models.CharField(max_length=60, blank=True, null=True)
+    subscription_id = models.CharField(max_length=60, blank=True, null=True)
+    billing_email = models.CharField(max_length=150, blank=True, null=True)
+    billing_phone = models.CharField(max_length=10, blank=True, null=True)
+    billing_street_1 = models.CharField(max_length=100, blank=True, null=True)
+    billing_street_2 = models.CharField(max_length=100, blank=True, null=True)
+    billing_city = models.CharField(max_length=60, blank=True, null=True)
+    billing_state = models.CharField(max_length=2, blank=True, null=True)
+    billing_zip = models.CharField(max_length=12, blank=True, null=True)
 
     # A referral code is required to claim a new airport
     referral_code = models.CharField(max_length=30, blank=True, null=True, db_index=True)
     status_code = models.CharField(max_length=1, default="I")
+
+    def has_billing_data(self):
+        return self.billing_email and self.billing_city and self.billing_state and self.billing_zip
 
     def is_active(self):
         """
@@ -44,8 +58,31 @@ class Airport(models.Model):
         if not self.is_active():
             return False
 
-        # Require a payment during initial development
-        return False
+        customer_data = stripe_service.get_customer_from_airport(self)
+        if not customer_data:
+            Error.record(f"Unable to retrieve customer data for active airport: {self}")
+            # Customer record was created before activating airport
+            # Assume API error and do not consider delinquent
+            return True
+
+        # Consider a zero balance to be current
+        try:
+            if int(customer_data.balance) == 0:
+                return True
+        except Exception as ee:
+            log.error(f"Non-number balance for {self}: {customer_data.balance}")
+
+        # Consider the "delinquent" property the final indicator
+        try:
+            return not customer_data.delinquent
+        except Exception as ee:
+            log.error(f"Unable to determine delinquency: {self}")
+            return True  # Assume API error?
+
+    def subscriptions(self):
+        subs = stripe_service.get_airport_subscriptions(self)
+        log.debug(subs)
+        return subs
 
     def activate_timezone(self):
         if self.timezone:

@@ -79,10 +79,13 @@ class EnvHelper:
         self.session[var] = value
         return value
 
-    def get_session_variable(self, var_name, alt=None):
+    def get_session_variable(self, var_name, alt=None, reset=False):
         # Prefix all custom session entries
         var = f"{session_prefix}{var_name}"
-        return self.session.get(var, alt)
+        val = self.session.get(var, alt)
+        if reset:
+            self.set_session_variable(var_name, None)
+        return val
 
     def clear_session_variables(self, preserve=None):
         """

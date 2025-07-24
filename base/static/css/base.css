@@ -81,6 +81,9 @@ body {
 p {
 max-width: 800px; }
 
+section {
+margin-bottom: 80px; }
+
 
 /** CLASSES I'M JUST USED TO **/
 .hidden {
@@ -706,7 +709,7 @@ a.pagination-page:hover {
 
 
 
-h1, h2, h3, h4, h5, .navbar-content, strong {
+h1, h2, h3, h4, h5, .navbar-content, .heading, strong {
   font-family: var(--app-font-heading);
   font-style: normal;
   font-weight: 400;

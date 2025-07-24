@@ -1,0 +1,19 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+
+{%block title%}Subscription Failure{%endblock%}
+
+{% block main_content %}
+<div class="content-1024 content-center">
+    <h1>Failed to Complete Subscription</h1>
+
+    <section>
+        <b>Your stripe transaction was not completed successfully.</b><br />
+        If you believe this to be an error, please contact support to manually verify your transaction.
+    </section>
+
+    ToDo: Provide contact info or a contact form
+
+</div>
+{%endblock%}

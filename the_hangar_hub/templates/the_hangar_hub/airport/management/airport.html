@@ -9,93 +9,104 @@
     <h1>Manage Airport: {{airport.identifier}}</h1>
     <br />
 
-    <h2>Airport Data</h2>
-    <table class="table">
-        <tr>
-            <th scope="row">Airport Name</th>
-            <td><input type="text" class="form-control" name="display_name" value="{{airport.display_name}}" onchange="update_airport_data($(this));" /></td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-        <tr>
-            <th scope="row">Airport Identifier</th>
-            <td><input type="text" class="form-control" name="identifier" value="{{airport.identifier}}" onchange="update_airport_data($(this));" /></td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-        <tr>
-            <th scope="row">City</th>
-            <td><input type="text" class="form-control" name="city" value="{{airport.city}}" onchange="update_airport_data($(this));" /></td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-        <tr>
-            <th scope="row">State</th>
-            <td><input type="text" class="form-control" name="state" value="{{airport.state}}" onchange="update_airport_data($(this));" /></td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-        <tr>
-            <th scope="row">Timezone</th>
-            <td>
-                {%select_menu options=timezone_options value=airport.timezone name="timezone" onchange="update_airport_data($(this));" class="form-select"%}
-            </td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-        <tr>
-            <th scope="row">Public Email Address</th>
-            <td><input type="text" class="form-control" name="info_email" value="{{airport.info_email|default:''}}" onchange="update_airport_data($(this));" /></td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-        <tr>
-            <th scope="row">Website Address</th>
-            <td><input type="text" class="form-control" name="url" value="{{airport.url|default:''}}" onchange="update_airport_data($(this));" /></td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-        <tr>
-            <th scope="row">Logo</th>
-            <td>
-                <div class="float-left">
-                    {%include 'base/upload/_dnd_input.html' with input_name="logo_file" upload_url="manage:upload_logo" upload_url_arg=airport.identifier %}
-                    {%include 'base/upload/_dnd_assets.html'%}
-                </div>
-
-                <div class="float-right">
-                    {%with logo=airport.get_logo%}
-                    {%if logo%}
-                        {%display_image file=logo class="img-fluid" style="max-width:100px;max-height:100px;" %}
-                    {%endif%}
-                    {%endwith%}
-                </div>
-                <br style="clear:both;" />
-            </td>
-            <td class="ajax-status-container">&nbsp;</td>
-        </tr>
-    </table>
-</div>
-
-<br />
-<br />
-
-<div class="content-1024">
-    <h2>Airport Managers</h2>
-    <div id="managers-container">
-        {%include "the_hangar_hub/airport/management/_manager_table.html"%}
+    <div class="list-group">
+    {%for subs in airport.subscriptions.data%}
+        <div class="list-group-item">
+            {{subs}}
+        </div>
+    {%endfor%}
     </div>
 
-    <h3>Add an Airport Manager</h3>
-    <em>
-        Enter the email address of the person you would like to invite to be an airport manager.
-        If the person you have in mind already has a HangarHub account, you may enter their username instead.
-    </em><br />
-    <br />
+    <section>
+        <h2>Airport Data</h2>
+        <table class="table">
+            <tr>
+                <th scope="row">Airport Name</th>
+                <td><input type="text" class="form-control" name="display_name" value="{{airport.display_name}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Airport Identifier</th>
+                <td><input type="text" class="form-control" name="identifier" value="{{airport.identifier}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">City</th>
+                <td><input type="text" class="form-control" name="city" value="{{airport.city}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">State</th>
+                <td><input type="text" class="form-control" name="state" value="{{airport.state}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Timezone</th>
+                <td>
+                    {%select_menu options=timezone_options value=airport.timezone name="timezone" onchange="update_airport_data($(this));" class="form-select"%}
+                </td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Public Email Address</th>
+                <td><input type="email" class="form-control" name="info_email" value="{{airport.info_email|default:''}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Website Address</th>
+                <td><input type="text" class="form-control" name="url" value="{{airport.url|default:''}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Logo</th>
+                <td>
+                    <div class="float-left">
+                        {%include 'base/upload/_dnd_input.html' with input_name="logo_file" upload_url="manage:upload_logo" upload_url_arg=airport.identifier %}
+                        {%include 'base/upload/_dnd_assets.html'%}
+                    </div>
 
-    <div class="content-800 content-center">
-        <div class="input-group mb-3">
-            <input type="text" id="invitee" name="invitee" class="form-control" placeholder="Username or Email Address" maxlength="128" />
-            <button class="btn btn-success" type="button" onclick="invite_manager($(this));">
-                {%icon bi-send title="Submit"%}
-            </button>
+                    <div class="float-right">
+                        {%with logo=airport.get_logo%}
+                        {%if logo%}
+                            {%display_image file=logo class="img-fluid" style="max-width:100px;max-height:100px;" %}
+                        {%endif%}
+                        {%endwith%}
+                    </div>
+                    <br style="clear:both;" />
+                </td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>Billing Data</h2>
+        {%include "the_hangar_hub/airport/_billing_data_fields.html" with use_ajax=True%}
+    </section>
+
+    <section>
+        <h2>Airport Managers</h2>
+        <div id="managers-container">
+            {%include "the_hangar_hub/airport/management/_manager_table.html"%}
         </div>
 
-    </div>
+        <h3>Add an Airport Manager</h3>
+        <em>
+            Enter the email address of the person you would like to invite to be an airport manager.
+            If the person you have in mind already has a HangarHub account, you may enter their username instead.
+        </em><br />
+        <br />
 
+        <div class="content-800 content-center">
+            <div class="input-group mb-3">
+                <input type="text" id="invitee" name="invitee" class="form-control" placeholder="Username or Email Address" maxlength="128" />
+                <button class="btn btn-success" type="button" onclick="invite_manager($(this));">
+                    {%icon bi-send title="Submit"%}
+                </button>
+            </div>
+
+        </div>
+    </section>
 </div>
 
 <script type="text/javascript">

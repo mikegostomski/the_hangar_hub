@@ -16,7 +16,7 @@
         <td>{{manager.user.username}}</td>
         <td>{{manager.user.email}}</td>
         <td>
-            {%select_menu value=manager.status class="form-select" options="A:Active|I:Inactive" nullable=False%}
+            {%select_menu value=manager.status data_manager_id=manager.id class="form-select" options="A:Active|I:Inactive" nullable=False onchange="change_am_status($(this));"%}
         </td>
         <td>{%humanized_date manager.date_created%}</td>
         <td>{%humanized_date manager.status_change_date%}</td>

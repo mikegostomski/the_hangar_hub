@@ -4,7 +4,8 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from the_hangar_hub.models import Tenant
+from the_hangar_hub.models.tenant import Tenant
+from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.hangar import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
@@ -17,6 +18,8 @@ from datetime import datetime, timezone
 from base.models.contact.contact import Contact
 from the_hangar_hub.decorators import require_airport, require_airport_manager
 from base_upload.services import upload_service, retrieval_service
+from base.models.utility.error import Error
+from the_hangar_hub.services import stripe_service
 
 log = Log()
 env = EnvHelper()
@@ -25,79 +28,11 @@ env = EnvHelper()
 @report_errors()
 @require_authentication()
 @require_airport()
-def claim_airport(request, airport_identifier):
-    airport = request.airport
-
-    # Airport must be inactive
-    if airport.is_active():
-        return redirect("airport:welcome", airport.identifier)
-
-    if request.method == "POST":
-        referral_code = request.POST.get("referral_code")
-        if referral_code:
-            pass
-
-
-    # Any inactive airport can be claimed.
-    # Display page with instructions/referral code
-    return render(
-        request, "the_hangar_hub/airport/management/claim.html",
-        {
-            "airport": airport,
-        }
-    )
-
-    # Get existing airport managers (including inactive ones)
-    managers = airport_service.get_managers(airport)
-    is_manager = is_inactive = False
-
-    # If managers exist, see if this user is already one of them
-    if managers:
-        for manager in managers:
-            if manager.user == request.user:
-                is_manager = True
-                log.info(f"Is already a manager for {airport.identifier}")
-                if manager.status != "A":
-                    log.warning(f"Is a non-active manager for {airport.identifier}")
-                    is_inactive = True
-                elif not manager.user.is_active:
-                    log.warning(f"Is a manager, but a non-active user")
-                    is_inactive = True
-                break
-
-        # Since managers exist for this airport, this user must be an active manager or ask an existing one for access
-        if is_inactive or not is_manager:
-            if not is_manager:
-                message_service.post_error(
-                    "This airport already has a manager. You'll need to request access from existing management."
-                )
-            else:
-                message_service.post_error(
-                    "Your airport management status is inactive. You'll need to request access from existing management."
-                )
-
-            return render(
-                request, "the_hangar_hub/airport/access_denied.html",
-                {"airport": airport}
-            )
-
-    # Since no managers exist for this airport, auto-assign this user to be the manager for this airport
-    else:
-        log.info(f"No managers exist for {airport}")
-        if airport_service.set_airport_manager(airport, request.user):
-            message_service.post_success(f"You are now the airport manager for {airport.identifier}")
-        else:
-            message_service.post_error(f"Unable to record you as the manager for {airport.identifier}")
-
-    return redirect("manage:airport", airport.identifier)
-
-
-@report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def my_airport(request, airport_identifier):
+
     airport = request.airport
+    customer = stripe_service.get_customer_from_airport(airport)
     return render(
         request, "the_hangar_hub/airport/management/airport.html",
         {
@@ -134,6 +69,9 @@ def update_airport(request, airport_identifier):
             reference_code="Airport", reference_id=airport.id,
             previous_value=prev_value, new_value=value
         )
+
+        if attribute.startswith("billing_") or attribute == "display_name":
+            stripe_service.modify_customer_from_airport(airport)
     except Exception as ee:
         message_service.post_error(f"Could not update airport data: {ee}")
 
@@ -203,6 +141,77 @@ def add_manager(request, airport_identifier):
                 "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
             }
         )
+
+    # Since user did not have an account, an email is needed to invite them
+    if "@" not in invitee:
+        message_service.post_error("The given user information could not be found. Please enter an email address.")
+        return HttpResponseForbidden()
+
+    # Create and send an invitation
+    Invitation.invite_manager(airport, invitee)
+    return render(
+        request, "the_hangar_hub/airport/management/_manager_table.html",
+        {
+            "airport": airport,
+            "managers": airport_service.get_managers(airport=airport),
+            "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
+        }
+    )
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def update_manager(request, airport_identifier):
+    airport = request.airport
+    manager_id = request.POST.get("manager_id")
+    new_status = request.POST.get("new_status")
+    log.trace([airport, manager_id, new_status])
+
+    try:
+        # Check for existing user
+        mgr = AirportManager.get(manager_id)
+        if not mgr:
+            message_service.post_error("Specified manager was not found.")
+            return HttpResponseForbidden()
+        if mgr.airport != airport:
+            message_service.post_error("Invalid manager record was specified.")
+            return HttpResponseForbidden()
+        if new_status not in mgr.status_options():
+            message_service.post_error("Invalid manager status was specified.")
+            return HttpResponseForbidden()
+
+        old_status = mgr.status
+        if old_status != new_status:
+            mgr.status_code = new_status
+            mgr.status_change_date = datetime.now(timezone.utc)
+            mgr.save()
+
+        # An inactive user will cause the manager record to appear inactive
+        if new_status == "A" and mgr.status == "I":
+            mgr.user.is_active = True
+            mgr.user.save()
+
+        Auth.audit(
+            "U", "AIRPORT",
+            "Updated airport manager status",
+            "AirportManager", mgr.id,
+            previous_value=old_status, new_value=new_status
+        )
+    except Exception as ee:
+        Error.unexpected(
+            "There was an error updating the manager record", ee
+        )
+
+    return render(
+        request, "the_hangar_hub/airport/management/_manager_table.html",
+        {
+            "airport": airport,
+            "managers": airport_service.get_managers(airport=airport),
+            "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
+        }
+    )
 
     # Since user did not have an account, an email is needed to invite them
     if "@" not in invitee:

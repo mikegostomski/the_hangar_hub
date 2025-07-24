@@ -1,3 +1,4 @@
+from allauth.core.internal.ratelimit import clear
 
 from the_hangar_hub.models.airport import Airport
 
@@ -5,7 +6,7 @@ from base.fixtures.timezones import timezones
 
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.db.models import Q
 import the_hangar_hub.models
 from base.classes.util.env_helper import Log, EnvHelper
@@ -32,7 +33,7 @@ env = EnvHelper()
 
 
 @report_errors()
-@require_authentication()  # ToDo: Maybe not required?
+# @require_authentication()  # ToDo: Maybe not required?
 @require_airport()
 def welcome(request, airport_identifier):
     """
@@ -41,7 +42,9 @@ def welcome(request, airport_identifier):
     airport = request.airport
 
     if not airport.is_active():
-        return redirect("manage:claim", airport.identifier)
+        return render(request, "the_hangar_hub/airport/airport_inactive.html")
+    elif not airport.is_current():
+        message_service.post_error("ToDo: When airport is not current???")
 
     is_manager = airport_service.is_airport_manager(airport=airport)
 
@@ -62,7 +65,36 @@ def welcome(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()  # ToDo: Maybe not required?
+@require_authentication()
+@require_airport()
+def claim_airport(request, airport_identifier):
+    airport = request.airport
+
+    # Airport must be inactive
+    if airport.is_active():
+        return redirect("airport:welcome", airport.identifier)
+
+    # If airport has a city/state but not a billing city/state, update billing to match
+    if airport.city and airport.state:
+        if not airport.billing_city and airport.billing_state:
+            airport.billing_city = airport.city
+            airport.billing_state = airport.state
+            airport.save()
+
+    prices = stripe_service.get_subscription_prices()
+
+
+    return render(
+        request, "the_hangar_hub/airport/subscriptions/index.html",
+        {
+            "is_manager": False,
+            "prices": prices,
+        }
+    )
+
+
+@report_errors()
+@require_authentication()
 @require_airport()
 def subscriptions(request, airport_identifier):
     airport = request.airport
@@ -79,16 +111,79 @@ def subscriptions(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()  # ToDo: Maybe not required?
+@require_authentication()
 @require_airport()
 def subscribe(request, airport_identifier):
+    subscription_id = request.POST.get("subscription_id")
+
+    # Make sure billing address/contact info is present
+    airport = request.airport
+    if not airport.has_billing_data():
+        # If data was just submitted
+        attrs = ["email", "phone", "street_1", "street_2", "city", "state", "zip"]
+        updated = False
+        for attr in [f"billing_{x}" for x in attrs]:
+            val = request.POST.get(attr)
+            if val or updated:
+                setattr(airport, attr, val)
+                updated = True
+        if updated:
+            airport.save()
+
+        if not airport.has_billing_data():
+            return render(
+                request, "the_hangar_hub/airport/subscriptions/billing_data.html",
+                {
+                    "subscription_id": subscription_id,
+                }
+            )
+
+    # Create Stripe customer if needed
+    if not airport.stripe_customer_id:
+        if not stripe_service.create_customer_from_airport(airport):
+            message_service.post_error("Could not continue with subscription.")
+            return redirect("airport:subscriptions", airport.identifier)
+
     try:
-        subscription_id = request.POST.get("subscription_id")
         checkout_session = stripe_service.get_checkout_session_hh_subscription(request.airport, subscription_id)
         if checkout_session:
+            env.set_session_variable("stripe_checkout_session_id", checkout_session.id)
             return redirect(checkout_session.url, code=303)
     except Exception as ee:
         Error.unexpected(
             "Unable to complete subscription payment", ee
         )
     return redirect("airport:subscription_failure", airport_identifier)
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+def subscription_success(request, airport_identifier):
+    airport = request.airport
+    co_session_id = env.get_session_variable("stripe_checkout_session_id", reset=True)
+    co_session = stripe_service.get_session_details(co_session_id)
+
+    paid = co_session.payment_status == "paid"
+    complete = co_session.status == "complete"
+
+    # If payment was completed, make this user an airport manager
+    if complete and paid:
+        message_service.post_success("You have successfully subscribed to The Hanger Hub!")
+        airport.status_code = "A"
+        airport.save()
+        airport_service.set_airport_manager(airport, Auth.current_user())
+        return redirect("manage:airport", airport.identifier)
+    else:
+        message_service.post_error("Stripe payment session indicates an incomplete or unsuccessful payment.")
+        return redirect("airport:subscription_failure", airport_identifier)
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+def subscription_failure(request, airport_identifier):
+    co_session_id = env.get_session_variable("stripe_checkout_session_id", reset=True)
+    co_session = stripe_service.get_session_details(co_session_id)
+
+    return render(request, "the_hangar_hub/airport/subscriptions/failure.html", {"co_session": co_session})

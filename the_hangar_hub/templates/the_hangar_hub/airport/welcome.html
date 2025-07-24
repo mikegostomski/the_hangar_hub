@@ -7,8 +7,9 @@
 {% block main_content %}
 <div class="content-1024 content-center">
     <h1>{{airport.display_name}}</h1>
-    <strong>Welcome, {{current_user.first_name}}</strong><br />
-
+    {%if request.user.is_authenticated%}
+        <strong>Welcome, {{current_user.first_name}}</strong><br />
+    {%endif%}
     <div class="alert alert-info hobbs-alert">
         <strong>Debug Data:</strong>
             "is_manager": {{is_manager}},

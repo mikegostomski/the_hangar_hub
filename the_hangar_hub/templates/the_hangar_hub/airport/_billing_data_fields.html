@@ -1,0 +1,42 @@
+{% load base_taglib %}
+<table class="table">
+    <tr>
+        <th scope="row">Billing Email {%required%}</th>
+        <td>
+            <input type="email" class="form-control" name="billing_email" value="{{airport.billing_email|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} placeholder="Required" />
+        </td>
+        <td class="ajax-status-container">&nbsp;</td>
+    </tr>
+    <tr>
+        <th scope="row">Billing Phone</th>
+        <td><input type="text" class="form-control" name="billing_phone" value="{{airport.billing_phone|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} /></td>
+        <td class="ajax-status-container">&nbsp;</td>
+    </tr>
+
+    <tr>
+        <th scope="row">Billing Street 1</th>
+        <td><input type="text" class="form-control" name="billing_street_1" value="{{airport.billing_street_1|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} /></td>
+        <td class="ajax-status-container">&nbsp;</td>
+    </tr>
+    <tr>
+        <th scope="row">Billing Street 2</th>
+        <td><input type="text" class="form-control" name="billing_street_2" value="{{airport.billing_street_2|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} /></td>
+        <td class="ajax-status-container">&nbsp;</td>
+    </tr>
+    <tr>
+        <th scope="row">Billing City {%required%}</th>
+        <td><input type="text" class="form-control" name="billing_city" value="{{airport.billing_city|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} placeholder="Required" /></td>
+        <td class="ajax-status-container">&nbsp;</td>
+    </tr>
+    <tr>
+        <th scope="row">Billing State {%required%}</th>
+        <td><input type="text" class="form-control" name="billing_state" value="{{airport.billing_state|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} placeholder="Required" /></td>
+        <td class="ajax-status-container">&nbsp;</td>
+    </tr>
+    <tr>
+        <th scope="row">Billing Zip {%required%}</th>
+        <td><input type="text" class="form-control" name="billing_zip" value="{{airport.billing_zip|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} placeholder="Required" /></td>
+        <td class="ajax-status-container">&nbsp;</td>
+    </tr>
+
+</table>

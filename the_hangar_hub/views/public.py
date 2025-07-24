@@ -50,7 +50,7 @@ def home(request):
             airport_service.save_airport_selection(airport)
             return redirect("airport:welcome", airport.identifier)
 
-    # Otherwise, just present a public landing page
+    # Otherwise, present a public landing page
     return render(
         request, "the_hangar_hub/public/public_landing_page.html",
         {}

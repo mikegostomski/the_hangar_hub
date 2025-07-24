@@ -1,0 +1,32 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load upload_taglib %}
+
+{%block title%}The Hangar Hub: Billing Information - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+    <h1>Billing Information: {{airport.identifier}}</h1>
+    <br />
+
+    We need to collect your airport's billing address and contact information.<br />
+    <b>Note:</b> The email address you enter here will receive invoices, receipts, and any other billing-related notices.<br />
+    <br />
+
+    <form method="post" action="{%url 'airport:subscribe' airport.identifier%}">
+        {%csrf_token%}
+        <input type="hidden" name="subscription_id" value="{{subscription_id}}" />
+        {%include "the_hangar_hub/airport/_billing_data_fields.html" with use_ajax=False%}
+        <button type="submit" class="btn btn-success">Continue</button>
+    </form>
+
+</div>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/management/scripts.js" %}
+    $(document).ready(function(){
+        $("input[name=billing_email]").trigger("focus");
+    });
+</script>
+
+{%endblock%}

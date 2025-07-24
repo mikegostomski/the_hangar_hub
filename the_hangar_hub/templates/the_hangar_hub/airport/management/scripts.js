@@ -1,5 +1,13 @@
 
 function update_airport_data(element) {
+    // Wait one second for when browser auto-completes after partial value entered
+   setTimeout(function () {
+      _update_airport_data(element)
+    }, 750);
+
+}
+
+function _update_airport_data(element) {
     let airport_id = {{airport.id}};
     let tr = element.closest('tr');
     let attribute = element.attr('name');
@@ -73,4 +81,32 @@ function invite_manager() {
         }
     });
 
+}
+
+function change_am_status(select_menu_el){
+    let manager_id = select_menu_el.data("manager_id");
+    let row = select_menu_el.closest("tr");
+
+    $.ajax({
+        type:   "POST",
+        url:    "{%url 'manage:update_manager' airport.identifier%}",
+        data:   {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            manager_id: manager_id,
+            new_status: select_menu_el.val(),
+        },
+        beforeSend:function(){
+            select_menu_el.after(getAjaxLoadImage());
+            select_menu_el.addClass("hidden");
+        },
+        success:function(data){
+            $("#managers-container").html(data);
+        },
+        error:function(){
+            select_menu_el.after(getAjaxStatusFailedIcon());
+            clearAjaxLoadImage(row);
+        },
+        complete:function(){
+        }
+    });
 }

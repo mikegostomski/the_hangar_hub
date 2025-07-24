@@ -1,11 +1,10 @@
 {% extends 'base/template/standard/template.html' %}
 {% load base_taglib %}
-{% load static %}
 
-{%block title%}The Hangar Hub: Claim Airport - {{airport.identifier}}{%endblock%}
+{%block title%}The Hangar Hub: Inactive Airport - {{airport.identifier}}{%endblock%}
 
 {% block main_content %}
-<div class="content-800">
+<div class="content-1024">
     <h1>{{airport.display_name}}</h1>
     <br />
     <div class="alert alert-danger">
@@ -13,11 +12,9 @@
     </div>
     <br />
     <strong>Are you an airport manager looking to start using the Hanger Hub?</strong><br />
-    <a href="" class="btn btn-primary">Claim This Airport</a>
+    <a href="{%url 'airport:claim' airport.identifier%}" class="btn btn-primary">Claim This Airport</a>
 </div>
 
 <br />
 <br />
-
-
 {%endblock%}
