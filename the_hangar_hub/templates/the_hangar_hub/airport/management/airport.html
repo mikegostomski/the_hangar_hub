@@ -38,6 +38,10 @@
                                 <th scope="row">Documents:</th>
                                 <td align="right"><a href="{{subscription.hosted_invoice_url}}" target="_blank">{%icon bi-file-earmark-pdf%} Invoice/Receipt</a></td>
                             </tr>
+                            <tr>
+                                <th scope="row">Manage:</th>
+                                <td align="right"><a href="{%url 'manage:subscription' airport.identifier%}">{%icon bi-credit-card%} Payment Portal</a></td>
+                            </tr>
                         </table>
 
 

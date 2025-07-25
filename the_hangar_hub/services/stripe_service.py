@@ -194,15 +194,32 @@ def get_session_details(session_id):
         return None
 
 def get_airport_subscriptions(airport):
+    if airport and airport.stripe_customer_id:
+        try:
+            set_stripe_api_key()
+            return stripe.Subscription.list(
+                customer=airport.stripe_customer_id,
+                expand=['data.latest_invoice.subscription_details']
+            )
+        except Exception as ee:
+            Error.record(
+                ee, f"get_airport_subscriptions({airport})"
+            )
+    return None
 
-    try:
-        set_stripe_api_key()
-        return stripe.Subscription.list(
-            customer=airport.stripe_customer_id,
-            expand=['data.latest_invoice.subscription_details']
-        )
-    except Exception as ee:
-        Error.record(
-            ee, f"get_airport_subscriptions({airport})"
-        )
-        return None
+
+def get_customer_portal_session(airport):
+    if airport and airport.stripe_customer_id:
+        try:
+            set_stripe_api_key()
+            session = stripe.billing_portal.Session.create(
+                customer=airport.stripe_customer_id,
+                return_url=f"{env.absolute_root_url}{reverse('manage:airport', args=[airport.identifier])}",
+            )
+            if session and hasattr(session, "url"):
+                return session.url
+        except Exception as ee:
+            Error.record(
+                ee, f"get_customer_portal_session({airport})"
+            )
+    return None

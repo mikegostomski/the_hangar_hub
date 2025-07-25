@@ -70,8 +70,8 @@ airport_paths = [
 # Airport Manager Paths
 manager_paths = [
     # AIRPORT MANAGEMENT (building and hangar definitions/config)
-    # path('<slug:airport_identifier>/claim', manage.claim_airport,                       name='claim'),
     path('<slug:airport_identifier>', manage.my_airport,                                name='airport'),
+    path('<slug:airport_identifier>/stripe', manage.my_subscription,                                name='subscription'),
     path('<slug:airport_identifier>/update', manage.update_airport,                     name='update_airport'),
     path('<slug:airport_identifier>/upload/logo', manage.upload_logo,                     name='upload_logo'),
     path('<slug:airport_identifier>/assign', manage.add_manager,                        name='add_manager'),

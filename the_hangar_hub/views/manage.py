@@ -48,6 +48,21 @@ def my_airport(request, airport_identifier):
 @require_authentication()
 @require_airport()
 @require_airport_manager()
+def my_subscription(request, airport_identifier):
+
+    airport = request.airport
+    url = stripe_service.get_customer_portal_session(airport)
+    if url:
+        return redirect(url)
+
+    message_service.post_error("Unable to create a payment portal session")
+    return redirect("manage:airport", airport_identifier)
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+@require_airport_manager()
 def update_airport(request, airport_identifier):
     airport = request.airport
     attribute = request.POST.get("attribute")
