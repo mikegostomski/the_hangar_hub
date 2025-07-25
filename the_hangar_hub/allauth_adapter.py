@@ -23,7 +23,7 @@ class HubAccountAdapter(DefaultAccountAdapter):
         BaseAccountAdapter().login(request, user)
 
         # Custom processing...
-        log.debug("######## HUB LOGIN ....")
+
         # Get user_profile
         user_profile = Auth.lookup_user_profile(user)
 

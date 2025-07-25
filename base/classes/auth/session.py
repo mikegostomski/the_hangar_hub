@@ -156,7 +156,6 @@ class Auth:
 
         if not found_user:
             # Perform lookup
-            log.debug(f"Performing lookup for {lookup_key} ({type(user_data)})")  # ToDo: Remove this line
             user_instance = UserProfile(user_data=user_data, get_contact=get_contact, get_authorities=get_authorities)
             # Add user_instance to dict
             if user_instance and user_instance.id:
@@ -164,8 +163,6 @@ class Auth:
                 found_user = user_map.get(lookup_key)
                 # Store updated dict for duration of request
                 env.store(user_map)
-
-            log.debug(f"Cached Users: {user_map.keys()}")
 
         # If getting contact or authorities, lookup could have been previously cached without that data.
         # Calling the functions to get that data will not re-query if the data is already present

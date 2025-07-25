@@ -8,6 +8,9 @@ from the_hangar_hub.classes.waitlist import Waitlist
 from base_upload.services import retrieval_service
 from the_hangar_hub.services import stripe_service
 from base.models.utility.error import Error
+from decimal import Decimal
+from base.classes.util.date_helper import DateHelper
+from base.services import date_service
 
 log = Log()
 
@@ -83,44 +86,40 @@ class Airport(models.Model):
         subs = stripe_service.get_airport_subscriptions(self)
         sub_datas = []
         for sub_data in subs.data:
-            log.debug(f"SUB_DATA: {sub_data}")
             latest_invoice = sub_data.latest_invoice
-            log.debug(f"LATEST_INVOICE: {latest_invoice}")
-
-
 
             item_list = sub_data["items"]["data"]
+            current_period_start = date_service.string_to_date(item_list[0].current_period_start)
+            current_period_end = date_service.string_to_date(item_list[0].current_period_end)
             lookup_keys = [y.lookup_key for y in [x.price for x in item_list]]
-            log.debug(f"LOOKUP_KEYS::: {lookup_keys}")
 
             plan_prices = stripe_service.get_subscription_prices()
             cents_due = latest_invoice.amount_due
             cents_paid = latest_invoice.amount_paid
             cents_remaining = latest_invoice.amount_remaining
-            effective_at = latest_invoice.effective_at
-            period_start = latest_invoice.period_start
-            period_end = latest_invoice.period_end
+            effective_at = date_service.string_to_date(latest_invoice.effective_at)
+            period_start = date_service.string_to_date(latest_invoice.period_start)
+            period_end = date_service.string_to_date(latest_invoice.period_end)
+
             
             sub_datas.append(
                 {
                     # "latest_invoice": sub_data.latest_invoice,
                     # "items": item_list,
                     "lookup_keys": lookup_keys,
-                    "cents_due": latest_invoice.amount_due,
-                    "cents_paid": latest_invoice.amount_paid,
-                    "cents_remaining": latest_invoice.amount_remaining,
-                    "effective_at": latest_invoice.effective_at,
-                    "period_start": latest_invoice.period_start,
-                    "period_end": latest_invoice.period_end,
+                    "amount_due": Decimal(latest_invoice.amount_due/100),
+                    "amount_paid": Decimal(latest_invoice.amount_paid/100),
+                    "amount_remaining": Decimal(latest_invoice.amount_remaining/100),
+                    "effective_at": effective_at,
+                    "current_period_start": current_period_start,
+                    "current_period_end": current_period_end,
                     "invoice_status": latest_invoice.status,
                     "invoice_pdf": latest_invoice.invoice_pdf,
                     "hosted_invoice_url": latest_invoice.hosted_invoice_url,
-                    "plan_prices": stripe_service.get_subscription_prices(),
                     "subscription_prices": [plan_prices.get(price_id) for price_id in lookup_keys],
                 }
             )
 
-        log.debug(subs)
         return sub_datas
 
     def activate_timezone(self):
@@ -167,12 +166,10 @@ class Airport(models.Model):
         log.trace([id_or_ident])
         try:
             if str(id_or_ident).isnumeric():
-                log.debug(f"Get by ID: {id_or_ident}")
                 return cls.objects.get(pk=id_or_ident)
             else:
                 return cls.objects.get(identifier=id_or_ident)
         except cls.DoesNotExist:
-            log.debug(f"Airport not found: {id_or_ident}")
             return None
         except Exception as ee:
             log.error(f"Could not get airport: {ee}")

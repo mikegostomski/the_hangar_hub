@@ -34,10 +34,10 @@
                 {%select_menu id=ff.id value=ff.status options=status_options onchange="update_feature($(this));" %}
             </td>
             <td>
-                <input type="text" id="enable_date-{{ff.id}}" value="{{ff.enable_date|date:'d-M-Y H:i'}}" onchange="update_feature($(this));" />
+                <input type="text" id="enable_date-{{ff.id}}" value="{{ff.enable_date|date:preferred_datetime_format}}" onchange="update_feature($(this));" />
             </td>
             <td>
-                <input type="text" id="disable_date-{{ff.id}}" value="{{ff.disable_date|date:'d-M-Y H:i'}}" onchange="update_feature($(this));" />
+                <input type="text" id="disable_date-{{ff.id}}" value="{{ff.disable_date|date:preferred_datetime_format}}" onchange="update_feature($(this));" />
             </td>
             <td class="date"><span class="bi bi-trash text-danger" title="Delete this feature" onclick="delete_feature($(this), {{ff.id}});"></span></td>
         </tr>

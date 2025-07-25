@@ -12,11 +12,40 @@
     <section>
         <h2>Subscription Data</h2>
         {%with sub_data=airport.subscriptions%}
-            <div class="list-group">
-                <div class="list-group-item"><strong>DATA:</strong> {{sub_data}}</div>
+            {%for subscription in sub_data%}
+                <div class="card float-left" style="border-left: 10px solid #000;border-color:{%if subscription.amount_remaining <= 0 %}green{%elif not airport.is_current%}red{%else%}#777{%endif%};">
+                    <div class="card-body">
+                        <table>
+                            <tr>
+                                <th scope="row">Billing Period:</th>
+                                <td style="padding-left:20px;">
+                                    {{subscription.current_period_start|date:preferred_date_format}} - {{subscription.current_period_end|date:preferred_date_format}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Charged:</th>
+                                <td align="right">{%format_currency subscription.amount_due%}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Paid:</th>
+                                <td align="right">{%format_currency subscription.amount_paid%}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Balance:</th>
+                                <td align="right">{%format_currency subscription.amount_remaining%}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Documents:</th>
+                                <td align="right"><a href="{{subscription.hosted_invoice_url}}" target="_blank">{%icon bi-file-earmark-pdf%} Invoice/Receipt</a></td>
+                            </tr>
+                        </table>
 
-            </div>
+
+                    </div>
+                </div>
+            {%endfor%}
         {%endwith%}
+        <br style="clear:both" />
     </section>
 
 

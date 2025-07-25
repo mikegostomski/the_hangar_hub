@@ -149,7 +149,6 @@ class FilePreviewNode(template.Node):
     def render(self, context):
         # Prepare attributes
         attrs = support.process_args(self.args, context)
-        log.trace(attrs, function_name="upload_taglib.DatabaseImageNode")
 
         # File (base_upload.models.DatabaseFile) is required
         file_instance = attrs.get("file")
@@ -236,7 +235,6 @@ class DisplayImageNode(template.Node):
     def render(self, context):
         # Prepare attributes
         attrs = support.process_args(self.args, context)
-        log.trace(attrs, function_name="upload_taglib.DatabaseImageNode")
 
         # File (base_upload.models.DatabaseFile) is required
         file_instance = attrs.get("file")

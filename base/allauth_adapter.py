@@ -17,9 +17,7 @@ class BaseAccountAdapter(DefaultAccountAdapter):
     def login(self, request, user):
         # Standard login...
         DefaultAccountAdapter().login(request, user)
-
         # Custom processing...
-        log.debug("######## LOGIN !!!!!!!!")
 
     def clean_email(self, email: str) -> str:
         """

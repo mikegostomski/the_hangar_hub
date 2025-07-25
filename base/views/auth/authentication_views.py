@@ -67,7 +67,6 @@ def proxy_search(request):
 def post_login_handler(request):
     next_url = env.get_session_variable("after_auth_url") or "/"
     env.set_session_variable("after_auth_url", None)
-    log.debug(f"#### NEXT URL: {next_url}")
     return redirect(next_url)
 
 def login_then_next(request):

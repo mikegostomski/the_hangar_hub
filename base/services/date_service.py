@@ -32,7 +32,7 @@ def string_to_date(date_string, source_timezone=None):
     dt = None
     try:
         # Use pandas to convert date string
-        if isinstance(date_string, str):
+        if isinstance(date_string, str) and not date_string.isnumeric():
             try:
                 dt = pandas.to_datetime(date_string).to_pydatetime()
             except Exception as ee:
@@ -40,6 +40,9 @@ def string_to_date(date_string, source_timezone=None):
 
         elif isinstance(date_string, datetime):
             dt = date_string
+
+        elif str(date_string).isnumeric():
+            dt = datetime.fromtimestamp(int(date_string), timezone.utc)
 
         else:
             log.warning(f"String to date received a non-string: {type(date_string)}")

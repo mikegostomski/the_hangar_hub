@@ -83,7 +83,6 @@ def require_authentication(redirect_url=None):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            log.debug("#### I'M HERE!")
             # If not logged in, redirect
             if not request.user.is_authenticated:
                 # Remember where to return after logging in

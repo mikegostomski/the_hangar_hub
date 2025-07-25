@@ -17,6 +17,9 @@ def util(request):
     app_code = app.get_app_code()
     app_version = app.get_app_version()
 
+    preferred_date_format = "m/d/Y"
+    preferred_time_format = "h:i A"
+
     model = {
         'app_code': app_code,
         'app_version': app_version,
@@ -41,7 +44,9 @@ def util(request):
         'posted_message_position': getattr(settings, 'POSTED_MESSAGE_POSITION', 'TOP').upper(),
 
         "now": datetime.now(timezone.utc),
-        "preferred_date_format": "m-d-Y"
+        "preferred_date_format": preferred_date_format,
+        "preferred_time_format": preferred_time_format,
+        "preferred_datetime_format": f"{preferred_date_format} {preferred_time_format}"
     }
 
     # Get admin links for any installed custom plugins, and the current app
