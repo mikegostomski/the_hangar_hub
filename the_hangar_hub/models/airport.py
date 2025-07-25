@@ -81,8 +81,47 @@ class Airport(models.Model):
 
     def subscriptions(self):
         subs = stripe_service.get_airport_subscriptions(self)
+        sub_datas = []
+        for sub_data in subs.data:
+            log.debug(f"SUB_DATA: {sub_data}")
+            latest_invoice = sub_data.latest_invoice
+            log.debug(f"LATEST_INVOICE: {latest_invoice}")
+
+
+
+            item_list = sub_data["items"]["data"]
+            lookup_keys = [y.lookup_key for y in [x.price for x in item_list]]
+            log.debug(f"LOOKUP_KEYS::: {lookup_keys}")
+
+            plan_prices = stripe_service.get_subscription_prices()
+            cents_due = latest_invoice.amount_due
+            cents_paid = latest_invoice.amount_paid
+            cents_remaining = latest_invoice.amount_remaining
+            effective_at = latest_invoice.effective_at
+            period_start = latest_invoice.period_start
+            period_end = latest_invoice.period_end
+            
+            sub_datas.append(
+                {
+                    # "latest_invoice": sub_data.latest_invoice,
+                    # "items": item_list,
+                    "lookup_keys": lookup_keys,
+                    "cents_due": latest_invoice.amount_due,
+                    "cents_paid": latest_invoice.amount_paid,
+                    "cents_remaining": latest_invoice.amount_remaining,
+                    "effective_at": latest_invoice.effective_at,
+                    "period_start": latest_invoice.period_start,
+                    "period_end": latest_invoice.period_end,
+                    "invoice_status": latest_invoice.status,
+                    "invoice_pdf": latest_invoice.invoice_pdf,
+                    "hosted_invoice_url": latest_invoice.hosted_invoice_url,
+                    "plan_prices": stripe_service.get_subscription_prices(),
+                    "subscription_prices": [plan_prices.get(price_id) for price_id in lookup_keys],
+                }
+            )
+
         log.debug(subs)
-        return subs
+        return sub_datas
 
     def activate_timezone(self):
         if self.timezone:

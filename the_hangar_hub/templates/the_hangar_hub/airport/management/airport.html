@@ -9,13 +9,16 @@
     <h1>Manage Airport: {{airport.identifier}}</h1>
     <br />
 
-    <div class="list-group">
-    {%for subs in airport.subscriptions.data%}
-        <div class="list-group-item">
-            {{subs}}
-        </div>
-    {%endfor%}
-    </div>
+    <section>
+        <h2>Subscription Data</h2>
+        {%with sub_data=airport.subscriptions%}
+            <div class="list-group">
+                <div class="list-group-item"><strong>DATA:</strong> {{sub_data}}</div>
+
+            </div>
+        {%endwith%}
+    </section>
+
 
     <section>
         <h2>Airport Data</h2>

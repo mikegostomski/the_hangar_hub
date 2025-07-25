@@ -163,20 +163,27 @@ def submit_review(request, application_id):
     if not application:
         return redirect("manage:application_dashboard")
 
-    # Update application status
-    application.change_status(request.POST.get("decision"))
+    decision = request.POST.get("decision")
 
     # If notes were added
     application.manager_notes_public = request.POST.get("manager_notes_public")
     application.manager_notes_private = request.POST.get("manager_notes_private")
 
     # If added to waitlist
-    if application.status_code == "L":
+    if decision == "L":
         application.wl_group_code = request.POST.get("wl_group_code")
+
+    # If assigning a hangar, status doesn't change until a hangar has been selected
+    if decision != "A":
+        # Update application status
+        application.change_status(decision)
 
     application.save()
 
-    return redirect("manage:application_dashboard", application.airport.identifier)
+    if decision == "A":
+        return redirect("apply:select", application.id)
+    else:
+        return redirect("manage:application_dashboard", application.airport.identifier)
 
 
 

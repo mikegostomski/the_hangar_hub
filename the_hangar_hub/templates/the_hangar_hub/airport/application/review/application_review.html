@@ -174,7 +174,7 @@ The Hangar Hub: Hangar Application -
                 <textarea name="manager_notes_private" id="manager_notes_private" class="form-control" rows="6">{{application.manager_notes_private|default:''}}</textarea>
             </div>
 
-            <button class="btn btn-success">
+            <button type="submit" class="btn btn-success">
                 {%icon bi-floppy%} Save Review
             </button>
 
@@ -184,10 +184,13 @@ The Hangar Hub: Hangar Application -
 
 
     <div class="content-800 content-block">
-        {%if is_applicant%}
-            <button class="btn btn-danger" onclick="withdraw_application();">Withdraw Application</button>
 
+        {%if is_applicant and application.is_active%}
+            <button class="btn btn-danger" onclick="withdraw_application();">Withdraw Application</button>
+        {%elif application.status_code == "W"%}
+            <button class="btn btn-primary" onclick="resubmit_application();">Resubmit Application</button>
         {%endif%}
+
     </div>
 
 <script type="text/javascript">

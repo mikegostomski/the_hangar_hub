@@ -80,9 +80,10 @@ def require_airport(after_selection_url=None):
             # Identifier was still not found. Send to airport selection page
             send_to = after_selection_url or request.path
             if invalid_path_id and invalid_path_id in send_to:
-                send_to = "hub:home"
+                log.debug(f"Not gonna send to: {send_to}")
+                send_to = None
             env.set_session_variable("thh-after-ap-selection-url", send_to)
-            log.debug(f"Must select an airport. The redirect to {send_to}")
+            log.debug(f"Must select an airport. Then redirect to {send_to or 'airport welcome page'}")
             return decorator_redirect(request, "hub:search")
 
         return _wrapped_view

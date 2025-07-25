@@ -83,7 +83,7 @@ class HangarApplication(models.Model):
 
         # If no longer on the waitlist
         if self.status_code == "L":
-            self.wl_group = None
+            self.wl_group_code = None
             self.wl_index = None
 
         # If just submitted
@@ -104,7 +104,7 @@ class HangarApplication(models.Model):
 
     @property
     def is_active(self):
-        return self.status_code in ["N", "I", "S", "R"]
+        return self.status_code in ["N", "I", "S", "L"]
 
     @property
     def is_incomplete(self):

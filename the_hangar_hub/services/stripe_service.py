@@ -197,7 +197,10 @@ def get_airport_subscriptions(airport):
 
     try:
         set_stripe_api_key()
-        return stripe.Subscription.list(customer=airport.stripe_customer_id)
+        return stripe.Subscription.list(
+            customer=airport.stripe_customer_id,
+            expand=['data.latest_invoice.subscription_details']
+        )
     except Exception as ee:
         Error.record(
             ee, f"get_airport_subscriptions({airport})"

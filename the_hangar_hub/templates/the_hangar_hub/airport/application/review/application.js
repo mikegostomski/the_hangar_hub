@@ -37,6 +37,10 @@ function withdraw_application(){
     {%end_js_confirm%}
 }
 
+function resubmit_application(){
+    _change_status('S');
+}
+
 
 function _change_status(new_status){
     $.ajax({

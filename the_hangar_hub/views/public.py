@@ -152,9 +152,10 @@ def router(request):
 
 
 def _post_airport_selection_redirect(airport):
+    log.trace(airport)
     airport_service.save_airport_selection(airport)
     next_url = env.get_session_variable("thh-after-ap-selection-url")
-    if next_url:
+    if next_url and next_url != "hub:home":
         if "IDENTIFIER" in next_url:
             next_url = next_url.replace("IDENTIFIER", airport.identifier)
         log.debug(f"Sending to next URL: {next_url}")

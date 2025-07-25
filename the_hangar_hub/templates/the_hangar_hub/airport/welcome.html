@@ -54,13 +54,16 @@
             <div class="card">
                 <img src="{% static 'images/apply.png' %}" alt="Cartoon airplane applying for a hangar" class="card-img-top" />
                 <div class="card-body">
-                    <h5 class="card-title">Hangar Applications</h5>
+                    <h5 class="card-title">Application Dashboard</h5>
                     <p class="card-text">
                         <ul>
-                            <li>Go paperless with an online hangar application process</li>
-                            <li>Eliminate data entry errors from handwritten forms</li>
-                            <li>Automatically keep applicants updated on the status of the application</li>
+                            <li>Check the status of your application</li>
+                            <li>Edit or withdraw your application</li>
+                            <li>Submit a new application</li>
                         </ul>
+                        <div class="text-center">
+                            <a href="{%url 'apply:dashboard'%}" class="btn btn-primary">Application Dashboard</a>
+                        </div>
                     </p>
                 </div>
             </div>
@@ -119,22 +122,40 @@
     {%endif%}
 
 
-
-            <div class="card">
-                <img src="{% static 'images/bs-cards/enhance.png' %}" alt="Image of an airplane having work done on it" class="card-img-top" />
-                <div class="card-body">
-                    <h5 class="card-title">Enhancement Requests</h5>
-                    <p class="card-text">
-                        Spotted a bug? Dreaming of a new feature? We want to hear from you!
-                        <ul>
-                            <li>Request a new feature</li>
-                            <li>Submit a bug report</li>
-                            <li>Vote for other users' ideas</li>
-                        </ul>
-                    </p>
-                    <a href="{%url 'base:enhancement_requests'%}" class="btn btn-primary">Contribute</a>
+    {%if not active_applications%}
+        <div class="card">
+            <img src="{% static 'images/apply.png' %}" alt="Cartoon airplane applying for a hangar" class="card-img-top" />
+            <div class="card-body">
+                <h5 class="card-title">Hangar Application</h5>
+                <p class="card-text">
+                    Fill out an application for a hangar at {{airport.display_name}}
+                </p>
+                <div class="text-center">
+                    <a href="{%url 'apply:airport_form' airport.identifier%}" class="btn btn-primary">Apply</a>
                 </div>
             </div>
+        </div>
+    {%endif%}
+
+    <div class="card">
+        <img src="{% static 'images/bs-cards/enhance.png' %}" alt="Image of an airplane having work done on it" class="card-img-top" />
+        <div class="card-body">
+            <h5 class="card-title">Enhancement Requests</h5>
+            <p class="card-text">
+                Spotted a bug? Dreaming of a new feature? We want to hear from you!
+                <ul>
+                    <li>Request a new feature</li>
+                    <li>Submit a bug report</li>
+                    <li>Vote for other users' ideas</li>
+                </ul>
+            </p>
+
+            <div class="text-center">
+                <a href="{%url 'base:enhancement_requests'%}" class="btn btn-primary">Contribute</a>
+            </div>
+
+        </div>
+    </div>
 
 
 </div>

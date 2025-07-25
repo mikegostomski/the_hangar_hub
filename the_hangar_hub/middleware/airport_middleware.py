@@ -11,7 +11,6 @@ env = EnvHelper()
 class AirportMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        log.debug("Airport Middleware")
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         # Add airport to request and activate timezone if found
@@ -20,6 +19,7 @@ class AirportMiddleware:
         airport_kwarg = view_kwargs.get("airport_identifier")
         saved_airport = airport_service.get_airport_selection()
         selected_airport = get_parameter or post_parameter or airport_kwarg or saved_airport
+        log.debug(f"Middleware Airport: {selected_airport}")
 
         if selected_airport:
             request.airport = Airport.get(selected_airport)
