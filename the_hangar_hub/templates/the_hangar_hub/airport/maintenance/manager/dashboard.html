@@ -5,9 +5,10 @@
 
 {% block main_content %}
 <h1>Maintenance Dashboard</h1>
+<div class="content-1024 content-block">
 
 {%if new_requests%}
-    <div class="content-1024 content-block">
+    <section>
         <h2 class="text-danger">New Maintenance Requests</h2>
         <table class="table">
             <tr>
@@ -38,39 +39,74 @@
                 </tr>
             {%endfor%}
         </table>
-    </div>
+    </section>
 {%endif%}
 
-<div class="content-1024 content-block">
-    <h2>My Maintenance Requests</h2>
-    <table class="table">
-        <tr>
-            <th scope="col">Airport</th>
-            <th scope="col">Hangar</th>
-            <th scope="col">Summary</th>
-            <th scope="col">Request Date</th>
-            <th scope="col">Priority</th>
-            <th scope="col">Status</th>
-        </tr>
-        {%for mx_request in requests%}
+    <section>
+        <h2>Scheduled Maintenance</h2>
+        <table class="table">
             <tr>
-                <td>{{mx_request.hangar.building.airport.identifier}}</td>
-                <td>{{mx_request.hangar.code}}</td>
-                <td>
-                    <a href="{%url 'manage:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
-                </td>
-                <td>{%humanized_date mx_request.date_created%}</td>
-                <td>{{mx_request.priority}}</td>
-                <td>{{mx_request.status}}</td>
+                <th scope="col">Building</th>
+                <th scope="col">Hangar</th>
+                <th scope="col">Summary</th>
+                <th scope="col">Start Date</th>
+                <th scope="col">End Date</th>
+                <th scope="col">Status</th>
             </tr>
-        {%empty%}
+            {%for mx in scheduled_mx%}
+                <tr>
+                    <td>{{mx.affected_building}}</td>
+                    <td>{{mx.affected_hangar}}</td>
+                    <td>
+                        {{mx.summary}}
+                    </td>
+                    <td>{%humanized_date mx.start_date%}</td>
+                    <td>{%humanized_date mx.end_date%}</td>
+                    <td>{{mx.status}}</td>
+                </tr>
+            {%empty%}
+                <tr>
+                    <td colspan="6">
+                        <em class="text-muted">No Scheduled Maintenance</em>
+                    </td>
+                </tr>
+            {%endfor%}
+        </table>
+        <button class="btn btn-primary">Add Scheduled Maintenance</button><br />
+    </section>
+
+
+    <section>
+        <h2>Tenant Maintenance Requests</h2>
+        <table class="table">
             <tr>
-                <td colspan="3">
-                    <em class="text-muted">No Maintenance Requests</em>
-                </td>
+                <th scope="col">Airport</th>
+                <th scope="col">Hangar</th>
+                <th scope="col">Summary</th>
+                <th scope="col">Request Date</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Status</th>
             </tr>
-        {%endfor%}
-    </table>
+            {%for mx_request in requests%}
+                <tr>
+                    <td>{{mx_request.hangar.building.airport.identifier}}</td>
+                    <td>{{mx_request.hangar.code}}</td>
+                    <td>
+                        <a href="{%url 'manage:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
+                    </td>
+                    <td>{%humanized_date mx_request.date_created%}</td>
+                    <td>{{mx_request.priority}}</td>
+                    <td>{{mx_request.status}}</td>
+                </tr>
+            {%empty%}
+                <tr>
+                    <td colspan="6">
+                        <em class="text-muted">No Maintenance Requests</em>
+                    </td>
+                </tr>
+            {%endfor%}
+        </table>
+    </section>
 </div>
 
 

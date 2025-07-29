@@ -5,6 +5,8 @@ from base.classes.auth.session import Auth
 from datetime import datetime, timezone
 from django.db.models import Q
 
+from the_hangar_hub.models import Hangar
+
 log = Log()
 
 
@@ -96,6 +98,53 @@ class MaintenanceComment(models.Model):
     @property
     def visibility(self):
         return self.visibility_options().get(self.visibility_code) or self.visibility_code
+
+    @classmethod
+    def get(cls, data):
+        try:
+            return cls.objects.get(pk=data)
+        except cls.DoesNotExist:
+            return None
+        except Exception as ee:
+            log.error(f"Could not get {cls}: {ee}")
+            return None
+
+
+class ScheduledMaintenance(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    status_code = models.CharField(max_length=1, default="S", db_index=True)
+    date_resolved = models.DateTimeField(null=True, blank=True)
+
+    tenant_request = models.ForeignKey(
+        MaintenanceRequest, on_delete=models.CASCADE, related_name="scheduled_maintenance", null=True, blank=True, db_index=True
+    )
+
+    affected_hangar = models.ForeignKey(
+        'the_hangar_hub.Hangar', on_delete=models.CASCADE, related_name="scheduled_maintenance", null=True, blank=True, db_index=True
+    )
+    affected_building = models.ForeignKey(
+        'the_hangar_hub.Building', on_delete=models.CASCADE, related_name="scheduled_maintenance", null=True, blank=True, db_index=True
+    )
+
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+
+    summary = models.CharField(max_length=120)
+    notes = models.TextField()
+
+    @staticmethod
+    def status_options():
+        return {
+            "S": "Scheduled",
+            "C": "Completed",
+            "H": "On Hold",
+            "X": "Canceled",
+        }
+
+    def status(self):
+        return self.status_options().get(self.status_code) or self.status_code
 
     @classmethod
     def get(cls, data):
