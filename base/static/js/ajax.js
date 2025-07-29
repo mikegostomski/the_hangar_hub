@@ -187,7 +187,10 @@ function flash_element(element, flash_color, flash_duration, final_color){
         flash_duration = 750
     }
     if(typeof final_color === 'undefined'){
-        final_color = 'transparent'
+        final_color = element.css("backgroundColor")
+        if(typeof final_color === 'undefined'){
+            final_color = 'transparent'
+        }
     }
 
     let t = 'transition';

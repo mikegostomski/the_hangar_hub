@@ -1,0 +1,41 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Stripe: Prices{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+    <h1>Stripe Prices</h1>
+    <br />
+    <table class="table">
+        <tr>
+            <th scope="col">Lookup Key</th>
+            <th scope="col">ID</th>
+            <th scope="col">Product</th>
+            <th scope="col">Recurring</th>
+            <th scope="col">Trial Days</th>
+            <th scope="col">Amount</th>
+        </tr>
+        {%for price in prices%}
+        <tr>
+            <td>
+                {%if price.lookup_key == price.id%}
+                    <em class="text-danger">No Lookup Key</em>
+                {%else%}
+                <span class="code">{{price.lookup_key}}</span>
+                {%endif%}
+
+            </td>
+            <td><span class="code">{{price.id}}</span></td>
+            <td>
+                <span class="code">{{price.product_id}}</span><br />
+                {{price.name}}
+            </td>
+            <td>{{price.recurring}}</td>
+            <td>{{price.trial_days}}</td>
+            <td align="right">{%format_currency price.amount%}</td>
+        </tr>
+        {%endfor%}
+    </table>
+</div>
+{%endblock%}

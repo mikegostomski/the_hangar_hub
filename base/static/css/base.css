@@ -123,6 +123,13 @@ margin-bottom: 80px; }
 .code {
     font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
 }
+span.code {
+    border: 1px solid #CCC;
+    border-radius: 3px;
+    padding: 3px;
+    background-color: var(--app-neutral);
+    color: var(--app-dark);
+}
 
 .fake-link{
     color: Blue;

@@ -3,48 +3,15 @@ import stripe
 from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service
+from base_stripe.services.config_service import set_stripe_api_key
+from base_stripe.services import price_service
 
 log = Log()
 env = EnvHelper()
 
-def set_stripe_api_key():
-    stripe.api_key = env.get_setting("STRIPE_KEY")
-
-
-def get_price_data():
-    prices = {}
-    try:
-        set_stripe_api_key()
-        price_list = stripe.Price.list(
-            expand=['data.product']
-        )
-        if not price_list:
-            return {}
-
-        for pp in price_list:
-            lookup_key = pp.get("lookup_key")
-            price_id = pp.get("id")
-            name = pp["product"].get("name")
-            description = pp["product"].get("description")
-            recurring = pp["recurring"].get("interval")
-            trial_days = pp["recurring"].get("trial_period_days")
-            amount_cents = int(pp.get("unit_amount_decimal"))
-            amount_dollars = Decimal(amount_cents/100)
-            prices[lookup_key] = {
-                "id": price_id,
-                "name": name,
-                "description": description,
-                "recurring": recurring,
-                "trial_days": trial_days,
-                "amount_dollars": amount_dollars
-            }
-    except Exception as ee:
-        Error.record(ee)
-    return prices
-
 
 def get_subscription_prices():
-    return {lookup_key: data for  lookup_key, data in get_price_data().items() if data["name"] == "The Hangar Hub"}
+    return {price.lookup_key: price for  price in price_service.get_price_list() if price.name == "The Hangar Hub"}
 
 
 def create_customer_from_airport(airport):

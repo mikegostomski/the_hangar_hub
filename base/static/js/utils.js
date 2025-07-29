@@ -395,3 +395,21 @@ function updateCounterDisplay(counterName){
         }
     );
 }
+
+function copy_text(element) {
+    let text = element.text();
+    try{
+        navigator.clipboard.writeText(text).then(() => {
+            flash_success(element);
+        });
+    }
+    catch(ee){
+        flash_error(element);
+    }
+}
+
+$(document).ready(function(){
+    $("span.code").click(function(){
+        copy_text($(this));
+    })
+})

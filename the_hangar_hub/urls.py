@@ -117,6 +117,7 @@ urlpatterns = [
     re_path('^accounts/', include('allauth.urls')),
     re_path('^base/', include(('base.urls', 'base'), namespace='base')),
     re_path('^upload/', include(('base_upload.urls', 'base_upload'), namespace='upload')),
+    re_path('^stripe/', include(('base_stripe.urls', 'base_stripe'), namespace='stripe')),
 
     re_path('', include((public_paths, 'the_hangar_hub'), namespace='hub')),
     re_path('airport/', include((airport_paths, 'the_hangar_hub'), namespace='airport')),
