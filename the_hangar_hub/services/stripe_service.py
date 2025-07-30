@@ -4,7 +4,7 @@ import stripe
 from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service
-from base_stripe.services.config_service import set_stripe_api_key
+from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.services import price_service
 
 log = Log()
@@ -27,14 +27,14 @@ def create_customer_from_airport(airport):
             name=airport.display_name,
             email=airport.billing_email,
             phone=airport.billing_phone,
-            address={
-                "line1": airport.billing_street_1,
-                "line2": airport.billing_street_2,
-                "city": airport.billing_city,
-                "state": airport.billing_state,
-                "postal_code": airport.billing_zip,
-                "country": airport.country,
-            },
+            address=get_stripe_address_dict(
+                airport.billing_street_1,
+                airport.billing_street_2,
+                airport.billing_city,
+                airport.billing_state,
+                airport.billing_zip,
+                airport.country
+            ),
         )
 
         if customer and hasattr(customer, "id"):
@@ -82,14 +82,14 @@ def modify_customer_from_airport(airport):
             name=airport.display_name,
             email=airport.billing_email,
             phone=airport.billing_phone,
-            address={
-                "line1": airport.billing_street_1,
-                "line2": airport.billing_street_2,
-                "city": airport.billing_city,
-                "state": airport.billing_state,
-                "postal_code": airport.billing_zip,
-                "country": airport.country,
-            },
+            address=get_stripe_address_dict(
+                airport.billing_street_1,
+                airport.billing_street_2,
+                airport.billing_city,
+                airport.billing_state,
+                airport.billing_zip,
+                airport.country
+            ),
         )
 
         if customer:

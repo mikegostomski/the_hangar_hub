@@ -3,6 +3,7 @@ from django.shortcuts import render
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from base_stripe.services import price_service, accounts_service
+from base.services import message_service
 
 log = Log()
 env = EnvHelper()
@@ -46,3 +47,39 @@ def show_accounts(request):
             "accounts": accounts,
         }
     )
+
+def modify_account(request):
+    account_id = request.POST.get("account_id")
+    account = accounts_service.get_connected_account(account_id)
+    if not account:
+        message_service.post_error("Connected account could not be retrieved from Stripe")
+        return HttpResponseForbidden()
+
+    something = False
+    for attr in account.editable_attrs():
+        if attr in request.POST:
+            value = request.POST.get(attr)
+            if attr == "company_phone":
+                account.set_phone(value)
+                something = True
+            elif hasattr(account, attr):
+                setattr(account, attr, value)
+                something = True
+            elif attr in account.company_address:
+                account.company_address[attr] = value
+                something = True
+            else:
+                log.error(f"{attr} does not exist in the account object or {account.company_address}")
+
+    if not something:
+        log.debug(request.POST)
+        message_service.post_error("Nothing was updated.")
+        return HttpResponseForbidden()
+
+    if accounts_service.modify_connected_account(account):
+        message_service.post_success("Account has been updated")
+        return HttpResponse("ok")
+
+    return HttpResponseForbidden()
+
+

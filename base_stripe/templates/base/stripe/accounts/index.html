@@ -4,7 +4,7 @@
 {%block title%}Stripe: Accounts{%endblock%}
 
 {% block main_content %}
-<div class="content-1024">
+<div class="content">
     <h1>Connected Stripe Accounts</h1>
     <br />
 
@@ -12,20 +12,22 @@
         <tr>
             <th scope="col">ID</th>
             <th scope="col">Name</th>
-            <th scope="col">fee_payer</th>
-            <th scope="col">loss_payer</th>
-            <th scope="col">requirement_collection</th>
-            <th scope="col">default_currency</th>
-            <th scope="col">login_link</th>
-            <th scope="col">payouts_enabled</th>
+            <th scope="col">Fees</th>
+            <th scope="col">Losses</th>
+            <th scope="col">Requirements</th>
+            <th scope="col">Currency</th>
+            <th scope="col">Login Link</th>
+            <th scope="col">Payouts</th>
             <th scope="col">Company Name</th>
             <th scope="col">Company Phone</th>
             <th scope="col">Company Address</th>
         </tr>
         {%for acct in accounts%}
-        <tr>
+        <tr data-account_id="{{acct.id}}">
             <td><span class="code">{{acct.id}}</span></td>
-            <td>{{acct.name}}</td>
+            <td>
+                <input type="text" name="name" value="{{acct.name|default:''}}" class="form-control" onchange="update_account($(this));" />
+            </td>
             <td>
                 {{acct.fee_payer}}
             </td>
@@ -34,12 +36,45 @@
             <td>{{acct.default_currency}}</td>
             <td>{{acct.login_link}}</td>
             <td>{{acct.payouts_enabled}}</td>
-            <td>{{acct.company_name}}</td>
-            <td>{{acct.company_phone}}</td>
-            <td>{{acct.company_address}}</td>
+            <td><input type="text" name="company_name" value="{{acct.company_name|default:''}}" class="form-control" onchange="update_account($(this));" /></td>
+            <td>
+                <input type="text" name="company_phone" value="{{acct.company_phone|default:''}}" class="form-control" onchange="update_account($(this));" />
+            </td>
+            <td>
+                <div class="company_address">
+                    <div class="input-group mb-1">
+                        <label class="input-group-text" for="street_1-{{acct.id}}">Street 1</label>
+                        <input type="text" id="street_1-{{acct.id}}" name="street_1" value="{{acct.company_address.street_1|default:''}}" class="form-control" />
+                    </div>
+                    <div class="input-group mb-1">
+                        <label class="input-group-text" for="street_2-{{acct.id}}">Street 2</label>
+                        <input type="text" id="street_2-{{acct.id}}" name="street_2" value="{{acct.company_address.street_2|default:''}}" class="form-control" />
+                    </div>
+                    <div class="input-group mb-1">
+                        <label class="input-group-text" for="city-{{acct.id}}">City</label>
+                        <input type="text" id="city-{{acct.id}}" name="city" value="{{acct.company_address.city|default:''}}" class="form-control" />
+                    </div>
+                    <div class="input-group mb-1">
+                        <label class="input-group-text" for="state-{{acct.id}}">State</label>
+                        <input type="text" id="state-{{acct.id}}" name="state" value="{{acct.company_address.state|default:''}}" class="form-control" />
+                    </div>
+                    <div class="input-group mb-1">
+                        <label class="input-group-text" for="zip_code-{{acct.id}}">Zip Code</label>
+                        <input type="text" id="zip_code-{{acct.id}}" name="zip_code" value="{{acct.company_address.zip_code|default:''}}" class="form-control" />
+                    </div>
+                    <div class="input-group mb-1">
+                        <label class="input-group-text" for="country-{{acct.id}}">Country</label>
+                        <input type="text" id="country-{{acct.id}}" name="country" value="{{acct.company_address.country|default:''}}" class="form-control" />
+                    </div>
+                    <button class="btn btn-success btn-sm" onclick="update_account($(this));">Save Address</button>
+                </div>
+            </td>
         </tr>
         {%endfor%}
     </table>
 </div>
+<script type="text/javascript">
+    {%include "base/stripe/accounts/script.js"%}
+</script>
 {%endblock%}
 

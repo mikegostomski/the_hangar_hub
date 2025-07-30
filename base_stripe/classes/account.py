@@ -1,5 +1,6 @@
 from base.models.utility.error import EnvHelper, Log, Error
 from decimal import Decimal
+from base_stripe.services.config_service import get_stripe_address_dict
 
 log = Log()
 env = EnvHelper()
@@ -18,6 +19,24 @@ class Account:
     company_phone = None
     company_address = None
 
+    def editable_attrs(self):
+        return [
+            "name",
+            "company_name", "company_phone",
+            "street_1", "street_2", "city", "state", "zip_code", "country",
+        ]
+
+    def set_phone(self, new_phone):
+        self.company_phone = new_phone
+        # if self.company_phone and len(self.company_phone) == 10:
+        #     self.company_phone = f"+1{self.company_phone}"
+
+    def company_stripe_address(self):
+        if type(self.company_address) is dict:
+            return get_stripe_address_dict(**self.company_address)
+        else:
+            return None
+
     def __init__(self, api_data):
         self.id = api_data.get("id")
         self.fee_payer = api_data.get("controller").get("fees").get("payer")
@@ -30,6 +49,7 @@ class Account:
         if co:
             self.company_name = co.get("name")
             self.company_phone = co.get("phone")
+
             ad = co.get("address")
             if ad:
                 # Match base.models.contact.Address format
@@ -40,6 +60,15 @@ class Account:
                     "state": ad.get("state"),
                     "zip_code": ad.get("postal_code"),
                     "country": ad.get("country"),
+                }
+            else:
+                self.company_address = {
+                    "street_1": None,
+                    "street_2": None,
+                    "city": None,
+                    "state": None,
+                    "zip_code": None,
+                    "country": None,
                 }
 
         ll = api_data.get("login_links")
