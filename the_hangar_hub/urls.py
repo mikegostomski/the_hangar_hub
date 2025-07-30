@@ -80,6 +80,7 @@ manager_paths = [
     path('<slug:airport_identifier>/buildings/add', manage.add_building,                name='add_building'),
     path('<slug:airport_identifier>/buildings/<building_id>', manage.my_hangars,           name='hangars'),
     path('<slug:airport_identifier>/buildings/<building_id>/add', manage.add_hangar,    name='add_hangar'),
+    path('<slug:airport_identifier>/hangar/delete', manage.delete_hangar,    name='delete_hangar'),
     path('<slug:airport_identifier>/hangars/<slug:hangar_id>', manage.one_hangar,                name='hangar'),
     path('<slug:airport_identifier>/hangars/<slug:hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
 

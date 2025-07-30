@@ -110,3 +110,31 @@ function change_am_status(select_menu_el){
         }
     });
 }
+
+
+function delete_hangar(el){
+    let row = el.closest("tr");
+    let hangar_id = row.data("hangar_id");
+
+    $.ajax({
+        type:   "POST",
+        url:    "{%url 'manage:delete_hangar' airport.identifier%}",
+        data:   {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            hangar_id: hangar_id,
+        },
+        beforeSend:function(){
+            el.after(getAjaxLoadImage());
+            el.addClass("hidden");
+        },
+        success:function(data){
+            row.remove()
+        },
+        error:function(){
+            sel.after(getAjaxStatusFailedIcon());
+            clearAjaxLoadImage(row);
+        },
+        complete:function(){
+        }
+    });
+}

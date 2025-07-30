@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
 
-from base.classes.util.env_helper import EnvHelper, Log
+from base.models.utility.error import EnvHelper, Log, Error
 from base.classes.auth.session import Auth
 from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
@@ -16,6 +16,7 @@ from the_hangar_hub.models.application import HangarApplication
 from the_hangar_hub.services import application_service
 from base.models.contact.phone import Phone
 from base.models.contact.address import Address
+from decimal import Decimal
 
 log = Log()
 env = EnvHelper()
@@ -95,12 +96,13 @@ def save(request, application_id):
 @require_authentication()
 @require_airport()
 def submit(request, application_id):
+    airport = request.airport
     application = _get_user_application(request, application_id)
     if not application:
-        return HttpResponseForbidden()
+        return redirect("apply:resume", application.id)
 
     if not _save_application_fields(request, application):
-        return HttpResponseForbidden()
+        return redirect("apply:resume", application.id)
 
     # Validate fields...
     issues = []
@@ -113,7 +115,10 @@ def submit(request, application_id):
                 issues.append(f"{ff.verbose_name} is a required field.")
 
         if not issues:
-            application.change_status("S")
+            if airport.application_fee_amount:
+                application.change_status("P")
+            else:
+                application.change_status("S")
             application.save()
     except Exception as ee:
         issues.append("There was an error submitting your application.")
@@ -127,7 +132,47 @@ def submit(request, application_id):
 
         return redirect("apply:resume", application.id)
     else:
-        return redirect("apply:dashboard")
+        if application.status_code == "P":
+            # Must pay application fee
+            pass
+
+        else:
+            return redirect("apply:dashboard")
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+def payment_success(request, application_id):
+    airport = request.airport
+    application = _get_user_application(request, application_id)
+
+    # ToDo: Check session to verify payment
+    message_service.post_success("Application fee payment has been received")
+    if not application:
+        message_service.post_error("Unable to update application status")
+    else:
+        application.change_status("S")
+        application.fee_payment_method = "STRIPE"
+        application.fee_amount = airport.application_fee_amount
+        application.fee_status = "P"
+        application.save()
+    return redirect("apply:review", application_id)
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+def payment_failure(request, application_id):
+    airport = request.airport
+    application = _get_user_application(request, application_id)
+
+    message_service.post_error("Application fee was not successfully collected")
+    if application:
+        application.fee_payment_method = "STRIPE"
+        application.fee_status = "X"
+        application.save()
+    return redirect("apply:review", application_id)
 
 
 @report_errors()
@@ -275,6 +320,27 @@ def save_preferences(request, airport_identifier):
     ha_preferences.required_fields_csv = ",".join(required_fields) if required_fields else None
     ha_preferences.ignored_fields_csv = ",".join(ignored_fields) if ignored_fields else None
     ha_preferences.save()
+
+    # Application fee is saved on the airport object
+    new_fee = request.POST.get("application_fee") or 0
+    old_fee = airport.application_fee_amount or 0
+    if old_fee != new_fee:
+        # format_decimal will clean up "$" or "," characters and make sure value is valid decimal
+        decimal_string = utility_service.format_decimal(new_fee, use_commas=False, show_decimals=True)
+        if not decimal_string:
+            message_service.post_error("Application fee must be a valid dollar amount.")
+        else:
+            try:
+                airport.application_fee_amount = Decimal(decimal_string)
+                airport.save()
+                Auth.audit(
+                    "U", "AIRPORT",
+                    "Updated application fee",
+                    "Airport", airport.id,
+                    old_fee, decimal_string
+                )
+            except Exception as ee:
+                Error.unexpected("Unable to save application fee", ee, decimal_string)
 
     return redirect("apply:preferences", airport.identifier)
 

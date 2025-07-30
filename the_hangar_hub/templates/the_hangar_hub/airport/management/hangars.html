@@ -18,10 +18,12 @@
             <th scope="col">Tenant(s)</th>
             <th scope="col" width="100">Capacity</th>
             <th scope="col" class="text-center" width="200">Has Electricity</th>
-            <th scope="col" class="text-center">-</th>
+            <th scope="col" class="text-center">
+                <span class="visually-hidden">Actions</span>
+            </th>
         </tr>
         {%for hangar in hangars%}
-            <tr>
+            <tr data-hangar_id="{{hangar.code}}">
                 <td>
                     <a href="{%url 'manage:hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
                 </td>
@@ -49,7 +51,9 @@
                         {%icon bi-check title="Doesn't Have Electricity%}
                     {%endif%}
                 </td>
-                <td align="right">-</td>
+                <td align="right">
+                    {%icon bi-trash text-danger title="Delete Hangar {{hangar.code}}" onclick="delete_hangar($(this));"%}
+                </td>
             </tr>
         {%endfor%}
         <tr>
@@ -85,4 +89,8 @@
     </div>
 
     {%include "the_hangar_hub/airport/management/_selected_application.html"%}
+
+    <script type="text/javascript">
+        {%include "the_hangar_hub/airport/management/scripts.js"%}
+    </script>
 {%endblock%}

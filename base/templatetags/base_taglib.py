@@ -155,38 +155,15 @@ def format_phone(*args):
 
 @register.simple_tag
 def format_decimal(*args, **kwargs):
-    amount = None
-    try:
-        amount = args[0]
+    # Allow some formatting options
+    prefix = kwargs["prefix"] if "prefix" in kwargs and kwargs["prefix"] else ""
+    use_commas = "comma" not in kwargs or bool(kwargs["comma"])
+    show_decimals = "decimal" not in kwargs or bool(kwargs["decimal"])
 
-        # Return empty-string for None values
-        if amount is None:
-            return ""
+    d = utility_service.format_decimal(args[0], prefix=prefix, use_commas=use_commas, show_decimals=show_decimals)
 
-        # Convert to Decimal
-        amount_str = str(amount).replace(",", "").replace("$", "")
-        amount_decimal = Decimal(amount_str)
-
-        # Allow some formatting options
-        prefix = kwargs["prefix"] if "prefix" in kwargs and kwargs["prefix"] else ""
-        use_commas = "comma" not in kwargs or bool(kwargs["comma"])
-        show_decimals = "decimal" not in kwargs or bool(kwargs["decimal"])
-
-        # Format the number as a string
-        if use_commas and show_decimals:
-            formatted_string = "{0:,.2f}".format(amount_decimal)
-        elif use_commas:
-            formatted_string = "{0:,.0f}".format(amount_decimal)
-        elif show_decimals:
-            formatted_string = "{0:.2f}".format(amount_decimal)
-        else:
-            formatted_string = "{0:.0f}".format(amount_decimal)
-
-        return f"{prefix}{formatted_string}"
-
-    except Exception as ee:
-        log.warn(f"Error formatting '{amount}' as decimal. {ee}")
-        return ""
+    # Return empty-string for None values
+    return d if d is not None else ""
 
 
 @register.simple_tag

@@ -6,13 +6,17 @@
 
 {% block main_content %}
 
+<section>
 <h1>Hangar Application Preferences</h1>
+<span class="xl">{{airport.display_name}} ({{airport.identifier}})</span>
+</section>
 
 <form method="post" action="{%url 'apply:save_preferences' airport.identifier%}" id="preference-form">
     {%csrf_token%}
-    <div class="content-800">
-        <span class="xlg">{{airport.display_name}} ({{airport.identifier}})</span>
 
+    <section>
+        <h2>Application Questions</h2>
+        <div class="content-800">
 
         <table class="table" id="field-table">
             <tr>
@@ -43,9 +47,20 @@
             </tr>
             {%endfor%}
         </table>
-    </div>
-    <br />
-    <br />
+        </div>
+    </section>
+
+    <section>
+        <h2>Application Fee</h2>
+        To charge an application fee, enter the fee amount.  Application fees will be collected upon submission.
+        <br />
+        <br />
+        <div class="input-group mb-3">
+            <label for="application_fee" class="visually-hidden">Application Fee Amount</label>
+            <span class="input-group-text">$</span>
+            <input type="text" name="application_fee" id="application_fee" value="{{airport.application_fee_amount|default:''}}" class="form-control" placeholder="No Fee" />
+        </div>
+    </section>
 
     <button type="submit" class="btn btn-success" onclick="setAjaxLoadDiv();">
         {%icon bi-floppy%} Save Changes

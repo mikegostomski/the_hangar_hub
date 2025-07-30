@@ -8,20 +8,20 @@
 <div class="content-1024 content-center">
     <h1>Subscriptions</h1>
 
-        {%for lookup_key, plan in prices.items%}
+        {%for lookup_key, price in prices.items%}
         <div class="card">
             <div class="card-body">
-                <h2 class="card-title">{{plan.recurring|title}}ly Plan</h2>
+                <h2 class="card-title">{{price.recurring|title}}ly Plan</h2>
                 <p class="card-text">
-                    <div class="xxl">{%format_currency plan.amount_dollars%}/{{plan.recurring}}</div>
+                    <div class="xxl">{%format_currency price.amount%}/{{price.recurring}}</div>
                     <br />
-                    <b>Billing begins after {{plan.trial_days|default:'0'}} day free trial</b><br />
+                    <b>Billing begins after {{price.trial_days|default:'0'}} day free trial</b><br />
                     <br />
                 </p>
                 <div class="text-center">
                     <form action="{%url 'airport:subscribe' airport.identifier%}" method="POST">
                         {%csrf_token%}
-                        <input type="hidden" name="subscription_id" value="{{plan.id}}" />
+                        <input type="hidden" name="subscription_id" value="{{price.id}}" />
                         <button id="checkout-and-portal-button" type="submit" class="btn btn-info">Subscribe</button>
                     </form>
                 </div>

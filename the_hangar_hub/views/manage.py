@@ -409,6 +409,37 @@ def add_hangar(request, airport_identifier, building_id):
             )
     return redirect("manage:hangars", airport.identifier, building_id)
 
+@report_errors()
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def delete_hangar(request, airport_identifier):
+    try:
+        airport = request.airport
+        hangar_id = request.POST.get("hangar_id")
+        hangar = airport_service.get_managed_hangar(airport, hangar_id)
+        if not hangar:
+            message_service.post_error("Specified hangar could not be found")
+            return HttpResponseForbidden()
+
+        # Only delete hangar if it has no rental history
+        # (most likely for accidental hangar creation)
+        if hangar.all_rentals():
+            message_service.post_error("You cannot delete a hangar with rental history")
+            return HttpResponseForbidden()
+
+        hangar_code = hangar.code
+        audit_comment = f"Deleted hangar {hangar_code} at {hangar.building.airport}"
+        hangar.delete()
+        message_service.post_success(f"Hangar {hangar_code} has been deleted")
+
+        Auth.audit("D", "HANGAR", audit_comment, "Hangar", hangar_id)
+        return HttpResponse("ok")
+
+    except Exception as ee:
+        Error.unexpected("Unable to delete hangar.", ee)
+        return HttpResponseForbidden()
+
 
 @report_errors()
 @require_authentication()

@@ -2,7 +2,7 @@ from django.http import HttpResponse, Http404, HttpResponseForbidden, JsonRespon
 from django.shortcuts import render
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from base_stripe.services import price_service
+from base_stripe.services import price_service, accounts_service
 
 log = Log()
 env = EnvHelper()
@@ -35,5 +35,14 @@ def show_prices(request):
         request, "base/stripe/prices/index.html",
         {
             "prices": prices,
+        }
+    )
+
+def show_accounts(request):
+    accounts = accounts_service.get_connected_accounts()
+    return render(
+        request, "base/stripe/accounts/index.html",
+        {
+            "accounts": accounts,
         }
     )

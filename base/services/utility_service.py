@@ -12,6 +12,7 @@ from base.classes.util.app_data import Log, EnvHelper, AppData
 import string
 import secrets
 from django.urls import reverse
+from decimal import Decimal
 
 log = Log()
 env = EnvHelper()
@@ -542,6 +543,36 @@ def format_phone(phone_number, no_special_chars=False):
             return f"{word_chars_only[:3]}-{word_chars_only[3:]}"
         else:
             return initial_string.upper()
+
+def format_decimal(amount, prefix="", use_commas=True, show_decimals=True):
+    try:
+        # Return empty-string for None values
+        if amount is None:
+            return None
+
+        # Convert to Decimal
+        amount_str = str(amount).replace(",", "").replace("$", "")
+        amount_decimal = Decimal(amount_str)
+
+        # Format the number as a string
+        if use_commas and show_decimals:
+            formatted_string = "{0:,.2f}".format(amount_decimal)
+        elif use_commas:
+            formatted_string = "{0:,.0f}".format(amount_decimal)
+        elif show_decimals:
+            formatted_string = "{0:.2f}".format(amount_decimal)
+        else:
+            formatted_string = "{0:.0f}".format(amount_decimal)
+
+        # Prefix of None should be changed to ""
+        if prefix is None:
+            prefix = ""
+
+        return f"{prefix}{formatted_string}"
+
+    except Exception as ee:
+        log.warn(f"Error formatting '{amount}' as decimal. {ee}")
+        return ""
 
 
 def decamelize(string):

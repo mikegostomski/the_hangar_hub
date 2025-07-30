@@ -1,0 +1,45 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Stripe: Accounts{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+    <h1>Connected Stripe Accounts</h1>
+    <br />
+
+    <table class="table">
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Name</th>
+            <th scope="col">fee_payer</th>
+            <th scope="col">loss_payer</th>
+            <th scope="col">requirement_collection</th>
+            <th scope="col">default_currency</th>
+            <th scope="col">login_link</th>
+            <th scope="col">payouts_enabled</th>
+            <th scope="col">Company Name</th>
+            <th scope="col">Company Phone</th>
+            <th scope="col">Company Address</th>
+        </tr>
+        {%for acct in accounts%}
+        <tr>
+            <td><span class="code">{{acct.id}}</span></td>
+            <td>{{acct.name}}</td>
+            <td>
+                {{acct.fee_payer}}
+            </td>
+            <td>{{acct.loss_payer}}</td>
+            <td>{{acct.requirement_collection}}</td>
+            <td>{{acct.default_currency}}</td>
+            <td>{{acct.login_link}}</td>
+            <td>{{acct.payouts_enabled}}</td>
+            <td>{{acct.company_name}}</td>
+            <td>{{acct.company_phone}}</td>
+            <td>{{acct.company_address}}</td>
+        </tr>
+        {%endfor%}
+    </table>
+</div>
+{%endblock%}
+

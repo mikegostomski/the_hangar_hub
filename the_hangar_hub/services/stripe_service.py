@@ -1,4 +1,5 @@
 from base.models.utility.error import EnvHelper, Log, Error
+from base.classes.auth.session import Auth
 import stripe
 from decimal import Decimal
 from django.urls import reverse
@@ -100,30 +101,6 @@ def modify_customer_from_airport(airport):
     return False
 
 
-# def create_subscription(airport, price_id):
-#     customer_id = airport.stripe_customer_id
-#     if not customer_id:
-#         create_customer_from_airport(airport)
-#
-#     try:
-#         set_stripe_api_key()
-#
-#         # Create the subscription
-#         subscription = stripe.Subscription.create(
-#             customer=customer_id,
-#             items=[{
-#                 'price': price_id,
-#             }],
-#             payment_behavior='default_incomplete',
-#             expand=['latest_invoice.payment_intent'],
-#         )
-#         log.debug(subscription)
-#         return subscription
-#
-#     except Exception as ee:
-#         Error.unexpected("Unable to create subscription", ee)
-#     return None
-
 
 def get_checkout_session_hh_subscription(airport, price_id):
     try:
@@ -137,6 +114,48 @@ def get_checkout_session_hh_subscription(airport, price_id):
                 },
             ],
             mode='subscription',
+            success_url=f"{env.absolute_root_url}{reverse('airport:subscription_success', args=[airport.identifier])}",
+            cancel_url=f"{env.absolute_root_url}{reverse('airport:subscription_failure', args=[airport.identifier])}",
+        )
+        co_session_id = checkout_session.id
+        log.debug(f"CHECKOUT SESSION ID: {co_session_id}")
+        return checkout_session
+    except Exception as ee:
+        Error.unexpected(
+            "Unable to create a payment session", ee
+        )
+        return None
+
+
+def get_checkout_session_application_fee(application):
+    try:
+        user_profile = Auth.lookup_user_profile(application.user, get_contact=True)
+        customer_data = {"email": user_profile.email}
+        phone = user_profile.phone_number()
+        if phone:
+            customer_data["phone"] = phone
+        address = user_profile.contact().get_strip_address()
+        if address:
+            customer_data["address"] = {
+                "line1": address.street_1,
+                "line2": address.street_2,
+                "city": address.city,
+                "state": address.state,
+                "postal_code": address.zip_code,
+                "country": address.country,
+            }
+        set_stripe_api_key()
+        checkout_session = stripe.checkout.Session.create(
+            customer_data=customer_data,
+            line_items=[
+                {
+                    'price_data': {
+                        "unit_amount": application.airport.application_fee_stripe,
+                        "product": "prod_Slrtn5xjteLKes"
+                    },
+                    'quantity': 1,
+                },
+            ],
             success_url=f"{env.absolute_root_url}{reverse('airport:subscription_success', args=[airport.identifier])}",
             cancel_url=f"{env.absolute_root_url}{reverse('airport:subscription_failure', args=[airport.identifier])}",
         )

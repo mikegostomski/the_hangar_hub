@@ -51,7 +51,7 @@ class HangarApplication(models.Model):
     manager_notes_private = models.TextField(verbose_name="Internal Notes", blank=True, null=True)
 
     # Application Fee (optional)
-    fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
+    fee_amount = models.DecimalField(verbose_name="Application Fee", decimal_places=2, max_digits=6, null=True, blank=True)
     fee_status = models.CharField(max_length=1, blank=True, null=True)
     fee_payment_method = models.CharField(max_length=30, blank=True, null=True)
     fee_notes = models.TextField(blank=True, null=True)
@@ -104,17 +104,18 @@ class HangarApplication(models.Model):
 
     @property
     def is_active(self):
-        return self.status_code in ["N", "I", "S", "L"]
+        return self.status_code in ["N", "I", "P", "S", "L"]
 
     @property
     def is_incomplete(self):
-        return self.status_code in ["N", "I"]
+        return self.status_code in ["N", "I", "P"]
 
     @staticmethod
     def status_options():
         return {
             "N": "New",
             "I": "Incomplete",
+            "P": "Pending Payment",
             "S": "Submitted",
             "A": "Accepted",
             "R": "Rejected",

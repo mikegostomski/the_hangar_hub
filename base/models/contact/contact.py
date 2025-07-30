@@ -68,6 +68,26 @@ class Contact(models.Model):
     def address_options(self):
         return {str(x.id): x for x in self.addresses.all()}
 
+    def get_address_by_type(self):
+        return {x.atype: x for x in self.addresses.all()}
+
+    def get_strip_address(self):
+        """Get best address to use for Stripe customer"""
+        addresses = self.get_address_by_type()
+        if addresses.get("B"):  # Billing
+            return addresses.get("B")
+        elif addresses.get("W"):  # Office (Work)
+            return addresses.get("W")
+        elif addresses.get("S"):  # Shipping
+            return addresses.get("S")
+        elif addresses.get("H"):  # Home
+            return addresses.get("H")
+        elif addresses.get("O"):  # Other
+            return addresses.get("O")
+        else:
+            return None
+
+
     def set_first_name(self, name):
         if name:
             self.first_name = name

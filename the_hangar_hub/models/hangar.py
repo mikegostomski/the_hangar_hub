@@ -59,6 +59,10 @@ class Hangar(models.Model):
         now = datetime.now(timezone.utc)
         return self.rentals.filter(end_date__lte=now)
 
+    def all_rentals(self):
+        now = datetime.now(timezone.utc)
+        return self.rentals.all()
+
     def rent(self):
         return self.default_rent or self.building.default_rent
 

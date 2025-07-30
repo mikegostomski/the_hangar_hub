@@ -30,6 +30,15 @@ class Airport(models.Model):
     info_email = models.CharField(max_length=150, blank=True, null=True)
     url = models.CharField(max_length=256, blank=True, null=True)
 
+    application_fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
+
+    @property
+    def application_fee_stripe(self):
+        if self.application_fee_amount:
+            return int(self.application_fee_amount * 100)
+        else:
+            return 0
+
     # Stripe Customer Data
     stripe_customer_id = models.CharField(max_length=60, blank=True, null=True)
     subscription_id = models.CharField(max_length=60, blank=True, null=True)
@@ -207,13 +216,21 @@ class HangarApplicationPreferences(models.Model):
 
     @property
     def optional_fields(self):
-        return [x.name for x in self.fields() if x not in self.required_fields and x not in self.ignored_fields]
+        return [x.name for x in self.fields() if x.name not in self.required_fields and x.name not in self.ignored_fields]
 
     @staticmethod
     def fields():
-        return [x for x in HangarApplication._meta.get_fields() if x.name not in [
-            "id", "last_updated", "date_created", "status_change_date", "airport", "user", "status_code"
-        ] and not x.name.startswith("fee")]
+        return [
+            x for x in HangarApplication._meta.get_fields() if x.name not in [
+                # Application fields not displayed on the application
+                "id",
+                "last_updated", "date_created", "status_change_date", "submission_date",
+                "airport", "user",
+                "status_code",
+                "wl_index", "wl_group_code",
+                "manager_notes_public", "manager_notes_private",
+            ] and not x.name.startswith("fee")
+        ]
 
     @classmethod
     def get(cls, id_or_airport):
