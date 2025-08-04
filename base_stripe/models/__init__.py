@@ -1,0 +1,1 @@
+from base_stripe.models.connected_account import ConnectedAccount

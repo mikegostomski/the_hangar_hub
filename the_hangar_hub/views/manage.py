@@ -32,7 +32,22 @@ env = EnvHelper()
 def my_airport(request, airport_identifier):
 
     airport = request.airport
-    customer = stripe_service.get_customer_from_airport(airport)
+
+    # If no connected account, create it now
+    if not airport.stripe_account_id:
+        stripe_service.create_connected_account(airport)
+
+    # If there is a stripe account, refresh with data from Stripe
+    stripe_service.sync_account_data(airport)
+
+    # Check connected account
+    connected_account = airport.connected_account()
+    onboarding_link = edit_link = None
+    if connected_account and not connected_account.onboarding_complete:
+        onboarding_link = stripe_service.get_onboarding_link(airport)
+    elif connected_account:
+        edit_link = stripe_service.get_account_edit_link(airport)
+
     return render(
         request, "the_hangar_hub/airport/management/airport.html",
         {
@@ -40,6 +55,8 @@ def my_airport(request, airport_identifier):
             "managers": airport.management.all(),
             "invitations": airport_service.get_pending_invitations(airport, "MANAGER"),
             "timezone_options": timezones,
+            "onboarding_link": onboarding_link,
+            "edit_link": edit_link,
         }
     )
 

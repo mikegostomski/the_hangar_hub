@@ -5,7 +5,8 @@ from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.services import price_service
+from base_stripe.services import price_service, accounts_service
+from base_stripe.models.connected_account import ConnectedAccount
 
 log = Log()
 env = EnvHelper()
@@ -16,7 +17,7 @@ def get_subscription_prices():
 
 
 def create_customer_from_airport(airport):
-    log.trace()
+    log.trace([airport])
 
     if airport.stripe_customer_id:
         return True  # Already has customer ID, so consider a success
@@ -125,6 +126,100 @@ def get_checkout_session_hh_subscription(airport, price_id):
             "Unable to create a payment session", ee
         )
         return None
+
+
+def create_connected_account(airport):
+    log.trace([airport])
+
+    if airport.stripe_account_id:
+        # Already exists... return it
+        return ConnectedAccount.get(airport.stripe_account_id)
+
+    try:
+
+        # Stripe uses two-digit country codes. Airport list was populated with three.
+        if len(airport.country) == 3:
+            # This works for USA and CAN. Future airports should import the 2-digit code
+            airport.country = airport.country[:2]
+            airport.save()
+
+        params_dict = {
+            "country": airport.country,
+            "email": airport.billing_email,
+            "capabilities": {
+                "card_payments": {"requested": True},
+                "transfers": {"requested": True},
+            },
+            "controller": {"fees": {"payer": "account"}},
+            "tos_acceptance": {"service_agreement": "full"},
+            "business_type": "company",
+            "business_profile": {
+                "mcc": "4582",  # Code for airports
+                "name": airport.display_name,
+                "support_email": airport.billing_email,
+                "support_phone": airport.billing_phone,
+                "url": airport.url,
+                "product_description": "Airport Payment",
+            },
+            "company": {
+                "name": airport.display_name,
+                "phone": airport.billing_phone,
+                "address": get_stripe_address_dict(
+                    airport.billing_street_1,
+                    airport.billing_street_2,
+                    airport.billing_city,
+                    airport.billing_state,
+                    airport.billing_zip,
+                    airport.country,
+                ),
+            }
+        }
+        connected_account = accounts_service.create_account(params_dict)
+        if connected_account:
+            airport.stripe_account_id = connected_account.stripe_id
+            airport.save()
+
+    except Exception as ee:
+        Error.record(ee, airport)
+        return False
+
+
+def get_onboarding_link(airport):
+    link = accounts_service.create_account_onboarding_link(
+        airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
+    )
+    if link:
+        return link.url
+    else:
+        return None
+
+def get_account_edit_link(airport):
+    link = accounts_service.create_account_edit_link(
+        airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
+    )
+    if link:
+        return link.url
+    else:
+        return None
+
+def sync_account_data(airport):
+    stripe_data, local_data = accounts_service.get_connected_account(airport.stripe_account_id)
+    log.debug(f"\nACCOUNT_DATA:::\n{stripe_data}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def get_checkout_session_application_fee(application):

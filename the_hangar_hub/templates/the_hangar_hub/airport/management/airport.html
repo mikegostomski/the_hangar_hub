@@ -52,6 +52,80 @@
         <br style="clear:both" />
     </section>
 
+    <section>
+        <h2>Stripe Account Data</h2>
+        <em>This determines your ability to collect payments from airport tenants.</em>
+        {%with acct_data=airport.connected_account%}
+            <div class="card" style="border-left: 10px solid #000;border-color:{%if acct_data.onboarding_complete %}green{%elif not acct_data%}red{%else%}#777{%endif%};">
+                <div class="card-body">
+                    <table>
+                        <tr>
+                            <th scope="row">Charges Enabled:</th>
+                            <td>
+                                {%if acct_data.charges_enabled%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    You can collect payments from your tenants
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    You cannot collect payments from your tenants
+                                {%endif%}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Transfers Enabled:</th>
+                            <td>
+                                {%if acct_data.transfers_enabled%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    Tenant payments go directly to your account
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    Tenant payments cannot go directly to your account
+                                {%endif%}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Payouts Enabled:</th>
+                            <td>
+                                {%if acct_data.payouts_enabled%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    Payments via Stripe will be transferred to your bank
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    Payments via Stripe will not be transferred to your bank
+                                {%endif%}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row" style="padding-right: 30px;">Onboarding Complete:</th>
+                            <td>
+                                {%if acct_data.onboarding_complete%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    You have provided all required information
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    You must provide more information to Stripe for payment processing
+                                {%endif%}
+                            </td>
+                        </tr>
+                        {%if onboarding_link%}
+                        <tr>
+                            <th scope="row">Manage:</th>
+                            <td align="right"><a href="{{onboarding_link}}">onboarding_link</a></td>
+                        </tr>
+                        {%endif%}
+                        {%if edit_link%}
+                        <tr>
+                            <th scope="row">Manage:</th>
+                            <td align="right"><a href="{{edit_link}}">edit_link</a></td>
+                        </tr>
+                        {%endif%}
+                    </table>
+                </div>
+            </div>
+        {%endwith%}
+        <br style="clear:both" />
+    </section>
+
 
     <section>
         <h2>Airport Data</h2>

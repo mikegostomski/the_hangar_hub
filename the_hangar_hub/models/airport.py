@@ -11,6 +11,7 @@ from base.models.utility.error import Error
 from decimal import Decimal
 from base.classes.util.date_helper import DateHelper
 from base.services import date_service
+from base_stripe.models.connected_account import ConnectedAccount
 
 log = Log()
 
@@ -41,6 +42,7 @@ class Airport(models.Model):
 
     # Stripe Customer Data
     stripe_customer_id = models.CharField(max_length=60, blank=True, null=True)
+    stripe_account_id = models.CharField(max_length=60, blank=True, null=True)
     subscription_id = models.CharField(max_length=60, blank=True, null=True)
     billing_email = models.CharField(max_length=150, blank=True, null=True)
     billing_phone = models.CharField(max_length=10, blank=True, null=True)
@@ -56,6 +58,9 @@ class Airport(models.Model):
 
     def has_billing_data(self):
         return self.billing_email and self.billing_city and self.billing_state and self.billing_zip
+
+    def connected_account(self):
+        return ConnectedAccount.get(self.stripe_account_id)
 
     def is_active(self):
         """

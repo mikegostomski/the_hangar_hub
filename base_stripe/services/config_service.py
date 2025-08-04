@@ -15,17 +15,22 @@ def get_stripe_address_dict(
 ):
     """
     Stripe addresses need to be passed in a dict with specific keys
+
+    Note: Countries must be two-digit code. Only using US and CA for now, but if others in the future:
+    https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements
     """
     if address_instance:
+        country = address_instance.country[:2] if address_instance.country in ["USA", "CAN"] else address_instance.country
         return {
             "line1": address_instance.street_1,
             "line2": address_instance.street_2,
             "city": address_instance.city,
             "state": address_instance.state,
             "postal_code": address_instance.zip_code,
-            "country": address_instance.country,
+            "country": country,
         }
     else:
+        country = country[:2] if country in ["USA", "CAN"] else country
         return {
             "line1": street_1,
             "line2": street_2,
