@@ -150,7 +150,10 @@ def create_connected_account(airport):
                 "card_payments": {"requested": True},
                 "transfers": {"requested": True},
             },
-            "controller": {"fees": {"payer": "account"}},
+            "controller": {
+                "fees": {"payer": "account"},
+                "stripe_dashboard": {"type": "full"},
+            },
             "tos_acceptance": {"service_agreement": "full"},
             "business_type": "company",
             "business_profile": {
@@ -193,8 +196,8 @@ def get_onboarding_link(airport):
     else:
         return None
 
-def get_account_edit_link(airport):
-    link = accounts_service.create_account_edit_link(
+def get_account_login_link(airport):
+    link = accounts_service.create_account_login_link(
         airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
     )
     if link:

@@ -108,15 +108,17 @@
                             </td>
                         </tr>
                         {%if onboarding_link%}
-                        <tr>
+                        <tr valign="top">
                             <th scope="row">Manage:</th>
-                            <td align="right"><a href="{{onboarding_link}}">onboarding_link</a></td>
-                        </tr>
-                        {%endif%}
-                        {%if edit_link%}
-                        <tr>
-                            <th scope="row">Manage:</th>
-                            <td align="right"><a href="{{edit_link}}">edit_link</a></td>
+                            <td align="left" style="padding-top:10px;">
+                                <a class="btn btn-primary" href="{{onboarding_link}}">
+                                {%if acct_data.onboarding_complete%}
+                                    Manage Account Data
+                                {%else%}
+                                    Complete Onboarding
+                                {%endif%}
+                                </a>
+                            </td>
                         </tr>
                         {%endif%}
                     </table>

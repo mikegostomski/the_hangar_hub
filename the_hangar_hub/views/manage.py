@@ -42,11 +42,10 @@ def my_airport(request, airport_identifier):
 
     # Check connected account
     connected_account = airport.connected_account()
-    onboarding_link = edit_link = None
-    if connected_account and not connected_account.onboarding_complete:
+    onboarding_link = None
+    if connected_account:
+        # Onboarding link can be used to manage account after onboarding
         onboarding_link = stripe_service.get_onboarding_link(airport)
-    elif connected_account:
-        edit_link = stripe_service.get_account_edit_link(airport)
 
     return render(
         request, "the_hangar_hub/airport/management/airport.html",
@@ -56,7 +55,6 @@ def my_airport(request, airport_identifier):
             "invitations": airport_service.get_pending_invitations(airport, "MANAGER"),
             "timezone_options": timezones,
             "onboarding_link": onboarding_link,
-            "edit_link": edit_link,
         }
     )
 

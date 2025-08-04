@@ -8,13 +8,13 @@
         <td class="ajax-status-container">&nbsp;</td>
     </tr>
     <tr>
-        <th scope="row">Billing Phone</th>
+        <th scope="row">Billing Phone {%required%}</th>
         <td><input type="text" class="form-control" name="billing_phone" value="{{airport.billing_phone|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} /></td>
         <td class="ajax-status-container">&nbsp;</td>
     </tr>
 
     <tr>
-        <th scope="row">Billing Street 1</th>
+        <th scope="row">Billing Street 1 {%required%}</th>
         <td><input type="text" class="form-control" name="billing_street_1" value="{{airport.billing_street_1|default:''}}" {%if use_ajax%}onchange="update_airport_data($(this));"{%endif%} /></td>
         <td class="ajax-status-container">&nbsp;</td>
     </tr>

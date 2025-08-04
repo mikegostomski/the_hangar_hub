@@ -82,11 +82,7 @@ def create_account_onboarding_link(account_id, return_url, refresh_url=None):
     return None
 
 
-def create_account_edit_link(account_id, return_url, refresh_url=None):
-
-    # Not available for some reason
-    return None
-
+def create_account_login_link(account_id, return_url, refresh_url=None):
     log.trace([account_id, return_url, refresh_url])
     try:
         abs_url = env.absolute_root_url
@@ -105,7 +101,7 @@ def create_account_edit_link(account_id, return_url, refresh_url=None):
         return link
     except Exception as ee:
         Error.unexpected(
-            "Unable to create account update link to Stripe", ee
+            "Unable to create account login link to Stripe", ee
         )
 
     return None
