@@ -34,8 +34,12 @@ class Airport(models.Model):
     application_fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
 
     @property
+    def has_application_fee(self):
+        return bool(self.application_fee_amount)
+
+    @property
     def application_fee_stripe(self):
-        if self.application_fee_amount:
+        if self.has_application_fee:
             return int(self.application_fee_amount * 100)
         else:
             return 0

@@ -17,6 +17,8 @@ from the_hangar_hub.services import application_service
 from base.models.contact.phone import Phone
 from base.models.contact.address import Address
 from decimal import Decimal
+from the_hangar_hub.services import stripe_service
+from base_stripe.services import checkout_service
 
 log = Log()
 env = EnvHelper()
@@ -87,6 +89,7 @@ def save(request, application_id):
     if not application:
         return HttpResponseForbidden()
     elif _save_application_fields(request, application):
+        message_service.post_success("Application data has been saved")
         return HttpResponse("ok")
     else:
         return HttpResponseForbidden()
@@ -131,10 +134,15 @@ def submit(request, application_id):
         message_service.post_error("".join(msg))
 
         return redirect("apply:resume", application.id)
+
     else:
         if application.status_code == "P":
+            co = stripe_service.get_checkout_session_application_fee(application)
+            session_id = co.id
+            env.set_session_variable(f"cs_applicationFee_{application_id}", session_id)
+
             # Must pay application fee
-            pass
+            return redirect(co.url, code=303)
 
         else:
             return redirect("apply:dashboard")
@@ -143,35 +151,23 @@ def submit(request, application_id):
 @report_errors()
 @require_authentication()
 @require_airport()
-def payment_success(request, application_id):
+def record_payment(request, application_id):
     airport = request.airport
     application = _get_user_application(request, application_id)
 
-    # ToDo: Check session to verify payment
-    message_service.post_success("Application fee payment has been received")
-    if not application:
-        message_service.post_error("Unable to update application status")
+    if checkout_service.verify_checkout(session_var=f"cs_applicationFee_{application_id}"):
+        message_service.post_success("Application fee has been paid")
+        if not application:
+            message_service.post_error("Unable to update application status")
+        else:
+            application.change_status("S")  # Submitted
+            application.fee_payment_method = "STRIPE"
+            application.fee_amount = airport.application_fee_amount
+            application.fee_status = "P"  # Paid
+            application.save()
     else:
-        application.change_status("S")
-        application.fee_payment_method = "STRIPE"
-        application.fee_amount = airport.application_fee_amount
-        application.fee_status = "P"
-        application.save()
-    return redirect("apply:review", application_id)
+        message_service.post_error("Application fee has not been paid")
 
-
-@report_errors()
-@require_authentication()
-@require_airport()
-def payment_failure(request, application_id):
-    airport = request.airport
-    application = _get_user_application(request, application_id)
-
-    message_service.post_error("Application fee was not successfully collected")
-    if application:
-        application.fee_payment_method = "STRIPE"
-        application.fee_status = "X"
-        application.save()
     return redirect("apply:review", application_id)
 
 

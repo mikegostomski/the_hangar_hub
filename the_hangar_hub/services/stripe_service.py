@@ -227,6 +227,7 @@ def sync_account_data(airport):
 
 def get_checkout_session_application_fee(application):
     try:
+        airport = application.airport
         user_profile = Auth.lookup_user_profile(application.user, get_contact=True)
         customer_data = {"email": user_profile.email}
         phone = user_profile.phone_number()
@@ -244,18 +245,24 @@ def get_checkout_session_application_fee(application):
             }
         set_stripe_api_key()
         checkout_session = stripe.checkout.Session.create(
-            customer_data=customer_data,
+            # customer_data=customer_data,
+            customer_email=user_profile.email,
+            mode="payment",
             line_items=[
                 {
                     'price_data': {
-                        "unit_amount": application.airport.application_fee_stripe,
-                        "product": "prod_Slrtn5xjteLKes"
+                        "unit_amount": airport.application_fee_stripe,
+                        # "product": "prod_Slrtn5xjteLKes",
+                        "product_data": {"name": "Application Fee", "description": f"Hangar application at {airport.identifier}"},
+                        "currency": "usd",
                     },
                     'quantity': 1,
                 },
             ],
-            success_url=f"{env.absolute_root_url}{reverse('airport:subscription_success', args=[airport.identifier])}",
-            cancel_url=f"{env.absolute_root_url}{reverse('airport:subscription_failure', args=[airport.identifier])}",
+            success_url=f"{env.absolute_root_url}{reverse('apply:record_payment', args=[application.id])}",
+            cancel_url=f"{env.absolute_root_url}{reverse('apply:record_payment', args=[application.id])}",
+            stripe_account= airport.stripe_account_id,
+            # application_fee_amount=airport.application_fee_stripe * .01,  # 1% fee for HangarHub
         )
         co_session_id = checkout_session.id
         log.debug(f"CHECKOUT SESSION ID: {co_session_id}")

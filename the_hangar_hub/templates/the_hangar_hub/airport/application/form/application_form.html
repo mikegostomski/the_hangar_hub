@@ -176,6 +176,17 @@
     <br />
 
     <div class="content-800">
+        {%if airport.has_application_fee%}
+        <div class="alert alert-info">
+            <div class="text-xl">
+                {%icon bi-cash-coin%} Application Fee
+            </div>
+            {{airport.display_name}} charges a
+            {%format_currency airport.application_fee_amount%}
+            application fee, which will be collected upon submission.
+        </div>
+        <br />
+        {%endif%}
         <button type="button" class="btn btn-secondary" onclick="save_changes();">
             {%icon bi-floppy%} Save Changes
         </button>

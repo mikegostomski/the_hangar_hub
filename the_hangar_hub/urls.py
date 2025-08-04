@@ -43,6 +43,7 @@ application_paths = [
     path('<slug:airport_identifier>', application.form,                      name='airport_form'),
     path('save/<int:application_id>', application.save,                      name='save'),
     path('submit/<int:application_id>', application.submit,                  name='submit'),
+    path('payment/<int:application_id>', application.record_payment,         name='record_payment'),
 
     # REVIEW SUBMISSIONS
     path('review/<int:application_id>', application.review_application,      name='review'),

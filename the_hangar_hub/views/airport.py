@@ -27,6 +27,7 @@ from base.models.contact.contact import Contact
 from the_hangar_hub.decorators import require_airport, require_airport_manager
 import stripe
 from base.models.utility.error import Error
+from base_stripe.services import checkout_service
 
 log = Log()
 env = EnvHelper()
@@ -161,14 +162,13 @@ def subscribe(request, airport_identifier):
 @require_airport()
 def subscription_success(request, airport_identifier):
     airport = request.airport
-    co_session_id = env.get_session_variable("stripe_checkout_session_id", reset=True)
-    co_session = stripe_service.get_session_details(co_session_id)
 
-    paid = co_session.payment_status == "paid"
-    complete = co_session.status == "complete"
+    # Verify checkout was actually successful
+    co_session_id = env.get_session_variable("stripe_checkout_session_id", reset=True)
+    success = checkout_service.verify_checkout(co_session_id)
 
     # If payment was completed, make this user an airport manager
-    if complete and paid:
+    if success:
         message_service.post_success("You have successfully subscribed to The Hanger Hub!")
         airport.status_code = "A"
         airport.save()
