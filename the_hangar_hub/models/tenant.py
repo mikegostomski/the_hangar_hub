@@ -3,11 +3,15 @@ from django.contrib.auth.models import User
 from base.classes.util.log import Log
 from datetime import datetime, timezone
 from django.db.models import Q
+from the_hangar_hub.services import stripe_service
+from base_stripe.services import customer_service
+from base_stripe.classes.customer_subscription import CustomerSubscription
 
 log = Log()
 
 
 class Tenant(models.Model):
+
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -36,6 +40,8 @@ class Tenant(models.Model):
             return None
 
 class Rental(models.Model):
+    subscription_data = None
+
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -50,6 +56,17 @@ class Rental(models.Model):
     rent = models.DecimalField(max_digits=10, decimal_places=2)
     deposit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+
+    def get_customer_data(self):
+        if self.stripe_customer_id:
+            return customer_service.get_customer(self.stripe_customer_id)
+        else:
+            return None
+
+    def get_subscription_data(self):
+        if self.subscription_data is None:
+            self.subscription_data = CustomerSubscription(self.stripe_subscription_id)
+        return self.subscription_data
 
     def has_subscription(self):
         return self.stripe_subscription_id and self.stripe_customer_id

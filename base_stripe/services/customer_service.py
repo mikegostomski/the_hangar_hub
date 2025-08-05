@@ -81,3 +81,19 @@ def create_customer(full_name, email, user=None):
 
 
 
+def get_customer(customer_id):
+    try:
+        set_stripe_api_key()
+        return stripe.Customer.retrieve(customer_id)
+    except Exception as ee:
+        Error.record(ee, customer_id)
+        return None
+
+
+def get_subscription(subscription_id):
+    try:
+        set_stripe_api_key()
+        return stripe.Subscription.retrieve(subscription_id, expand=['latest_invoice'])
+    except Exception as ee:
+        Error.record(ee, subscription_id)
+        return None
