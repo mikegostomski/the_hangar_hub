@@ -67,7 +67,14 @@
                 <td>{{rental.rent}}</td>
                 <td>{{rental.deposit}}</td>
                 <td>{{rental.notes}}</td>
-                <td>{{rental.id}}</td>
+                <td>
+                    {{rental.id}}
+
+                    {%if not rental.has_subscription%}
+                        {%icon bi-receipt title="Create Invoice" onclick="create_invoice($(this), '{{rental.id}}');"%}
+                        {%icon bi-repeat title="Create Subscription" onclick="create_subscription($(this), '{{rental.id}}')"%}
+                    {%endif%}
+                </td>
             </tr>
         {%empty%}
             <tr>
@@ -84,7 +91,14 @@
                 <td>{{rental.rent}}</td>
                 <td>{{rental.deposit}}</td>
                 <td>{{rental.notes}}</td>
-                <td>{{rental.id}}</td>
+                <td>
+                    {{rental.id}}
+
+                    {%if not rental.has_subscription%}
+                        {%icon bi-receipt title="Create Invoice" onclick="create_invoice($(this), '{{rental.id}}');"%}
+                        {%icon bi-repeat title="Create Subscription" onclick="create_subscription($(this), '{{rental.id}}')"%}
+                    {%endif%}
+                </td>
             </tr>
         {%endfor%}
         {%if selected_application%}
@@ -233,4 +247,7 @@
 </div>
 
 {%include "the_hangar_hub/airport/management/_selected_application.html"%}
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/management/scripts.js"%}
+</script>
 {%endblock%}

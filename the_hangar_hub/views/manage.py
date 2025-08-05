@@ -20,6 +20,7 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 from base_upload.services import upload_service, retrieval_service
 from base.models.utility.error import Error
 from the_hangar_hub.services import stripe_service
+from base_stripe.services import customer_service
 
 log = Log()
 env = EnvHelper()
@@ -243,21 +244,21 @@ def update_manager(request, airport_identifier):
         }
     )
 
-    # Since user did not have an account, an email is needed to invite them
-    if "@" not in invitee:
-        message_service.post_error("The given user information could not be found. Please enter an email address.")
-        return HttpResponseForbidden()
-
-    # Create and send an invitation
-    Invitation.invite_manager(airport, invitee)
-    return render(
-        request, "the_hangar_hub/airport/management/_manager_table.html",
-        {
-            "airport": airport,
-            "managers": airport_service.get_managers(airport=airport),
-            "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
-        }
-    )
+    # # Since user did not have an account, an email is needed to invite them
+    # if "@" not in invitee:
+    #     message_service.post_error("The given user information could not be found. Please enter an email address.")
+    #     return HttpResponseForbidden()
+    #
+    # # Create and send an invitation
+    # Invitation.invite_manager(airport, invitee)
+    # return render(
+    #     request, "the_hangar_hub/airport/management/_manager_table.html",
+    #     {
+    #         "airport": airport,
+    #         "managers": airport_service.get_managers(airport=airport),
+    #         "invitations": airport_service.get_pending_invitations(airport, "MANAGER")
+    #     }
+    # )
 
 
 @report_errors()
@@ -647,13 +648,52 @@ def add_tenant(request, airport_identifier, hangar_id):
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
 
-
-
     # If not an existing user, send an invitation
     if not user:
         Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
+    # Create a Stripe customer record (for sending invoices and collecting rent)
+    customer_service.create_customer(full_name=f"{first_name} {last_name}", email=email, user=user)
+
     return redirect("manage:hangar",airport_identifier, hangar.code)
+
+
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def create_invoice(request, airport_identifier):
+    rental_id = request.POST.get("rental_id")
+    rental = Rental.get(rental_id)
+    if not rental:
+        message_service.post_error("Specified rental agreement could not be found")
+    else:
+        invoice = stripe_service.create_rent_invoice(request.airport, rental)
+        if invoice:
+            return HttpResponse("ok")
+
+    message_service.post_error("Invoice could not be created")
+    return HttpResponseForbidden()
+
+
+@report_errors()
+@require_authentication()
+@require_airport()
+@require_airport_manager()
+def create_subscription(request, airport_identifier):
+    rental_id = request.POST.get("rental_id")
+    rental = Rental.get(rental_id)
+    if not rental:
+        message_service.post_error("Specified rental agreement could not be found")
+    else:
+        subscription = stripe_service.create_rent_subscription(request.airport, rental)
+        if subscription:
+            return HttpResponse("ok")
+
+    message_service.post_error("Subscription could not be created")
+    return HttpResponseForbidden()
 
 
 @report_errors()

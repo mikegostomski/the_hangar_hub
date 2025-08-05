@@ -5,8 +5,9 @@ from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.services import price_service, accounts_service
+from base_stripe.services import price_service, accounts_service, customer_service
 from base_stripe.models.connected_account import ConnectedAccount
+from datetime import datetime, timezone
 
 log = Log()
 env = EnvHelper()
@@ -209,9 +210,159 @@ def sync_account_data(airport):
     stripe_data, local_data = accounts_service.get_connected_account(airport.stripe_account_id)
 
 
+def create_rent_subscription(airport, rental, charge_automatically=False):
+    if rental.has_subscription():
+        return rental.stripe_subscription_id
+
+    try:
+        customer_email = rental.tenant.email
+        customer_rec = customer_service.create_customer(
+            rental.tenant.contact.display_name, customer_email, rental.tenant.user
+        )
+        if not customer_rec:
+            message_service.post_error("Unable to create a subscription without a customer record")
+            return None
+
+        amount_due = int(rental.rent * 100)  # In cents
+
+        billing_cycle_anchor = billing_cycle_anchor_config = None
+        now = datetime.now(timezone.utc)
+        if rental.start_date and rental.start_date > now:
+            billing_cycle_anchor = int(rental.start_date.timestamp())
+        elif rental.start_date:
+            billing_cycle_anchor_config = {"day_of_month": rental.start_date.day}
 
 
+        set_stripe_api_key()
+        subscription = stripe.Subscription.create(
+            customer=customer_rec.stripe_id,
+            # currency="usd",  # ToDo: cad for airports in Canada
+            description=f"Hanger {rental.hangar.code} at {airport.display_name}",
+            items=[{
+                "price_data": {
+                    "unit_amount": amount_due,
+                    "product": "prod_SlruA5rXT1JeD2",
+                    "currency": "usd",  # ToDo: cad for airports in Canada
+                    "recurring": {
+                        "interval": "month",
+                    }
+                },
+                "quantity": 1,
+            }],
+            application_fee_percent=1.0,  # ToDo: Make this a per-airport setting
+            collection_method="charge_automatically" if charge_automatically else "send_invoice",
+            days_until_due=7,
+            invoice_settings={
+                "issuer": {
+                    "type": "account",
+                    "account": airport.stripe_account_id
+                }
+            },
+            on_behalf_of=airport.stripe_account_id,
+            transfer_data={"destination": airport.stripe_account_id},
+            billing_cycle_anchor=billing_cycle_anchor,
+            billing_cycle_anchor_config=billing_cycle_anchor_config,
+        )
 
+        subscription_id = subscription.get("id")
+        try:
+            rental.stripe_subscription_id = subscription_id
+            rental.stripe_customer_id = customer_rec.stripe_id
+            rental.save()
+        except Exception as ee:
+            Error.record(ee, subscription_id)
+
+        return subscription_id
+    except Exception as ee:
+        Error.unexpected("Unable to create rental subscription", ee, rental)
+        return None
+
+
+def create_rent_invoice(airport, rental, charge_automatically=False):
+    try:
+        customer_email = rental.tenant.email
+        customer_rec = customer_service.create_customer(
+            rental.tenant.contact.display_name, customer_email, rental.tenant.user
+        )
+        if not customer_rec:
+            message_service.post_error("Unable to create an invoice without a customer record")
+            return None
+
+
+        amount_due = int(rental.rent * 100)  # In cents
+
+        # Calculate a due date
+        # ToDo: Should manager specify due date manually?
+        if charge_automatically:
+            due_date = None
+        elif rental.start_date:
+            # If rental agreement started in the past, make invoice due today
+            if rental.start_date < datetime.now(timezone.utc):
+                due_date = int(datetime.now(timezone.utc).timestamp())
+            # Otherwise, make it due on start date of rental agreement
+            else:
+                due_date = int(rental.start_date.timestamp())
+        else:
+            # When rental agreement date is not known, make due today
+            due_date = int(datetime.now(timezone.utc).timestamp())
+    except Exception as ee:
+        Error.unexpected("Unable to process invoice parameters", ee, rental)
+        return None
+
+    # Create the invoice
+    try:
+        set_stripe_api_key()
+
+        # invoice_item = stripe.InvoiceItem.create(
+        #     customer=customer_rec.stripe_id,
+        #     description=f"Hanger {rental.hangar.code}",
+        #     price_data={
+        #         "unit_amount": amount_due,
+        #         "product": "prod_SlruA5rXT1JeD2",
+        #         # "product_data": {"name": "Application Fee", "description": f"Hangar application at {airport.identifier}"},
+        #         "currency": "usd",
+        #     },
+        #     quantity=1,
+        # )
+
+        log.info("Creating invoice...")
+        invoice = stripe.Invoice.create(
+            customer=customer_rec.stripe_id,
+            description=f"Hanger {rental.hangar.code} at {airport.display_name}",
+            # amount_due=amount_due,
+            application_fee_amount=int(amount_due * 0.01),  # ToDo: Save fee amount per airport
+            due_date=due_date,
+            collection_method="charge_automatically" if charge_automatically else "send_invoice",
+            issuer={
+                "type": "account",
+                "account": airport.stripe_account_id
+            },
+            on_behalf_of=airport.stripe_account_id,
+            transfer_data={"destination": airport.stripe_account_id}
+        )
+
+        if invoice and invoice.get("object") == "invoice":
+            invoice_id = invoice.get("id")
+
+            log.info("Creating invoice line item...")
+            inv_lines = stripe.Invoice.add_lines(
+                invoice_id,
+                lines=[
+                    {"description": f"Hanger {rental.hangar.code}", "amount": amount_due},
+                ]
+            )
+            if inv_lines and inv_lines.get("object") == "invoice":
+                return inv_lines
+
+            return invoice
+        else:
+            message_service.post_error(
+                f"Unable to crete invoice for hanger {rental.hangar.code} ({rental.tenant.contact.display_name})"
+            )
+            return None
+    except Exception as ee:
+        Error.unexpected("Unable to create Stripe invoice", ee, rental)
+        return None
 
 
 

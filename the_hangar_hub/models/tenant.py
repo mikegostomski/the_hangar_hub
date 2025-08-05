@@ -18,6 +18,13 @@ class Tenant(models.Model):
     def display_name(self):
         return f"{self.user.first_name} {self.user.last_name}"
 
+    @property
+    def email(self):
+        if self.user:
+            return self.user.email
+        else:
+            return self.contact.email
+
     @classmethod
     def get(cls, data):
         try:
@@ -35,11 +42,17 @@ class Rental(models.Model):
     tenant = models.ForeignKey("the_hangar_hub.Tenant", on_delete=models.CASCADE, related_name="rentals")
     hangar = models.ForeignKey('the_hangar_hub.Hangar', on_delete=models.CASCADE, related_name="rentals")
 
+    stripe_customer_id = models.CharField(max_length=60, null=True, blank=True)
+    stripe_subscription_id = models.CharField(max_length=60, unique=True, null=True, blank=True)
+
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
     rent = models.DecimalField(max_digits=10, decimal_places=2)
     deposit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+
+    def has_subscription(self):
+        return self.stripe_subscription_id and self.stripe_customer_id
 
     def is_current(self):
         now = datetime.now(timezone.utc)
