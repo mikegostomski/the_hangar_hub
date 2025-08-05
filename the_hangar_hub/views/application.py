@@ -140,6 +140,7 @@ def submit(request, application_id):
             co = stripe_service.get_checkout_session_application_fee(application)
             session_id = co.id
             env.set_session_variable(f"cs_applicationFee_{application_id}", session_id)
+            log.info(f"Checkout Session ID: {session_id}")
 
             # Must pay application fee
             return redirect(co.url, code=303)
@@ -155,20 +156,34 @@ def record_payment(request, application_id):
     airport = request.airport
     application = _get_user_application(request, application_id)
 
-    if checkout_service.verify_checkout(session_var=f"cs_applicationFee_{application_id}"):
+    if checkout_service.verify_checkout(
+            session_var=f"cs_applicationFee_{application_id}", account_id=airport.stripe_account_id
+    ):
         message_service.post_success("Application fee has been paid")
         if not application:
-            message_service.post_error("Unable to update application status")
+            Error.unexpected(
+                "Unable to mark application as submitted.",
+                "Payment succeeded, but application not found.",
+                application_id
+            )
         else:
-            application.change_status("S")  # Submitted
-            application.fee_payment_method = "STRIPE"
-            application.fee_amount = airport.application_fee_amount
-            application.fee_status = "P"  # Paid
-            application.save()
+            try:
+                application.change_status("S")  # Submitted
+                application.fee_payment_method = "STRIPE"
+                application.fee_amount = airport.application_fee_amount
+                application.fee_status = "P"  # Paid
+                application.save()
+            except Exception as ee:
+                Error.unexpected(
+                    "Unable to mark application as submitted",
+                    ee,
+                    application_id
+                )
+        return redirect("apply:review", application_id)
     else:
         message_service.post_error("Application fee has not been paid")
 
-    return redirect("apply:review", application_id)
+    return redirect("apply:resume", application_id)
 
 
 @report_errors()

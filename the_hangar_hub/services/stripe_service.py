@@ -207,7 +207,6 @@ def get_account_login_link(airport):
 
 def sync_account_data(airport):
     stripe_data, local_data = accounts_service.get_connected_account(airport.stripe_account_id)
-    log.debug(f"\nACCOUNT_DATA:::\n{stripe_data}\n")
 
 
 

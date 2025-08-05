@@ -14,14 +14,9 @@ env = EnvHelper()
 def create_account(params_dict):
 
     try:
-
-        log.debug(f"Account Creation Params:\n{params_dict}\n")
-
         set_stripe_api_key()
         account_object = stripe.Account.create(**params_dict)
         if account_object and account_object.get("object") == "account":
-            log.debug(f"Account Creation Response:\n{params_dict}\n")
-
             try:
                 ca = ConnectedAccount()
                 ca.stripe_id = account_object.get("id")
@@ -154,7 +149,6 @@ def get_connected_accounts():
             return {}
 
         for acct in account_list.get("data"):
-            log.debug(acct)
             accts.append(Account(acct))
     except Exception as ee:
         Error.record(ee)

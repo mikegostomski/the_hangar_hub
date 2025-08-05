@@ -24,7 +24,6 @@ def require_airport(after_selection_url=None):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            log.debug("Requiring AIRPORT")
             invalid_path_id = False
 
             # Clear any previous post-airport-selection URL
@@ -32,7 +31,6 @@ def require_airport(after_selection_url=None):
 
             # Middleware would have already processed any obvious airport
             if hasattr(request, "airport") and type(request.airport) is Airport:
-                log.debug(f"From middleware: {request.airport} ({request.airport.identifier})")
                 return view_func(request, *args, **kwargs)
 
             # Since airport was not found, check for an application (which contains an airport)
@@ -67,23 +65,19 @@ def require_airport(after_selection_url=None):
                 # If an airport was selected via this method, redirect to the after_selection_url
                 if hasattr(request, "airport") and request.airport:
                     # The after_selection_url will default to the current url if not provided
-                    log.debug(f"Saving related airport: {request.airport.identifier}")
                     airport_service.save_airport_selection(request.airport)
 
                     send_to = after_selection_url or request.path
                     if invalid_path_id:
                         send_to = send_to.replace(invalid_path_id, request.airport.identifier)
 
-                    log.debug(f"Sending to {send_to}")
                     return decorator_redirect(request, send_to)
 
             # Identifier was still not found. Send to airport selection page
             send_to = after_selection_url or request.path
             if invalid_path_id and invalid_path_id in send_to:
-                log.debug(f"Not gonna send to: {send_to}")
                 send_to = None
             env.set_session_variable("thh-after-ap-selection-url", send_to)
-            log.debug(f"Must select an airport. Then redirect to {send_to or 'airport welcome page'}")
             return decorator_redirect(request, "hub:search")
 
         return _wrapped_view

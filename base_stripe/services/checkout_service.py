@@ -10,7 +10,8 @@ log = Log()
 env = EnvHelper()
 
 
-def verify_checkout(checkout_id=None, session_var=None):
+def verify_checkout(checkout_id=None, session_var=None, account_id=None):
+    log.trace([checkout_id, session_var, account_id])
     success = False
     try:
         if checkout_id is None:
@@ -20,13 +21,18 @@ def verify_checkout(checkout_id=None, session_var=None):
             log.error("Checkout session ID could not be located")
             return None
 
+
         set_stripe_api_key()
-        checkout = stripe.checkout.Session.retrieve(checkout_id)
+        if account_id:
+            checkout = stripe.checkout.Session.retrieve(checkout_id, stripe_account=account_id)
+        else:
+            checkout = stripe.checkout.Session.retrieve(checkout_id)
+
         if checkout and checkout.get("object") == "checkout.session":
             payment_status = checkout.get("payment_status")
             tx_status = checkout.get("status")
             amount_total_cents = checkout.get("amount_total")
-            success = (tx_status == "complete" and tx_status == "paid")
+            success = (tx_status == "complete" and payment_status == "paid")
 
             if success:
                 Auth.audit(

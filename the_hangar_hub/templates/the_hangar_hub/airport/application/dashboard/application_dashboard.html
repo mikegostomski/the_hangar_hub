@@ -26,7 +26,7 @@ The Hangar Hub: Hangar Application Dashboard
         {%for application in applications%}
         <tr>
             <td>{{application.airport.identifier}}</td>
-            <td>{{application.submission_date}}</td>
+            <td>{{application.submission_date|date:preferred_datetime_format}}</td>
             <td>{{application.status}}</td>
             <td>
                 {%with waitlist=application.airport.get_waitlist%}

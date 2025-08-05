@@ -34,6 +34,11 @@ function withdraw_application(){
         Are you sure you want to withdraw your application?<br />
         <br />
         If you are on a waitlist, you may be giving up your position in the queue.
+        {%if airport.has_application_fee%}
+            <br /><br />
+            Your application fee will not be automatically refunded. Inquire with the airport manager if
+            you would like your application fee refunded.
+        {%endif%}
     {%end_js_confirm%}
 }
 
