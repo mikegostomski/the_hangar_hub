@@ -16,7 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from the_hangar_hub.views import public, application, administration, airport, tenant, manage, maintenance
+from the_hangar_hub.views import public, application, administration, maintenance
+from the_hangar_hub.views import airport, tenant, manage_airport, rent_subscription
 
 # Accessible to non-authenticated users
 public_paths = [
@@ -71,27 +72,31 @@ airport_paths = [
 # Airport Manager Paths
 manager_paths = [
     # AIRPORT MANAGEMENT (building and hangar definitions/config)
-    path('<slug:airport_identifier>', manage.my_airport,                                name='airport'),
-    path('<slug:airport_identifier>/stripe', manage.my_subscription,                                name='subscription'),
-    path('<slug:airport_identifier>/update', manage.update_airport,                     name='update_airport'),
-    path('<slug:airport_identifier>/upload/logo', manage.upload_logo,                     name='upload_logo'),
-    path('<slug:airport_identifier>/assign', manage.add_manager,                        name='add_manager'),
-    path('<slug:airport_identifier>/manager/update', manage.update_manager,              name='update_manager'),
-    path('<slug:airport_identifier>/buildings', manage.my_buildings,                       name='buildings'),
-    path('<slug:airport_identifier>/buildings/add', manage.add_building,                name='add_building'),
-    path('<slug:airport_identifier>/buildings/<building_id>', manage.my_hangars,           name='hangars'),
-    path('<slug:airport_identifier>/buildings/<building_id>/add', manage.add_hangar,    name='add_hangar'),
-    path('<slug:airport_identifier>/hangar/delete', manage.delete_hangar,    name='delete_hangar'),
-    path('<slug:airport_identifier>/hangars/<slug:hangar_id>', manage.one_hangar,                name='hangar'),
-    path('<slug:airport_identifier>/hangars/<slug:hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
-    path('<slug:airport_identifier>/hangars/invoice/create', manage.create_invoice,     name='create_invoice'),
-    path('<slug:airport_identifier>/hangars/subscription/create', manage.create_subscription,     name='create_subscription'),
-    path('<slug:airport_identifier>/hangars/invoice/delete_draft', manage.delete_draft_invoice,     name='delete_draft_invoice'),
+    path('<slug:airport_identifier>', manage_airport.my_airport,                                name='airport'),
+    path('<slug:airport_identifier>/stripe', manage_airport.my_subscription,                                name='subscription'),
+    path('<slug:airport_identifier>/update', manage_airport.update_airport,                     name='update_airport'),
+    path('<slug:airport_identifier>/upload/logo', manage_airport.upload_logo,                     name='upload_logo'),
+    path('<slug:airport_identifier>/assign', manage_airport.add_manager,                        name='add_manager'),
+    path('<slug:airport_identifier>/manager/update', manage_airport.update_manager,              name='update_manager'),
+    path('<slug:airport_identifier>/buildings', manage_airport.my_buildings,                       name='buildings'),
+    path('<slug:airport_identifier>/buildings/add', manage_airport.add_building,                name='add_building'),
+    path('<slug:airport_identifier>/buildings/<building_id>', manage_airport.my_hangars,           name='hangars'),
+    path('<slug:airport_identifier>/buildings/<building_id>/add', manage_airport.add_hangar,    name='add_hangar'),
+    path('<slug:airport_identifier>/hangar/delete', manage_airport.delete_hangar,    name='delete_hangar'),
+    path('<slug:airport_identifier>/hangars/<slug:hangar_id>', manage_airport.one_hangar,                name='hangar'),
+    path('<slug:airport_identifier>/hangars/<slug:hangar_id>/assign', manage_airport.add_tenant,     name='add_tenant'),
 
     # APPLICATION/WAITLIST
-    path('<slug:airport_identifier>/application/dashboard', manage.application_dashboard,     name='application_dashboard'),
-    path('<slug:airport_identifier>/waitlist/prioritize', manage.change_wl_priority,     name='change_wl_priority'),
-    path('<slug:airport_identifier>/waitlist/index', manage.change_wl_index,     name='change_wl_index'),
+    path('<slug:airport_identifier>/application/dashboard', manage_airport.application_dashboard, name='application_dashboard'),
+    path('<slug:airport_identifier>/waitlist/prioritize', manage_airport.change_wl_priority, name='change_wl_priority'),
+    path('<slug:airport_identifier>/waitlist/index', manage_airport.change_wl_index, name='change_wl_index'),
+
+    # Stripe Rent Subscription Management
+    # path('<slug:airport_identifier>/rentals/invoice/create', rent_subscription.create_invoice,     name='create_invoice'),
+    path('<slug:airport_identifier>/rentals/subscription/form', rent_subscription.get_subscription_form,     name='subscription_form'),
+    path('<slug:airport_identifier>/rentals/subscription/create', rent_subscription.create_subscription,     name='create_subscription'),
+    path('<slug:airport_identifier>/rentals/invoice/delete_draft', rent_subscription.delete_draft_invoice,     name='delete_draft_invoice'),
+
     
     # MAINTENANCE
     path('<slug:airport_identifier>/maintenance', maintenance.manager_dashboard,  name='mx_dashboard'),

@@ -1,0 +1,42 @@
+{% load base_taglib %}
+
+{# Required Parameter: rental #}
+
+<div class="popup" style="max-width:800px;padding:20px;" id="rent_subscribe_form">
+    <form method="post" action="{%url 'manage:create_subscription' airport.identifier%}" onsubmit="setAjaxLoadDiv()">
+        {%csrf_token%}
+        <input type="hidden" name="rental_id" value="{{rental.id}}" />
+
+        <h2>Initiate Hangar Rental Subscription</h2>
+        <b>Create a recurring payment plan in Stripe to collect rent.</b><br />
+        <br />
+        <p>
+            Invoices will be created automatically, and include a link for the tenant to complete payment.  Tenants may choose to
+            save their payment information for auto-payment, or may continue to receive invoices each month and pay them manually.
+        </p>
+
+        <strong>Start Charging Rent On</strong><br />
+        Specify the day on which the tenant must start paying rent.  If this tenant has been paying rent outside the system,
+        enter the date on which billing through Stripe should begin.<br />
+        <label class="visually-hidden" for="collection_start_date">Start Collecting Rent On</label>
+        <input type="date" id="collection_start_date" name="collection_start_date" value="{{rental.default_collection_start_date|date:'Y-m-d'}}" class="form-control" />
+        <br />
+
+        <strong>Billing Period</strong><br />
+        If the billing period should reset on a day other that the day-of-month that billing started, enter that day here.<br />
+        <label class="visually-hidden" for="billing_cycle_anchor">Billing Cycle Day</label>
+        <input type="number" id="billing_cycle_anchor" name="billing_cycle_anchor" value="" min="1" max="31" placeholder="1 through 31" class="form-control" />
+        <br />
+
+        <strong>Days Until Due</strong><br />
+        Any time the tenant receives an invoice (auto-pay failed or was not set up), how many days until that invoice is due?<br />
+        <label class="visually-hidden" for="day_until_due">Days Until Due</label>
+        <input type="number" id="day_until_due" name="day_until_due" value="7" class="form-control" />
+        <br />
+
+        <div class="text-center">
+            <button type="button" class="btn btn-danger" onclick="$(this).closest('.popup').remove();">Cancel</button>
+            <button type="submit" class="btn btn-success" onclick="">Subscribe</button>
+        </div>
+    </form>
+</div>

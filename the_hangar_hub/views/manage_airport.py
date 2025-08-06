@@ -28,8 +28,6 @@ env = EnvHelper()
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def my_airport(request, airport_identifier):
 
@@ -62,8 +60,6 @@ def my_airport(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def my_subscription(request, airport_identifier):
 
@@ -77,8 +73,6 @@ def my_subscription(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def update_airport(request, airport_identifier):
     airport = request.airport
@@ -110,8 +104,6 @@ def update_airport(request, airport_identifier):
     return HttpResponse("ok")
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def upload_logo(request, airport_identifier):
     airport = request.airport
@@ -149,8 +141,6 @@ def upload_logo(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def add_manager(request, airport_identifier):
     airport = request.airport
@@ -192,8 +182,6 @@ def add_manager(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def update_manager(request, airport_identifier):
     airport = request.airport
@@ -263,8 +251,6 @@ def update_manager(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def my_buildings(request, airport_identifier):
     airport = request.airport
@@ -284,8 +270,6 @@ def my_buildings(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def add_building(request, airport_identifier):
     airport = request.airport
@@ -341,8 +325,6 @@ def add_building(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def my_hangars(request, airport_identifier, building_id):
     airport = request.airport
@@ -366,8 +348,6 @@ def my_hangars(request, airport_identifier, building_id):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def add_hangar(request, airport_identifier, building_id):
     airport = request.airport
@@ -427,8 +407,6 @@ def add_hangar(request, airport_identifier, building_id):
     return redirect("manage:hangars", airport.identifier, building_id)
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def delete_hangar(request, airport_identifier):
     try:
@@ -459,8 +437,6 @@ def delete_hangar(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def one_hangar(request, airport_identifier, hangar_id):
     airport = request.airport
@@ -490,8 +466,6 @@ def one_hangar(request, airport_identifier, hangar_id):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def add_tenant(request, airport_identifier, hangar_id):
     log.trace([airport_identifier, hangar_id])
@@ -659,57 +633,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     return redirect("manage:hangar",airport_identifier, hangar.code)
 
 
-
-
 @report_errors()
-@require_authentication()
-@require_airport()
-@require_airport_manager()
-def create_invoice(request, airport_identifier):
-    rental_id = request.POST.get("rental_id")
-    rental = Rental.get(rental_id)
-    if not rental:
-        message_service.post_error("Specified rental agreement could not be found")
-    else:
-        invoice = stripe_service.create_rent_invoice(request.airport, rental)
-        if invoice:
-            return HttpResponse("ok")
-
-    message_service.post_error("Invoice could not be created")
-    return HttpResponseForbidden()
-
-
-@report_errors()
-@require_authentication()
-@require_airport_manager()
-def create_subscription(request, airport_identifier):
-    rental_id = request.POST.get("rental_id")
-    rental = Rental.get(rental_id)
-    if not rental:
-        message_service.post_error("Specified rental agreement could not be found")
-    else:
-        subscription = stripe_service.create_rent_subscription(request.airport, rental)
-        if subscription:
-            return HttpResponse("ok")
-
-    message_service.post_error("Subscription could not be created")
-    return HttpResponseForbidden()
-
-
-@report_errors()
-@require_authentication()
-@require_airport_manager()
-def delete_draft_invoice(request, airport_identifier):
-    if invoice_service.delete_draft_invoice(request.POST.get("invoice_id")):
-        message_service.post_success("Draft invoice deleted")
-        return HttpResponse("ok")
-    else:
-        return HttpResponseForbidden()
-
-
-@report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def application_dashboard(request, airport_identifier):
     log.trace([airport_identifier])
@@ -734,8 +658,6 @@ def application_dashboard(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def change_wl_priority(request, airport_identifier):
     log.trace([airport_identifier])
@@ -767,8 +689,6 @@ def change_wl_priority(request, airport_identifier):
 
 
 @report_errors()
-@require_authentication()
-@require_airport()
 @require_airport_manager()
 def change_wl_index(request, airport_identifier):
     application_id = request.POST.get("application_id")

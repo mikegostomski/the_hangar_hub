@@ -10,7 +10,7 @@
     <td>{{rental.notes}}</td>
     <td>
         {%if not rental.has_subscription%}
-            {%icon bi-repeat title="Create Subscription" onclick="create_subscription($(this), '{{rental.id}}')"%}
+            {%icon bi-cash-coin title="Create Rental Subscription" onclick="show_subscription_form($(this), '{{rental.id}}')"%}
         {%else%}
             {%with subscription_data=rental.get_subscription_data%}
                 {%if subscription_data.invoice_pdf%}
@@ -33,7 +33,11 @@
                 {%if subscription_data.invoice_pdf%}
                     </a>
                 {%endif%}
-                <div class="popup" style="max-width: 800px;">
+
+
+
+
+                <div class="popup hidden" style="max-width: 800px;">
                     {%if subscription_data.invoice_status == "draft"%}
                         <h2>Draft Invoice</h2>
                     {%else%}
@@ -55,7 +59,6 @@
                         <tr>
                             <th scope="row">Due Date</th>
                             <td>
-                                {{subscription_data.due_date|date:preferred_date_format}}
                                 {%humanized_date subscription_data.due_date%}
                             </td>
                         </tr>
@@ -63,8 +66,17 @@
                         <tr>
                             <th scope="row">Invoice Activation</th>
                             <td>
-                                {{subscription_data.automatically_finalizes_at|date:preferred_datetime_format}}
                                 {%humanized_date subscription_data.automatically_finalizes_at%}
+                            </td>
+                        </tr>
+                        {%endif%}
+                        {%if subscription_data.invoice_pdf%}
+                        <tr>
+                            <th scope="row">View Invoice</th>
+                            <td>
+                                <a href="{{subscription_data.invoice_pdf}}" target="_blank">
+                                    {%icon bi-file-earmark-pdf%} invoice.pdf
+                                </a>
                             </td>
                         </tr>
                         {%endif%}

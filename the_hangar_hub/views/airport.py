@@ -86,7 +86,7 @@ def claim_airport(request, airport_identifier):
 
 
     return render(
-        request, "the_hangar_hub/airport/subscriptions/index.html",
+        request, "the_hangar_hub/airport/subscriptions/hh/index.html",
         {
             "is_manager": False,
             "prices": prices,
@@ -103,7 +103,7 @@ def subscriptions(request, airport_identifier):
     prices = stripe_service.get_subscription_prices()
 
     return render(
-        request, "the_hangar_hub/airport/subscriptions/index.html",
+        request, "the_hangar_hub/airport/subscriptions/hh/index.html",
         {
             "is_manager": is_manager,
             "prices": prices,
@@ -133,7 +133,7 @@ def subscribe(request, airport_identifier):
 
         if not airport.has_billing_data():
             return render(
-                request, "the_hangar_hub/airport/subscriptions/billing_data.html",
+                request, "the_hangar_hub/airport/subscriptions/hh/billing_data.html",
                 {
                     "subscription_id": subscription_id,
                 }
@@ -186,4 +186,4 @@ def subscription_failure(request, airport_identifier):
     co_session_id = env.get_session_variable("stripe_checkout_session_id", reset=True)
     co_session = stripe_service.get_session_details(co_session_id)
 
-    return render(request, "the_hangar_hub/airport/subscriptions/failure.html", {"co_session": co_session})
+    return render(request, "the_hangar_hub/airport/subscriptions/hh/failure.html", {"co_session": co_session})

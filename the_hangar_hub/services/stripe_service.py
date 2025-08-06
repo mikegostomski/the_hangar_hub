@@ -210,7 +210,7 @@ def sync_account_data(airport):
     stripe_data, local_data = accounts_service.get_connected_account(airport.stripe_account_id)
 
 
-def create_rent_subscription(airport, rental, charge_automatically=False):
+def create_rent_subscription(airport, rental, **kwargs):
     if rental.has_subscription():
         return rental.stripe_subscription_id
 
@@ -225,24 +225,61 @@ def create_rent_subscription(airport, rental, charge_automatically=False):
 
         amount_due = int(rental.rent * 100)  # In cents
 
-        billing_cycle_anchor = billing_cycle_anchor_config = None
+        if kwargs.get("collection_start_date"):
+            collection_start_date = kwargs.get("collection_start_date")
+        else:
+            collection_start_date = rental.default_collection_start_date()
+
+        if kwargs.get("billing_cycle_anchor"):
+            billing_cycle_anchor_day = int(kwargs.get("billing_cycle_anchor"))
+        else:
+            billing_cycle_anchor_day = None
+
+        if kwargs.get("days_until_due"):
+            days_until_due = kwargs.get("days_until_due")
+        else:
+            days_until_due = 7
+
+        if kwargs.get("currency"):
+            currency = kwargs.get("currency")
+        else:
+            currency = "usd"
+
+        if kwargs.get("charge_automatically"):
+            charge_automatically = kwargs.get("charge_automatically")
+        else:
+            charge_automatically = True
+
         now = datetime.now(timezone.utc)
-        if rental.start_date and rental.start_date > now:
-            billing_cycle_anchor = int(rental.start_date.timestamp())
-        elif rental.start_date:
-            billing_cycle_anchor_config = {"day_of_month": rental.start_date.day}
+        backdate_start_date = billing_cycle_anchor_config = billing_cycle_anchor = None
+        proration_behavior = "none"
+
+        # ToDo: Something not right with start day + billing cycle anchor
+        # If billing started in past
+        if collection_start_date <= now:
+            backdate_start_date = int(collection_start_date.timestamp())
+            proration_behavior = "create_prorations"
+
+            if billing_cycle_anchor_day:
+                billing_cycle_anchor_config = {"day_of_month": billing_cycle_anchor_day}
+
+            else:
+                billing_cycle_anchor = int(now.timestamp())
+
+        # Billing has not yet started
+        else:
+            billing_cycle_anchor = int(collection_start_date.timestamp())
 
 
         set_stripe_api_key()
         subscription = stripe.Subscription.create(
             customer=customer_rec.stripe_id,
-            # currency="usd",  # ToDo: cad for airports in Canada
             description=f"Hanger {rental.hangar.code} at {airport.display_name}",
             items=[{
                 "price_data": {
                     "unit_amount": amount_due,
                     "product": "prod_SlruA5rXT1JeD2",
-                    "currency": "usd",  # ToDo: cad for airports in Canada
+                    "currency": currency,
                     "recurring": {
                         "interval": "month",
                     }
@@ -251,7 +288,7 @@ def create_rent_subscription(airport, rental, charge_automatically=False):
             }],
             application_fee_percent=1.0,  # ToDo: Make this a per-airport setting
             collection_method="charge_automatically" if charge_automatically else "send_invoice",
-            days_until_due=7,
+            days_until_due=None if charge_automatically else days_until_due,
             invoice_settings={
                 "issuer": {
                     "type": "account",

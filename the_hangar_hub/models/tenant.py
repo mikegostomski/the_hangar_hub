@@ -20,7 +20,10 @@ class Tenant(models.Model):
 
     @property
     def display_name(self):
-        return f"{self.user.first_name} {self.user.last_name}"
+        if self.user:
+            return f"{self.user.first_name} {self.user.last_name}"
+        else:
+            return self.contact.display_name
 
     @property
     def email(self):
@@ -82,6 +85,18 @@ class Rental(models.Model):
     def is_future(self):
         now = datetime.now(timezone.utc)
         return self.start_date and self.start_date > now
+
+    def default_collection_start_date(self):
+        """
+        When creating a subscription for this rental agreement, when should Stripe billing begin?
+        """
+        now = datetime.now(timezone.utc)
+        if not self.start_date:
+            return now
+        elif self.start_date > now:
+            return self.start_date
+        else:
+            return now
 
     @classmethod
     def current_rentals(cls):
