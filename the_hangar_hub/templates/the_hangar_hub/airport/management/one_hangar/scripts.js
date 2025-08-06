@@ -52,3 +52,30 @@ function create_subscription(el, rental_id){
         }
     });
 }
+
+function delete_draft_invoice(el, invoice_id){
+    let row = el.closest("tr");
+    console.log(`Delete draft invoice ${invoice_id}`)
+
+    $.ajax({
+        type:   "POST",
+        url:    "{%url 'manage:delete_draft_invoice' airport.identifier%}",
+        data:   {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            invoice_id: invoice_id,
+        },
+        beforeSend:function(){
+            el.after(getAjaxLoadImage());
+            el.addClass("hidden");
+        },
+        success:function(data){
+            console.log(data)
+        },
+        error:function(){
+            el.after(getAjaxStatusFailedIcon());
+        },
+        complete:function(){
+            clearAjaxLoadImage(row);
+        }
+    });
+}

@@ -6,6 +6,12 @@ import stripe
 log = Log()
 env = EnvHelper()
 
+ignorable_events = [
+    "invoiceitem.created",
+    "transfer.created",
+    "application_fee.created",
+]
+
 
 class WebhookValidation:
     valid_request = False
@@ -85,14 +91,15 @@ class WebhookValidation:
                 # re-sending the request after a time-out.
                 # Therefore, just save the object ID in the database to be processed by the app later.
 
-                whe = WebhookEvent.objects.create(
-                    event_type=response.event_type,
-                    event_id=response.event_id,
-                    object_type=response.object_type,
-                    object_id=response.object_id,
-                )
-                log.info(f"Webhook Event Logged: {whe}")
-                response.webhook_event_id = whe.id
+                if response.event_type not in ignorable_events:
+                    whe = WebhookEvent.objects.create(
+                        event_type=response.event_type,
+                        event_id=response.event_id,
+                        object_type=response.object_type,
+                        object_id=response.object_id,
+                    )
+                    log.info(f"Webhook Event Logged: {whe}")
+                    response.webhook_event_id = whe.id
             except Exception as ee:
                 Error.record(ee, "Creating WebhookEvent record")
 

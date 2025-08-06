@@ -40,7 +40,8 @@ class CustomerSubscription:
     @property
     def automatically_finalizes_at(self):
         """When 'draft' status becomes 'open' """
-        return date_service.string_to_date(self.invoice_data.get("automatically_finalizes_at"))
+        if self.invoice_data:
+            return date_service.string_to_date(self.invoice_data.get("automatically_finalizes_at"))
 
     @property
     def delinquent(self):
@@ -50,32 +51,44 @@ class CustomerSubscription:
     # Latest Invoice Data
     # ..........................................................................
     @property
+    def invoice_id(self):
+        if self.invoice_data:
+            return self.invoice_data.get("id")
+
+    @property
     def invoice_pdf(self):
-        return self.invoice_data.get("invoice_pdf")
+        if self.invoice_data:
+            return self.invoice_data.get("invoice_pdf")
 
     @property
     def period_start(self):
-        return date_service.string_to_date(self.invoice_data["lines"].data[0]["period"]["start"])
+        if self.invoice_data:
+            return date_service.string_to_date(self.invoice_data["lines"].data[0]["period"]["start"])
 
     @property
     def period_end(self):
-        return date_service.string_to_date(self.invoice_data["lines"].data[0]["period"]["end"])
+        if self.invoice_data:
+            return date_service.string_to_date(self.invoice_data["lines"].data[0]["period"]["end"])
     
     @property
     def amount_due(self):
-        return Decimal(self.invoice_data.get("amount_due")/100)
+        if self.invoice_data:
+            return Decimal(self.invoice_data.get("amount_due")/100)
 
     @property
     def amount_paid(self):
-        return Decimal(self.invoice_data.get("amount_paid")/100)
+        if self.invoice_data:
+            return Decimal(self.invoice_data.get("amount_paid")/100)
 
     @property
     def amount_remaining(self):
-        return Decimal(self.invoice_data.get("amount_remaining")/100)
+        if self.invoice_data:
+            return Decimal(self.invoice_data.get("amount_remaining")/100)
 
     @property
     def due_date(self):
-        return date_service.string_to_date(self.invoice_data.get("due_date"))
+        if self.invoice_data:
+            return date_service.string_to_date(self.invoice_data.get("due_date"))
 
     @property
     def billing_cycle_anchor(self):
@@ -116,7 +129,7 @@ class CustomerSubscription:
 
     def __init__(self, subscription_id):
         self.subscription_data = customer_service.get_subscription(subscription_id) or {}
-        self.invoice_data = self.subscription_data.get("latest_invoice")
+        self.invoice_data = self.subscription_data.get("latest_invoice") or {}
         self.customer_data = customer_service.get_customer(self.customer_id) or {}
 
 

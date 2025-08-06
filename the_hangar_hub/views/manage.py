@@ -20,7 +20,8 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 from base_upload.services import upload_service, retrieval_service
 from base.models.utility.error import Error
 from the_hangar_hub.services import stripe_service
-from base_stripe.services import customer_service
+from base_stripe.services import customer_service, invoice_service
+
 
 log = Log()
 env = EnvHelper()
@@ -680,7 +681,6 @@ def create_invoice(request, airport_identifier):
 
 @report_errors()
 @require_authentication()
-@require_airport()
 @require_airport_manager()
 def create_subscription(request, airport_identifier):
     rental_id = request.POST.get("rental_id")
@@ -694,6 +694,17 @@ def create_subscription(request, airport_identifier):
 
     message_service.post_error("Subscription could not be created")
     return HttpResponseForbidden()
+
+
+@report_errors()
+@require_authentication()
+@require_airport_manager()
+def delete_draft_invoice(request, airport_identifier):
+    if invoice_service.delete_draft_invoice(request.POST.get("invoice_id")):
+        message_service.post_success("Draft invoice deleted")
+        return HttpResponse("ok")
+    else:
+        return HttpResponseForbidden()
 
 
 @report_errors()

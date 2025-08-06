@@ -33,7 +33,46 @@
                 {%if subscription_data.invoice_pdf%}
                     </a>
                 {%endif%}
+                <div class="popup" style="max-width: 800px;">
+                    {%if subscription_data.invoice_status == "draft"%}
+                        <h2>Draft Invoice</h2>
+                    {%else%}
+                        <h2>Invoice Details</h2>
+                    {%endif%}
+                    <table class="table">
+                        <tr>
+                            <th scope="row">Invoice ID</th>
+                            <td>{{subscription_data.invoice_id}}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Invoice Period</th>
+                            <td>{{subscription_data.period_start|date:preferred_date_format}} - {{subscription_data.period_end|date:preferred_date_format}}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Amount Due</th>
+                            <td>{%format_currency subscription_data.amount_due%}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Due Date</th>
+                            <td>
+                                {{subscription_data.due_date|date:preferred_date_format}}
+                                {%humanized_date subscription_data.due_date%}
+                            </td>
+                        </tr>
+                        {%if subscription_data.invoice_status == "draft"%}
+                        <tr>
+                            <th scope="row">Invoice Activation</th>
+                            <td>
+                                {{subscription_data.automatically_finalizes_at|date:preferred_datetime_format}}
+                                {%humanized_date subscription_data.automatically_finalizes_at%}
+                            </td>
+                        </tr>
+                        {%endif%}
+                    </table>
+                    <button type="button" class="btn btn-danger" onclick="delete_draft_invoice($(this), '{{subscription_data.invoice_id}}')">Delete</button>
+                    <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Close</button>
 
+                </div>
             {%endwith%}
         {%endif%}
     </td>

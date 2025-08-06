@@ -86,6 +86,7 @@ manager_paths = [
     path('<slug:airport_identifier>/hangars/<slug:hangar_id>/assign', manage.add_tenant,     name='add_tenant'),
     path('<slug:airport_identifier>/hangars/invoice/create', manage.create_invoice,     name='create_invoice'),
     path('<slug:airport_identifier>/hangars/subscription/create', manage.create_subscription,     name='create_subscription'),
+    path('<slug:airport_identifier>/hangars/invoice/delete_draft', manage.delete_draft_invoice,     name='delete_draft_invoice'),
 
     # APPLICATION/WAITLIST
     path('<slug:airport_identifier>/application/dashboard', manage.application_dashboard,     name='application_dashboard'),

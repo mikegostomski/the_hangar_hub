@@ -262,6 +262,7 @@ def create_rent_subscription(airport, rental, charge_automatically=False):
             transfer_data={"destination": airport.stripe_account_id},
             billing_cycle_anchor=billing_cycle_anchor,
             billing_cycle_anchor_config=billing_cycle_anchor_config,
+            proration_behavior="none",
         )
 
         subscription_id = subscription.get("id")
