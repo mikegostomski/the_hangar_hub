@@ -4,11 +4,33 @@ from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from base_stripe.services import price_service, accounts_service
 from base.services import message_service
+from django.views.decorators.csrf import csrf_exempt
+import json
+import stripe
+from base_stripe.classes.webhook_validation import WebhookValidation
+from base_stripe.models.events import WebhookEvent
+from base.models.utility.error import Error
 
 log = Log()
 env = EnvHelper()
 
 # ToDo: Error Handling/Messages
+
+
+@csrf_exempt
+def webhook(request):
+    result = WebhookValidation.validate(request)
+    if result.ignore or not result.valid_request:
+        return HttpResponse(status=result.status_code)
+
+    try:
+
+        # Return success response
+        return HttpResponse(status=200)
+
+    except Exception as ee:
+        Error.record(ee)
+        return HttpResponse(status=500)
 
 
 def home(request, file_id):

@@ -13,6 +13,9 @@ class AirportMiddleware:
         self.get_response = get_response
 
     def process_view(self, request, view_func, view_args, view_kwargs):
+        if request.path == "/stripe/webhook":
+            return None
+
         # Add airport to request and activate timezone if found
         get_parameter = request.GET.get("airport_identifier")
         post_parameter = request.POST.get("airport_identifier")
