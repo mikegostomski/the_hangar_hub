@@ -1,0 +1,41 @@
+{% load base_taglib %}
+<tr>
+    <td>{{rental.tenant.contact.first_name}}</td>
+    <td>{{rental.tenant.contact.last_name}}</td>
+    <td>{{rental.tenant.contact.email}}</td>
+    <td>{{rental.start_date|date:preferred_date_format}}</td>
+    <td>{{rental.end_date|date:preferred_date_format}}</td>
+    <td>{{rental.rent}}</td>
+    <td>{{rental.deposit}}</td>
+    <td>{{rental.notes}}</td>
+    <td>
+        {%if not rental.has_subscription%}
+            {%icon bi-repeat title="Create Subscription" onclick="create_subscription($(this), '{{rental.id}}')"%}
+        {%else%}
+            {%with subscription_data=rental.get_subscription_data%}
+                {%if subscription_data.invoice_pdf%}
+                    <a href="{{subscription_data.invoice_pdf}}" target="_blank">
+                {%endif%}
+                {%if subscription_data.invoice_status == "draft"%}
+                    {%icon bi-pencil-square text-info title="Draft invoice editable until {{subscription_data.automatically_finalizes_at}}" %}
+                {%elif subscription_data.invoice_status == "open"%}
+                    {%icon bi-receipt title="Invoice is available" %}
+                {%elif subscription_data.invoice_status == "paid"%}
+                    {%icon bi-receipt text-success title="Invoice has been paid" %}
+                {%elif subscription_data.invoice_status == "uncollectible"%}
+                    {%icon bi-receipt text-danger title="Invoice is uncollectible" %}
+                {%elif subscription_data.invoice_status == "void"%}
+                    {%icon bi-receipt text-warning title="Invoice is void" %}
+                {%elif subscription_data.delinquent%}
+                    {%icon bi-exclamation-triangle text-danger title="Tenant is delinquent" %}
+                {%endif%}
+
+                {%if subscription_data.invoice_pdf%}
+                    </a>
+                {%endif%}
+
+        <div class="popup">{{subscription_data.invoice_data}}</div>
+            {%endwith%}
+        {%endif%}
+    </td>
+</tr>

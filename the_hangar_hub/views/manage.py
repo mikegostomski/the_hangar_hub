@@ -477,7 +477,7 @@ def one_hangar(request, airport_identifier, hangar_id):
 
     return render(
         request,
-        "the_hangar_hub/airport/management/one_hangar.html",
+        "the_hangar_hub/airport/management/one_hangar/index.html",
         {
             "airport": airport,
             "hangar": hangar,

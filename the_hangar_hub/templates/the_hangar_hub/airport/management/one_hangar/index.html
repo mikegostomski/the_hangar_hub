@@ -55,78 +55,17 @@
             <th scope="col">Rent</th>
             <th scope="col">Deposit</th>
             <th scope="col">Notes</th>
-            <th scope="col">Action</th>
+            <th scope="col">Invoice</th>
         </tr>
         {%for rental in hangar.current_rentals%}
-            <tr>
-                <td>{{rental.tenant.contact.first_name}}</td>
-                <td>{{rental.tenant.contact.last_name}}</td>
-                <td>{{rental.tenant.contact.email}}</td>
-                <td>{{rental.start_date|date:preferred_date_format}}</td>
-                <td>{{rental.end_date|date:preferred_date_format}}</td>
-                <td>{{rental.rent}}</td>
-                <td>{{rental.deposit}}</td>
-                <td>{{rental.notes}}</td>
-                <td>
-                    {{rental.id}}
-
-                    {%if not rental.has_subscription%}
-                        {%icon bi-receipt title="Create Invoice" onclick="create_invoice($(this), '{{rental.id}}');"%}
-                        {%icon bi-repeat title="Create Subscription" onclick="create_subscription($(this), '{{rental.id}}')"%}
-                    {%endif%}
-
-                    {%with customer_data=rental.get_subscription_data%}
-                        {%if customer_data%}
-                            <div class="popup">
-
-                                
-amount_due: {{customer_data.amount_due}}<br />
-amount_paid: {{customer_data.amount_paid}}<br />
-amount_remaining: {{customer_data.amount_remaining}}<br />
-period_start: {{customer_data.period_start}}<br />
-period_end: {{customer_data.period_end}}<br />
-description: {{customer_data.description}}<br />
-collection_method: {{customer_data.collection_method}}<br />
-status: {{customer_data.status}}<br />
-start_date: {{customer_data.start_date}}<br />
-billing_cycle_anchor: {{customer_data.billing_cycle_anchor}}<br />
-billing_cycle_day: {{customer_data.billing_cycle_day}}<br />
-
-
-                                
-                                
-                                
-                                
-                                
-                            </div>
-                        {%endif%}
-                    {%endwith%}
-                </td>
-            </tr>
+            {%include "the_hangar_hub/airport/management/one_hangar/_rental_row.html" with rental=rental%}
         {%empty%}
             <tr>
                 <td colspan="9" class="text-center">No Current Tenants</td>
             </tr>
         {%endfor%}
         {%for rental in hangar.future_rentals%}
-            <tr>
-                <td>{{rental.tenant.contact.first_name}}</td>
-                <td>{{rental.tenant.contact.last_name}}</td>
-                <td>{{rental.tenant.contact.email}}</td>
-                <td>{{rental.start_date|date:preferred_date_format}}</td>
-                <td>{{rental.end_date|date:preferred_date_format}}</td>
-                <td>{{rental.rent}}</td>
-                <td>{{rental.deposit}}</td>
-                <td>{{rental.notes}}</td>
-                <td>
-                    {{rental.id}}
-
-                    {%if not rental.has_subscription%}
-                        {%icon bi-receipt title="Create Invoice" onclick="create_invoice($(this), '{{rental.id}}');"%}
-                        {%icon bi-repeat title="Create Subscription" onclick="create_subscription($(this), '{{rental.id}}')"%}
-                    {%endif%}
-                </td>
-            </tr>
+            {%include "the_hangar_hub/airport/management/one_hangar/_rental_row.html" with rental=rental%}
         {%endfor%}
         {%if selected_application%}
         <form method="post" action="{%url 'manage:add_tenant' airport.identifier hangar.id%}">
@@ -275,6 +214,6 @@ billing_cycle_day: {{customer_data.billing_cycle_day}}<br />
 
 {%include "the_hangar_hub/airport/management/_selected_application.html"%}
 <script type="text/javascript">
-    {%include "the_hangar_hub/airport/management/scripts.js"%}
+    {%include "the_hangar_hub/airport/management/one_hangar/scripts.js"%}
 </script>
 {%endblock%}
