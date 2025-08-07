@@ -90,6 +90,16 @@ def get_customer(customer_id):
         return None
 
 
+def customer_has_payment_method(customer_id):
+    customer = get_customer(customer_id)
+
+    # Does customer have a payment method saved in Stripe?
+    default_pay_method = customer.get("invoice_settings", {}).get("default_payment_method")
+    default_source = customer.get("default_source")
+    return default_pay_method or default_source
+
+
+
 def get_subscription(subscription_id):
     try:
         set_stripe_api_key()

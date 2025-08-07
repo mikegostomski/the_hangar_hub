@@ -15,6 +15,8 @@
             {%with subscription_data=rental.get_subscription_data%}
                 {%if subscription_data.invoice_pdf%}
                     <a href="{{subscription_data.invoice_pdf}}" target="_blank">
+                {%else%}
+                    <span onclick="$(this).closest('td').find('.invoice-popup').removeClass('hidden');">
                 {%endif%}
                 {%if subscription_data.invoice_status == "draft"%}
                     {%icon bi-pencil-square text-info title="Draft invoice editable until {{subscription_data.automatically_finalizes_at}}" %}
@@ -32,12 +34,14 @@
 
                 {%if subscription_data.invoice_pdf%}
                     </a>
+                {%else%}
+                    </span>
                 {%endif%}
 
 
 
 
-                <div class="popup hidden" style="max-width: 800px;">
+                <div class="popup hidden invoice-popup" style="max-width: 800px;">
                     {%if subscription_data.invoice_status == "draft"%}
                         <h2>Draft Invoice</h2>
                     {%else%}
@@ -80,8 +84,23 @@
                             </td>
                         </tr>
                         {%endif%}
+
+                        <tr>
+                            <th scope="row">invoice_items</th>
+                            <td>
+                                <table class="table">
+                                {%for line_item in subscription_data.invoice_items%}
+                                    <tr>
+                                        <th scope="row">{{line_item.description}}</th>
+                                        <td align="right">{%format_currency line_item.amount%}</td>
+                                    </tr>
+                                {%endfor%}
+                                </table>
+                            </td>
+                        </tr>
+
+
                     </table>
-                    <button type="button" class="btn btn-danger" onclick="delete_draft_invoice($(this), '{{subscription_data.invoice_id}}')">Delete</button>
                     <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Close</button>
 
                 </div>

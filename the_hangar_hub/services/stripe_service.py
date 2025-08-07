@@ -214,6 +214,19 @@ def create_rent_subscription(airport, rental, **kwargs):
     if rental.has_subscription():
         return rental.stripe_subscription_id
 
+    def next_anchor_date(from_date, anchor_day_number):
+        """Given a datetime, get the next billing anchor date (could be same date)"""
+        from_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        if int(from_date.day) < anchor_day_number:
+            return int(from_date.replace(day=anchor_day_number).timestamp())
+        elif int(from_date.day) > anchor_day_number:
+            if from_date.month == 12:
+                return int(from_date.replace(month=1, day=anchor_day_number, year=from_date.year + 1).timestamp())
+            else:
+                return int(from_date.replace(month=from_date.month + 1, day=anchor_day_number).timestamp())
+        else:
+            return int(from_date.timestamp())
+
     try:
         customer_email = rental.tenant.email
         customer_rec = customer_service.create_customer(
@@ -224,24 +237,70 @@ def create_rent_subscription(airport, rental, **kwargs):
             return None
 
         amount_due = int(rental.rent * 100)  # In cents
+        now = datetime.now(timezone.utc)
 
+        # Need to know what date rent starts getting charged (this may be in the past)
         if kwargs.get("collection_start_date"):
             collection_start_date = kwargs.get("collection_start_date")
         else:
             collection_start_date = rental.default_collection_start_date()
 
+        # Does the manager want the rental period to refresh on a certain day of the month?
         if kwargs.get("billing_cycle_anchor"):
-            billing_cycle_anchor_day = int(kwargs.get("billing_cycle_anchor"))
+            try:
+                billing_cycle_anchor_day = int(kwargs.get("billing_cycle_anchor"))
+                # Interface limits this number to max 28, but enforce that here as well
+                if billing_cycle_anchor_day > 28 or billing_cycle_anchor_day < 1:
+                    billing_cycle_anchor_day = 1
+                # If specified day is the same as the collection start day, then this is not needed
+                if billing_cycle_anchor_day == collection_start_date.day:
+                    billing_cycle_anchor_day = None
+            except Exception as ee:
+                Error.record(ee, kwargs.get("billing_cycle_anchor"))
+                billing_cycle_anchor_day = None
         else:
             billing_cycle_anchor_day = None
 
-        if kwargs.get("days_until_due"):
-            days_until_due = kwargs.get("days_until_due")
-        else:
-            days_until_due = 7
+        # If not specific period refresh day is requested
+        if billing_cycle_anchor_day is None:
+            # If collection started in the past
+            if collection_start_date < now:
+                backdate_start_date = int(collection_start_date.timestamp())
+                billing_cycle_anchor = next_anchor_date(now, collection_start_date.day)
+                billing_cycle_anchor_config = None
+            else:
+                backdate_start_date = None
+                billing_cycle_anchor = int(collection_start_date.timestamp())
+                billing_cycle_anchor_config = None
 
+        # If specific day is needed, a few more considerations
+        else:
+            # If rent collection started in the past
+            if collection_start_date < now:
+                backdate_start_date = int(collection_start_date.timestamp())
+                billing_cycle_anchor_config = None
+
+                # Determine the next cycle date
+                billing_cycle_anchor = next_anchor_date(now, billing_cycle_anchor_day)
+
+            # Rent collection starts today or in the future
+            else:
+                # Determine the next cycle date
+                billing_cycle_anchor = next_anchor_date(collection_start_date, billing_cycle_anchor_day)
+                backdate_start_date = None
+                billing_cycle_anchor_config = None
+
+        # If collection does not start until future date, use trial period to prevent billing until then
+        now = datetime.now(timezone.utc)
+        if collection_start_date > now:
+            trial_end = int(collection_start_date.timestamp())
+        else:
+            trial_end = None
+
+
+        # Look for some other preferences...
         if kwargs.get("currency"):
-            currency = kwargs.get("currency")
+            currency = kwargs.get("currency").lower()
         else:
             currency = "usd"
 
@@ -250,30 +309,26 @@ def create_rent_subscription(airport, rental, **kwargs):
         else:
             charge_automatically = True
 
-        now = datetime.now(timezone.utc)
-        backdate_start_date = billing_cycle_anchor_config = billing_cycle_anchor = None
-        proration_behavior = "none"
+        # Can only charge automatically if customer has a defined payment method
+        if charge_automatically and not customer_service.customer_has_payment_method(customer_rec.stripe_id):
+            charge_automatically = False
 
-        # ToDo: Something not right with start day + billing cycle anchor
-        # If billing started in past
-        if collection_start_date <= now:
-            backdate_start_date = int(collection_start_date.timestamp())
-            proration_behavior = "create_prorations"
-
-            if billing_cycle_anchor_day:
-                billing_cycle_anchor_config = {"day_of_month": billing_cycle_anchor_day}
-
-            else:
-                billing_cycle_anchor = int(now.timestamp())
-
-        # Billing has not yet started
+        if kwargs.get("days_until_due"):
+            days_until_due = kwargs.get("days_until_due")
         else:
-            billing_cycle_anchor = int(collection_start_date.timestamp())
+            days_until_due = 7
 
 
         set_stripe_api_key()
         subscription = stripe.Subscription.create(
             customer=customer_rec.stripe_id,
+            on_behalf_of=airport.stripe_account_id,
+            transfer_data={"destination": airport.stripe_account_id},
+            application_fee_percent=1.0,  # ToDo: Make this a per-airport setting
+            invoice_settings={
+                "issuer": {"type": "account", "account": airport.stripe_account_id}
+            },
+
             description=f"Hanger {rental.hangar.code} at {airport.display_name}",
             items=[{
                 "price_data": {
@@ -286,20 +341,15 @@ def create_rent_subscription(airport, rental, **kwargs):
                 },
                 "quantity": 1,
             }],
-            application_fee_percent=1.0,  # ToDo: Make this a per-airport setting
+
             collection_method="charge_automatically" if charge_automatically else "send_invoice",
             days_until_due=None if charge_automatically else days_until_due,
-            invoice_settings={
-                "issuer": {
-                    "type": "account",
-                    "account": airport.stripe_account_id
-                }
-            },
-            on_behalf_of=airport.stripe_account_id,
-            transfer_data={"destination": airport.stripe_account_id},
+
             billing_cycle_anchor=billing_cycle_anchor,
             billing_cycle_anchor_config=billing_cycle_anchor_config,
-            proration_behavior="none",
+            trial_end=trial_end,
+            backdate_start_date=backdate_start_date,
+            proration_behavior="none" if collection_start_date > now else None,
         )
 
         subscription_id = subscription.get("id")

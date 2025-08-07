@@ -61,6 +61,18 @@ class CustomerSubscription:
             return self.invoice_data.get("invoice_pdf")
 
     @property
+    def invoice_lines(self):
+        if self.invoice_data:
+            return list(self.invoice_data["lines"].data or [])
+        return [{}]
+
+    @property
+    def invoice_items(self):
+        if self.invoice_data:
+            return [{"description": x.get("description"), "amount": (x.get("amount") or 0)/100} for x in self.invoice_lines]
+        return [{}]
+
+    @property
     def period_start(self):
         if self.invoice_data:
             return date_service.string_to_date(self.invoice_data["lines"].data[0]["period"]["start"])

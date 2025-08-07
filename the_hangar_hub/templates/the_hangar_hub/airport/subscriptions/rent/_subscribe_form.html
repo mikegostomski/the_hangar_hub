@@ -23,9 +23,10 @@
         <br />
 
         <strong>Billing Period</strong><br />
-        If the billing period should reset on a day other that the day-of-month that billing started, enter that day here.<br />
+        If the billing period should reset on a day other than the day-of-month that billing started, enter that day here.<br />
+        <em>(must be less than 29 since not all months are guaranteed to have 29 days)</em>
         <label class="visually-hidden" for="billing_cycle_anchor">Billing Cycle Day</label>
-        <input type="number" id="billing_cycle_anchor" name="billing_cycle_anchor" value="" min="1" max="31" placeholder="1 through 31" class="form-control" />
+        <input type="number" id="billing_cycle_anchor" name="billing_cycle_anchor" value="" min="1" max="31" placeholder="1 through 28" class="form-control" />
         <br />
 
         <strong>Days Until Due</strong><br />

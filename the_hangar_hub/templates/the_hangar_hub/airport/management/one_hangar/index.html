@@ -23,11 +23,11 @@
         <tr valign="top">
             <td>
                 <label for="capacity" class="visually-hidden">Capacity</label>
-                <input type="number" id="capacity" name="capacity" value="{{hangar.capacity}}" min="1" max="100" />
+                <input type="number" id="capacity" name="capacity" value="{{hangar.capacity}}" min="1" max="100" class="form-control" />
             </td>
             <td>
                 <label for="default_rent" class="visually-hidden">Default Rent</label>
-                <input type="text" id="default_rent" name="default_rent" value="{{hangar.default_rent}}" />
+                <input type="text" id="default_rent" name="default_rent" value="{{hangar.default_rent}}" class="form-control" />
             </td>
             <td>
                 <fieldset>
@@ -75,36 +75,36 @@
 
                 <td>
                     <label for="nt-first_name" class="visually-hidden">First Name</label>
-                    <input type="text" name="first_name" id="nt-first_name" placeholder="First Name" value="{{prefill.first_name|default:selected_application.user.first_name}}" />
+                    <input type="text" name="first_name" id="nt-first_name" placeholder="First Name" value="{{prefill.first_name|default:selected_application.user.first_name}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-last_name" class="visually-hidden">Last Name</label>
-                    <input type="text" name="last_name" id="nt-last_name" placeholder="Last Name" value="{{prefill.last_name|default:selected_application.user.last_name}}" />
+                    <input type="text" name="last_name" id="nt-last_name" placeholder="Last Name" value="{{prefill.last_name|default:selected_application.user.last_name}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-email" class="visually-hidden">Email Address</label>
-                    <input type="email" name="email" id="nt-email" placeholder="Email Address" value="{{prefill.email|default:selected_application.preferred_email}}" />
+                    <input type="email" name="email" id="nt-email" placeholder="Email Address" value="{{prefill.email|default:selected_application.preferred_email}}" class="form-control" />
                 </td>
 
                 <td>
                     <label for="nt-start_date" class="visually-hidden">Start Date</label>
-                    <input type="date" name="start_date" id="nt-start_date" placeholder="Start Date" value="{{prefill.start_date|default:''}}" />
+                    <input type="date" name="start_date" id="nt-start_date" placeholder="Start Date" value="{{prefill.start_date|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-end_date" class="visually-hidden">End Date</label>
-                    <input type="date" name="end_date" id="nt-end_date" placeholder="End Date" value="{{prefill.end_date|default:''}}" />
+                    <input type="date" name="end_date" id="nt-end_date" placeholder="End Date" value="{{prefill.end_date|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-rent" class="visually-hidden">Rent</label>
-                    <input type="text" name="rent" id="nt-rent" placeholder="Rent" value="{{prefill.rent|default:''}}" />
+                    <input type="text" name="rent" id="nt-rent" placeholder="Rent" value="{{prefill.rent|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-deposit" class="visually-hidden">Deposit</label>
-                    <input type="text" name="deposit" id="nt-deposit" placeholder="Deposit" value="{{prefill.deposit|default:''}}" />
+                    <input type="text" name="deposit" id="nt-deposit" placeholder="Deposit" value="{{prefill.deposit|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-notes" class="visually-hidden">notes</label>
-                    <textarea name="notes" id="nt-notes" placeholder="notes" rows="3">{{prefill.notes|default:selected_application.aircraft_description}}</textarea>
+                    <textarea name="notes" id="nt-notes" placeholder="notes" rows="3" class="form-control">{{prefill.notes|default:selected_application.aircraft_description}}</textarea>
                 </td>
                 <td>
                     <button type="submit" class="btn btn-success">Add</button>
@@ -117,35 +117,35 @@
             <tr>
                 <td>
                     <label for="nt-first_name" class="visually-hidden">First Name</label>
-                    <input type="text" name="first_name" id="nt-first_name" placeholder="First Name" value="{{prefill.first_name|default:''}}" />
+                    <input type="text" name="first_name" id="nt-first_name" placeholder="First Name" value="{{prefill.first_name|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-last_name" class="visually-hidden">Last Name</label>
-                    <input type="text" name="last_name" id="nt-last_name" placeholder="Last Name" value="{{prefill.last_name|default:''}}" />
+                    <input type="text" name="last_name" id="nt-last_name" placeholder="Last Name" value="{{prefill.last_name|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-email" class="visually-hidden">Email Address</label>
-                    <input type="email" name="email" id="nt-email" placeholder="Email Address" value="{{prefill.email|default:''}}" />
+                    <input type="email" name="email" id="nt-email" placeholder="Email Address" value="{{prefill.email|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-start_date" class="visually-hidden">Start Date</label>
-                    <input type="date" name="start_date" id="nt-start_date" placeholder="Start Date" value="{{prefill.start_date|default:''}}" />
+                    <input type="date" name="start_date" id="nt-start_date" placeholder="Start Date" value="{{prefill.start_date|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-end_date" class="visually-hidden">End Date</label>
-                    <input type="date" name="end_date" id="nt-end_date" placeholder="End Date" value="{{prefill.end_date|default:''}}" />
+                    <input type="date" name="end_date" id="nt-end_date" placeholder="End Date" value="{{prefill.end_date|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-rent" class="visually-hidden">Rent</label>
-                    <input type="text" name="rent" id="nt-rent" placeholder="Rent" value="{{prefill.rent|default:''}}" />
+                    <input type="text" name="rent" id="nt-rent" placeholder="Rent" value="{{prefill.rent|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-deposit" class="visually-hidden">Deposit</label>
-                    <input type="text" name="deposit" id="nt-deposit" placeholder="Deposit" value="{{prefill.deposit|default:''}}" />
+                    <input type="text" name="deposit" id="nt-deposit" placeholder="Deposit" value="{{prefill.deposit|default:''}}" class="form-control" />
                 </td>
                 <td>
                     <label for="nt-notes" class="visually-hidden">notes</label>
-                    <textarea name="notes" id="nt-notes" placeholder="notes" rows="3">{{prefill.notes|default:''}}</textarea>
+                    <textarea name="notes" id="nt-notes" placeholder="notes" rows="3" class="form-control">{{prefill.notes|default:''}}</textarea>
                 </td>
                 <td>
                     <button type="submit" class="btn btn-success">Add</button>

@@ -67,7 +67,7 @@ def create_subscription(request, airport_identifier):
 
 
     if collection_start_date_str:
-        collection_start_date = date_service.string_to_date(collection_start_date_str)
+        collection_start_date = date_service.string_to_date(collection_start_date_str, request.airport.timezone)
         if not collection_start_date:
             message_service.post_error("Invalid rent collection start date")
             return redirect("manage:hangar", airport_identifier, rental.hangar.id)
