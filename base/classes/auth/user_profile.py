@@ -168,7 +168,7 @@ class UserProfile:
         elif type(user_data) is UserProfile:
             pass
 
-        # New from ID, username or email
+        # New from ID, username or email, or Stripe Customer ID
         else:
             try:
                 if str(user_data).isnumeric():
@@ -180,6 +180,13 @@ class UserProfile:
                         # Look at other confirmed emails
                         confirmed_email = EmailAddress.objects.get(email__iexact=user_data, verified=True)
                         self.user = confirmed_email.user
+                elif user_data.startswith("cus_") and "base_stripe" in env.get_setting("INSTALLED_APPS"):
+                    from base_stripe.models.customer import Customer
+                    sc = Customer.get(user_data)
+                    if sc:
+                        self.user = sc.user
+                    else:
+                        self.user = User.objects.get(username__iexact=user_data)
                 else:
                     self.user = User.objects.get(username__iexact=user_data)
             except User.DoesNotExist:

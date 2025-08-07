@@ -1,58 +1,52 @@
 from base.models.utility.error import EnvHelper, Log, Error
 import stripe
-from decimal import Decimal
-from django.urls import reverse
-from base.services import message_service
-from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.classes.account import Account
-from base_stripe.models.connected_account import ConnectedAccount
+from base_stripe.services.config_service import set_stripe_api_key
+from base_stripe.models.connected_account import ConnectedAccount as AccountModel
+from base_stripe.classes.api.account import Account as AccountStripe
 
 log = Log()
 env = EnvHelper()
 
 
 def create_account(params_dict):
+    """
+    Create a Connect Account in Stripe
+    Create a local record of this as well
 
+    Returns: the local record (model) for this Account
+    """
     try:
+        # Create the Account in Stripe
         set_stripe_api_key()
-        account_object = stripe.Account.create(**params_dict)
-        if account_object and account_object.get("object") == "account":
+        response = stripe.Account.create(**params_dict)
+
+        # If account was created...
+        if response and response.get("object") == "account":
+            account_stripe = AccountStripe(response)
+
             try:
-                ca = ConnectedAccount()
-                ca.stripe_id = account_object.get("id")
-                ca.charges_enabled = account_object.get("charges_enabled")
-                ca.payouts_enabled = account_object.get("payouts_enabled")
-
-                business_profile = account_object.get("business_profile")
-                company = account_object.get("company")
-
-                if business_profile:
-                    ca.name = business_profile.get("name")
-                elif company:
-                    ca.name = company.get("name")
-                else:
-                    # ToDo: Individual name?
-                    ca.name = f"Account: {ca.stripe_id}"
-
+                # Create a database record of this account for querying
+                ca = AccountModel()
+                ca.stripe_id = account_stripe.id
+                ca.charges_enabled = account_stripe.charges_enabled
+                ca.payouts_enabled = account_stripe.payouts_enabled
+                ca.name = account_stripe.name
                 ca.save()
                 return ca
 
             except Exception as ee:
-                Error.unexpected(
-                    "Unable to save connected account record", ee
-                )
+                Error.unexpected("Unable to save connected account record", ee)
 
     except Exception as ee:
-        Error.unexpected(
-            "Unable to create connected account in Stripe", ee
-        )
+        Error.unexpected("Unable to create connected account in Stripe", ee)
 
     return None
 
 
-
-def create_account_onboarding_link(account_id, return_url, refresh_url=None):
-    log.trace([account_id, return_url, refresh_url])
+def create_account_onboarding_url(account_id, return_url, refresh_url=None):
+    """
+    Link to Stripe session for onboarding, as well as making account changes after onboarding
+    """
     try:
         abs_url = env.absolute_root_url
         if return_url and not return_url.startswith(abs_url):
@@ -68,47 +62,21 @@ def create_account_onboarding_link(account_id, return_url, refresh_url=None):
             return_url=return_url,
             refresh_url=refresh_url or return_url,
         )
-        return link
+        return link.url
     except Exception as ee:
-        Error.unexpected(
-            "Unable to create onboarding link to Stripe", ee
-        )
-
+        Error.unexpected("Unable to create onboarding link to Stripe", ee)
     return None
-
-
-def create_account_login_link(account_id, return_url, refresh_url=None):
-    log.trace([account_id, return_url, refresh_url])
-    try:
-        abs_url = env.absolute_root_url
-        if return_url and not return_url.startswith(abs_url):
-            return_url = f"{abs_url}{return_url}"
-        if refresh_url and not refresh_url.startswith(abs_url):
-            refresh_url = f"{abs_url}{refresh_url}"
-
-        set_stripe_api_key()
-        link = stripe.AccountLink.create(
-            account=account_id,
-            type="account_update",
-            return_url=return_url,
-            refresh_url=refresh_url or return_url,
-        )
-        return link
-    except Exception as ee:
-        Error.unexpected(
-            "Unable to create account login link to Stripe", ee
-        )
-
-    return None
-
 
 
 def get_connected_account(account_id):
+    """
+    Get Connected Account data from Stripe
+    """
     try:
         set_stripe_api_key()
         stripe_account = stripe.Account.retrieve(account_id)
         if stripe_account and stripe_account.get("object") == "account":
-            ca = ConnectedAccount.get(stripe_account.id)
+            ca = AccountModel.get(stripe_account.id)
             capabilities = stripe_account.get("capabilities")
             if not ca:
                 log.error(f"Unable to find ConnectedAccount for {stripe_account.id}")
@@ -122,56 +90,7 @@ def get_connected_account(account_id):
                     ca.transfers_enabled = capabilities.get("transfers") == "active"
                 ca.save()
 
-            return stripe_account, ca
+            return AccountStripe(stripe_account), ca
     except Exception as ee:
         Error.record(ee)
     return None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def get_connected_accounts():
-    accts = []
-    try:
-        set_stripe_api_key()
-        account_list = stripe.Account.list(limit=3)
-        if not account_list:
-            return {}
-
-        for acct in account_list.get("data"):
-            accts.append(Account(acct))
-    except Exception as ee:
-        Error.record(ee)
-    return accts
-
-
-
-def modify_connected_account(account_instance):
-    try:
-        set_stripe_api_key()
-        response = stripe.Account.modify(
-            account_instance.id,
-            business_profile={"name": account_instance.name, "support_phone": account_instance.company_phone,},
-            company={
-                "name": account_instance.company_name,
-                "phone": account_instance.company_phone,
-                "address": account_instance.company_stripe_address(),
-            }
-
-        )
-        if response and response.get("object") == "account":
-            return Account(response)
-    except Exception as ee:
-        Error.record(ee)
-    return None
-

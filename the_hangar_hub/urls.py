@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from the_hangar_hub.views import public, application, administration, maintenance
-from the_hangar_hub.views import airport, tenant, manage_airport, rent_subscription
+from the_hangar_hub.views import airport, tenant, manage_airport, rent_subscription, payment
 
 # Accessible to non-authenticated users
 public_paths = [
@@ -120,6 +120,15 @@ tenant_paths = [
     path('<slug:airport_identifier>/hangar/<slug:hangar_id>', tenant.my_hangar,  name='hangar'),
 ]
 
+# Stripe Payment Management Paths
+pay_paths = [
+    # MAINTENANCE
+    path('dashboard', payment.payment_dashboard,  name='dashboard'),
+
+    # HANGAR
+    path('<slug:airport_identifier>/hangar/<slug:hangar_id>', tenant.my_hangar,  name='hangar'),
+]
+
 
 urlpatterns = [
     # Django and Plugin URLs
@@ -134,5 +143,6 @@ urlpatterns = [
     re_path('manage/', include((manager_paths, 'the_hangar_hub'), namespace='manage')),
     re_path('apply/', include((application_paths, 'the_hangar_hub'), namespace='apply')),
     re_path('tenant/', include((tenant_paths, 'the_hangar_hub'), namespace='tenant')),
+    re_path('pay/', include((pay_paths, 'the_hangar_hub'), namespace='pay')),
     re_path('administration/', include((administration_paths, 'the_hangar_hub'), namespace='administration')),
 ]

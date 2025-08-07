@@ -62,7 +62,7 @@ class Rental(models.Model):
 
     def get_customer_data(self):
         if self.stripe_customer_id:
-            return customer_service.get_customer(self.stripe_customer_id)
+            return customer_service.get_stripe_customer(self.stripe_customer_id)
         else:
             return None
 

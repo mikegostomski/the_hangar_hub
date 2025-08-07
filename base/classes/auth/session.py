@@ -146,7 +146,7 @@ class Auth:
     @classmethod
     def _lookup_user_profile(cls, user_data, get_contact=False, get_authorities=False):
         if user_data is None:
-            return UserProfile(None)
+            return UserProfile(None)  # Does not return None to handle non-authenticated user
         elif type(user_data) is UserProfile:
             return user_data
 

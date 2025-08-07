@@ -4,7 +4,7 @@ from decimal import Decimal
 log = Log()
 env = EnvHelper()
 
-
+# ToDo: Is this still needed for anything?
 class Price:
     id = None
     lookup_key = None

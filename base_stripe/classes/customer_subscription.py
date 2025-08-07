@@ -142,7 +142,7 @@ class CustomerSubscription:
     def __init__(self, subscription_id):
         self.subscription_data = customer_service.get_subscription(subscription_id) or {}
         self.invoice_data = self.subscription_data.get("latest_invoice") or {}
-        self.customer_data = customer_service.get_customer(self.customer_id) or {}
+        self.customer_data = customer_service.get_stripe_customer(self.customer_id) or {}
 
 
 

@@ -1,3 +1,5 @@
+from django.http import HttpResponseForbidden
+
 from base.models.utility.error import EnvHelper, Log, Error
 from base.classes.auth.session import Auth
 import stripe
@@ -189,22 +191,19 @@ def create_connected_account(airport):
 
 
 def get_onboarding_link(airport):
-    link = accounts_service.create_account_onboarding_link(
+    return accounts_service.create_account_onboarding_url(
         airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
     )
-    if link:
-        return link.url
-    else:
-        return None
 
 def get_account_login_link(airport):
-    link = accounts_service.create_account_login_link(
-        airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
-    )
-    if link:
-        return link.url
-    else:
-        return None
+    return None
+#     link = accounts_service.create_account_login_link(
+#         airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
+#     )
+#     if link:
+#         return link.url
+#     else:
+#         return None
 
 def sync_account_data(airport):
     stripe_data, local_data = accounts_service.get_connected_account(airport.stripe_account_id)
@@ -229,7 +228,7 @@ def create_rent_subscription(airport, rental, **kwargs):
 
     try:
         customer_email = rental.tenant.email
-        customer_rec = customer_service.create_customer(
+        customer_rec = customer_service.create_stripe_customer(
             rental.tenant.contact.display_name, customer_email, rental.tenant.user
         )
         if not customer_rec:
@@ -369,7 +368,7 @@ def create_rent_subscription(airport, rental, **kwargs):
 def create_rent_invoice(airport, rental, charge_automatically=False):
     try:
         customer_email = rental.tenant.email
-        customer_rec = customer_service.create_customer(
+        customer_rec = customer_service.create_stripe_customer(
             rental.tenant.contact.display_name, customer_email, rental.tenant.user
         )
         if not customer_rec:

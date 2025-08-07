@@ -9,6 +9,8 @@ from base_stripe.classes.price import Price
 log = Log()
 env = EnvHelper()
 
+# ToDo: Is this still needed for anything?
+
 
 def get_price_list():
     prices = []

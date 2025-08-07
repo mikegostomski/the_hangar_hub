@@ -628,7 +628,7 @@ def add_tenant(request, airport_identifier, hangar_id):
         Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
     # Create a Stripe customer record (for sending invoices and collecting rent)
-    customer_service.create_customer(full_name=f"{first_name} {last_name}", email=email, user=user)
+    customer_service.create_stripe_customer(full_name=f"{first_name} {last_name}", email=email, user=user)
 
     return redirect("manage:hangar",airport_identifier, hangar.code)
 

@@ -5,13 +5,13 @@ log = Log()
 env = EnvHelper()
 
 
-class StripeCustomer(models.Model):
+class Customer(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
     email = models.CharField(max_length=180, unique=True, db_index=True)
-    user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customers", null=True, blank=True, db_index=True)
+    user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customer", null=True, blank=True, db_index=True)
 
     full_name = models.CharField(max_length=150)
 
