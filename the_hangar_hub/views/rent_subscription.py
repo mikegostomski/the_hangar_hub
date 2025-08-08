@@ -135,9 +135,11 @@ def create_subscription(request, airport_identifier):
 @report_errors()
 @require_airport_manager()
 def delete_draft_invoice(request, airport_identifier):
-    if invoice_service.delete_draft_invoice(request.POST.get("invoice_id")):
-        message_service.post_success("Draft invoice deleted")
-        return HttpResponse("ok")
-    else:
-        return HttpResponseForbidden()
+    # Subscription invoices cannot be deleted
+    return HttpResponseForbidden()
+    # if invoice_service.delete_draft_invoice(request.POST.get("invoice_id")):
+    #     message_service.post_success("Draft invoice deleted")
+    #     return HttpResponse("ok")
+    # else:
+    #     return HttpResponseForbidden()
 

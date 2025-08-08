@@ -8,6 +8,7 @@ from base_stripe.services.config_service import set_stripe_api_key, get_stripe_a
 from base_stripe.models.customer import Customer as CustomerModel
 from base_stripe.classes.api.customer import Customer as StripeCustomer
 
+
 log = Log()
 env = EnvHelper()
 
@@ -101,6 +102,8 @@ def get_stripe_customer(customer):
         stripe_id = customer
     else:
         user = Auth.lookup_user(customer)
+        log.debug(f"Type of {user} is: {type(user)}")
+        message_service.post_error(f"Type of {user} is: {type(user)}")
         if user:
             customer_model = create_stripe_customer(user=user)
             if customer_model:
@@ -118,15 +121,8 @@ def get_stripe_customer(customer):
     return None
 
 
-
-
-
-
-
-
-
-
-
+def get_customer_model(customer):
+    return CustomerModel.get(customer)
 
 
 

@@ -1,6 +1,7 @@
 from base.models.utility.error import EnvHelper, Log, Error
 from base_stripe.services import config_service
 import stripe
+from django.utils.html import mark_safe
 
 log = Log()
 env = EnvHelper()
@@ -37,6 +38,30 @@ class Customer:
         if self.invoice_settings:
             return self.invoice_settings.get("default_payment_method")
         return None
+
+    @property
+    def default_payment_method_display(self):
+        pm_id = self.default_payment_method
+        if pm_id:
+            try:
+                config_service.set_stripe_api_key()
+                pm = stripe.Customer.retrieve_payment_method(self.id, pm_id)
+                log.debug(f"PAYMENT METHOD:::\n{pm}\n")
+                payment_type = pm.get("type")
+                if payment_type == "card":
+                    card = pm.get("card")
+                    exp = f'exp. {card.get("exp_month")}/{card.get("exp_year")}'
+                    return f'{card.get("brand")} ****{card.get("last4")} {exp}'
+                elif payment_type == "us_bank_account":
+                    acct = pm.get("us_bank_account")
+                    return f'{acct.get("bank_name")} ****{acct.get("last4")}'
+                elif payment_type == "link":
+                    return mark_safe("""<a href="https://link.com" target="_blank">Link</a>""")
+            except Exception as ee:
+                Error.unexpected("Unable to get payment method details", ee)
+                return "unknown payment method"
+        else:
+            return "n/a"
 
     @property
     def address(self):

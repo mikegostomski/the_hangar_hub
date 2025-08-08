@@ -122,11 +122,9 @@ tenant_paths = [
 
 # Stripe Payment Management Paths
 pay_paths = [
-    # MAINTENANCE
+    # TENANT PAYMENT DASHBOARD
     path('dashboard', payment.payment_dashboard,  name='dashboard'),
 
-    # HANGAR
-    path('<slug:airport_identifier>/hangar/<slug:hangar_id>', tenant.my_hangar,  name='hangar'),
 ]
 
 
