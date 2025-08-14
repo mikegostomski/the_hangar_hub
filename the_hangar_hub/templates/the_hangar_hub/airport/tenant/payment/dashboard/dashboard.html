@@ -52,7 +52,35 @@
             <th scope="row">Auto-Pay</th>
             <td>
                 {%if stripe_customer.default_payment_method%}
+                    {%with use_auto_pay=customer_model.use_auto_pay%}
+                        <div id="autopay-on" class="autopay-ind {%if not use_auto_pay%}hidden{%endif%}">
+                            {%icon bi-toggle-on text-xl onclick="update_auto_pay($(this));" title="Disable auto-pay"%}
+                            &nbsp;
+                            <span class="badge text-bg-success">Auto-Pay Enabled</span>
+                        </div>
+                        <div id="autopay-off" class="autopay-ind {%if use_auto_pay%}hidden{%endif%}">
+                            {%icon bi-toggle-off text-xl onclick="update_auto_pay($(this));" title="Enable auto-pay"%}
+                            &nbsp;
+                            <span class="badge text-bg-warning">Auto-Pay Disabled</span>
+                        </div>
+                        {%if open_invoices%}
+                        <em class="text-muted text-sm">
+                            This setting affects <b>future</b> invoices.
+                            {%if open_invoices|length == 1 and open_invoices.0.auto_pay != use_auto_pay%}
+                                {%if open_invoices|length == 1 and open_invoices.0.auto_pay%}
+                                    Your existing invoice will still be auto-paid.
+                                    You may be able to change this in the
+                                    <a href="{{'STRIPE_PORTAL_LINK'|get_setting}}" target="_blank">Stripe Customer Portal</a>.
+                                {%elif open_invoices|length == 1 and not open_invoices.0.auto_pay%}
+                                    You must manually pay your existing invoice below.
+                                {%else%}
+                                    Invoices listed below will not be affected.
+                                {%endif%}
+                            {%endif%}
+                        </em><br />
+                        {%endif%}
 
+                    {%endwith%}
                 {%else%}
                     You must save your payment information in Stripe before you can enroll in auto-pay.
                 {%endif%}
@@ -61,11 +89,12 @@
         <tr>
             <th scope="row">Billing Portal</th>
             <td>
-
+                <p class="text-sm">
                 We use Stripe to securely handle all billing and payments.<br />
                 You can manage your payment information in the Stripe Customer Portal.<br />
                 Be sure to use <b>{{stripe_customer.email}}</b> as your email address.<br />
-                <div class="text-center">
+                </p>
+                <div class="">
                 <a href="{{'STRIPE_PORTAL_LINK'|get_setting}}" class="btn btn-primary btn-sm" target="_blank">
                     <span class="visually-hidden">manage your payment information in the</span>
                     Stripe Customer Portal
@@ -76,64 +105,24 @@
     </table>
 </section>
 
+<section>
+    <h2>Open Invoices</h2>
+    <br />
+    <div id="open-invoice-container">
+        {%include "the_hangar_hub/airport/tenant/payment/dashboard/_invoice_table.html" with stripe_invoices=open_invoices%}
+    </div>
+</section>
 
 <section>
-    <h2>Invoices</h2>
+    <h2>Recent Invoices</h2>
     <br />
-
-    <table class="table">
-        <tr>
-            <th scope="col">Invoice Date</th>
-            <th scope="col">Due Date</th>
-            <th scope="col">Invoice #</th>
-            <th scope="col">Billing Period</th>
-            <th scope="col">Payment</th>
-            <th scope="col">Pay To</th>
-            <th scope="col">Total</th>
-            <th scope="col">URL</th>
-        </tr>
-    {%for invoice in stripe_invoices%}
-        <tr>
-            <td>{{invoice.date_invoice|date:preferred_date_format}}</td>
-            <td>
-                {%humanized_date invoice.date_due%}
-            </td>
-            <td>{{invoice.number}}</td>
-            <td>
-                {% for period in invoice.billing_periods%}
-                    {{period.start|date:preferred_date_format}} - {{period.end|date:preferred_date_format}}<br />
-                {%endfor%}
-            </td>
-            <td>
-                {%if invoice.auto_pay%}
-                    {%icon bi-arrow-repeat text-success%} Auto Pay
-                {%else%}
-                    {%icon bi-slash-circle text-danger%} Pay Manually
-                {%endif%}<br />
-                {%if invoice.attempt_count%}
-                    <span class="text-bg-danger badge">{{invoice.attempt_count}} Failed Attempt{%if invoice.attempt_count != 1%}s{%endif%}</span>
-                {%endif%}
-            </td>
-            <td>{{invoice.account_name}}</td>
-            <td>{%format_currency invoice.dollars_due%}</td>
-            <td>
-                <a href="{{invoice.interactive_url}}" target="_blank">
-                    {%icon bi-credit-card%} Pay Now
-                </a><br />
-                <a href="{{invoice.pdf_url}}" target="_blank">
-                    {%icon bi-file-earmark-pdf%} Download
-                </a><br />
-            </td>
-        </tr>
-    {%empty%}
-        <tr>
-            <td colspan="10">
-                <em class="text-muted">No Open Invoices</em>
-            </td>
-        </tr>
-    {%endfor%}
-    </table>
-
+    <div id="recent-invoice-container">
+        {%include "the_hangar_hub/airport/tenant/payment/dashboard/_invoice_table.html" with stripe_invoices=recent_invoices%}
+    </div>
 </section>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/tenant/payment/dashboard/script.js"%}
+</script>
 
 {%endblock%}

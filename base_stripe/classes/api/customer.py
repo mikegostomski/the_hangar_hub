@@ -46,7 +46,6 @@ class Customer:
             try:
                 config_service.set_stripe_api_key()
                 pm = stripe.Customer.retrieve_payment_method(self.id, pm_id)
-                log.debug(f"PAYMENT METHOD:::\n{pm}\n")
                 payment_type = pm.get("type")
                 if payment_type == "card":
                     card = pm.get("card")
@@ -116,7 +115,6 @@ class Customer:
 
     def __init__(self, api_response):
         if api_response:
-            log.debug(api_response)
             self.address_stripe = api_response.get("address")
             self.balance = api_response.get("balance")
             self.created = api_response.get("created")

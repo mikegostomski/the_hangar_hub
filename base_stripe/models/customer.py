@@ -28,7 +28,7 @@ class Customer(models.Model):
         try:
             if str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
-            elif type(object) in [User, SimpleLazyObject]:
+            elif type(xx) in [User, SimpleLazyObject]:
                 return cls.objects.get(user=xx)
             elif "@" in str(xx):
                 return cls.objects.get(email__iexact=xx)

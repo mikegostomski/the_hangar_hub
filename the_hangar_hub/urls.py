@@ -124,6 +124,7 @@ tenant_paths = [
 pay_paths = [
     # TENANT PAYMENT DASHBOARD
     path('dashboard', payment.payment_dashboard,  name='dashboard'),
+    path('autopay/set', payment.set_auto_pay,  name='set_auto_pay'),
 
 ]
 

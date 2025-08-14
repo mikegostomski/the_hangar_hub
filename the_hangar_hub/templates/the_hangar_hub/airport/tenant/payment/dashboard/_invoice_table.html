@@ -1,0 +1,68 @@
+{% load base_taglib %}
+
+{## Required Parameter: stripe_invoices (list of base_stripe.classes.invoice Invoice objects) ##}
+
+<table class="table">
+    <tr>
+        <th scope="col">Invoice Date</th>
+        <th scope="col">Due Date</th>
+        <th scope="col">Invoice #</th>
+        <th scope="col">Billing Period</th>
+        <th scope="col">Payment</th>
+        <th scope="col">Pay To</th>
+        <th scope="col">Total</th>
+        <th scope="col">URL</th>
+    </tr>
+{%for invoice in stripe_invoices%}
+    <tr>
+        <td>{{invoice.date_invoice|date:preferred_date_format}}</td>
+        <td>
+            {%humanized_date invoice.date_due%}
+        </td>
+        <td>{{invoice.number}}</td>
+        <td>
+            {% for period in invoice.billing_periods%}
+                {{period.start|date:preferred_date_format}} - {{period.end|date:preferred_date_format}}<br />
+            {%endfor%}
+        </td>
+        <td>
+
+            {%if invoice.status == "paid"%}
+                {{invoice.date_paid|date:preferred_date_format}}<br />
+                {{invoice.date_paid|date:preferred_time_format}}
+            {%else%}
+                {%if invoice.auto_pay%}
+                    <span class="text-success">{%icon bi-arrow-repeat%} Auto-Pay</span>
+                {%else%}
+                    <span class="text-danger">{%icon bi-cash-coin%} Manual Payment</span>
+                {%endif%}<br />
+                {%if invoice.attempt_count%}
+                    <span class="text-bg-danger badge">{{invoice.attempt_count}} Failed Attempt{%if invoice.attempt_count != 1%}s{%endif%}</span>
+                {%endif%}
+            {%endif%}
+        </td>
+        <td>{{invoice.account_name}}</td>
+        <td>{%format_currency invoice.dollars_due%}</td>
+        <td>
+            <a href="{{invoice.interactive_url}}" target="_blank">
+                {%if invoice.status == "paid"%}
+                    {%icon bi-receipt%} Receipt
+                {%else%}
+                    {%icon bi-credit-card%} Pay Now
+                {%endif%}
+            </a><br />
+            {%if invoice.status != "paid"%}
+                <a href="{{invoice.pdf_url}}" target="_blank">
+                    {%icon bi-file-earmark-pdf%} Download
+                </a><br />
+            {%endif%}
+        </td>
+    </tr>
+{%empty%}
+    <tr>
+        <td colspan="10">
+            <em class="text-muted">No Invoices to Display</em>
+        </td>
+    </tr>
+{%endfor%}
+</table>

@@ -102,8 +102,6 @@ def get_stripe_customer(customer):
         stripe_id = customer
     else:
         user = Auth.lookup_user(customer)
-        log.debug(f"Type of {user} is: {type(user)}")
-        message_service.post_error(f"Type of {user} is: {type(user)}")
         if user:
             customer_model = create_stripe_customer(user=user)
             if customer_model:
