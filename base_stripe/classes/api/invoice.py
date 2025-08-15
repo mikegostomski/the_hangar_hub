@@ -155,6 +155,19 @@ class Invoice:
         return list(self.lines.data or []) if self.lines else []
 
     @property
+    def subscription_ids(self):
+        sub_ids = []
+        parent_sub_dicts = [
+            x.get("parent").get("subscription_item_details") for x in self.invoice_lines if x.get("parent")
+        ]
+        for detail_dict in parent_sub_dicts:
+            subscription_id = detail_dict.get("subscription") if detail_dict else None
+            if subscription_id:
+                sub_ids.append(subscription_id)
+
+        return list(set(sub_ids))
+
+    @property
     def invoice_items(self):
         return [{"description": x.get("description"), "amount": (x.get("amount") or 0) / 100} for x in self.invoice_lines]
 

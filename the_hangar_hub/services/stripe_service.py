@@ -9,6 +9,8 @@ from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.services import price_service, accounts_service, customer_service
 from base_stripe.models.connected_account import ConnectedAccount
+from base_stripe.models.subscription import Subscription
+from base_stripe.models.customer import Customer
 from datetime import datetime, timezone
 
 log = Log()
@@ -356,6 +358,17 @@ def create_rent_subscription(airport, rental, **kwargs):
             rental.stripe_subscription_id = subscription_id
             rental.stripe_customer_id = customer_rec.stripe_id
             rental.save()
+        except Exception as ee:
+            Error.record(ee, subscription_id)
+
+        try:
+            sub_model = Subscription()
+            sub_model.stripe_id = subscription_id
+            sub_model.customer = customer_rec
+            sub_model.status = subscription.get("status")
+            sub_model.related_type = "rental"
+            sub_model.related_id = rental.id
+            sub_model.save()
         except Exception as ee:
             Error.record(ee, subscription_id)
 

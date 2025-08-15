@@ -15,6 +15,8 @@ class WebhookEvent(models.Model):
     object_type = models.CharField(max_length=60, db_index=True)
     object_id = models.CharField(max_length=60, db_index=True)
 
+    refreshed = models.BooleanField(default=False)
+
     @classmethod
     def get(cls, xx):
         try:
