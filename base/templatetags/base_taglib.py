@@ -155,6 +155,10 @@ def format_phone(*args):
 
 @register.simple_tag
 def format_decimal(*args, **kwargs):
+    number = args[0]
+    if number is None or number == "":
+        return ""
+
     # Allow some formatting options
     prefix = kwargs["prefix"] if "prefix" in kwargs and kwargs["prefix"] else ""
     use_commas = "comma" not in kwargs or bool(kwargs["comma"])

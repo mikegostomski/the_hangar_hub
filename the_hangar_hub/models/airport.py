@@ -101,6 +101,7 @@ class Airport(models.Model):
             return True  # Assume API error?
 
     def subscriptions(self):
+        """HangarHub Subscriptions"""
         subs = stripe_service.get_airport_subscriptions(self)
         sub_datas = []
         for sub_data in subs.data:

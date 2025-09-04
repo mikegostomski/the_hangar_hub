@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
+from base_stripe.models.subscription import Subscription
 from the_hangar_hub.models.tenant import Tenant, Rental
 from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.hangar import Building, Hangar
@@ -32,7 +33,7 @@ env = EnvHelper()
 @require_authentication()
 def payment_dashboard(request):
     """
-    Renders the HTML form to collect subscription preferences from the airport manager
+    Tenant Payment Center
     """
     stripe_customer = customer_service.get_stripe_customer(Auth.current_user())
     open_invoices = invoice_service.get_customer_invoices(stripe_customer.id, "open")
@@ -52,6 +53,9 @@ def payment_dashboard(request):
 
 @require_authentication()
 def set_auto_pay(request):
+    """
+    Allow tenants to enable/disable auto-pay
+    """
     try:
         use_auto_pay = request.POST.get("use_auto_pay")
         if use_auto_pay not in ["Y", "N"]:
@@ -117,3 +121,34 @@ def set_auto_pay(request):
         return HttpResponseForbidden()
 
 
+@require_airport_manager()
+def rent_collection_dashboard(request, airport_identifier):
+    """
+    Airport Manager view to see who is current/late on rent payments
+    """
+    airport = request.airport
+    rentals = Rental.current_rentals().filter(hangar__building__airport=airport)
+
+    return render(
+        request, "the_hangar_hub/airport/management/rent/payments/dashboard.html",
+        {
+            "rentals": rentals,
+        }
+    )
+
+
+@require_airport()
+def refresh_rental_status(request, airport_identifier, rental_id=None):
+    """
+    Sync rent subscription model with Stripe data
+    """
+    try:
+        rental = Rental.get(rental_id or request.POST.get("rental_id"))
+        if rental:
+            subscription = rental.get_stripe_subscription_model()
+            subscription.sync()
+            return HttpResponse(subscription.status)
+    except Exception as ee:
+        Error.record(ee)
+    message_service.post_error("Unable to update rental status")
+    return HttpResponseForbidden()

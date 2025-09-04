@@ -485,6 +485,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     rent = request.POST.get("rent")
     deposit = request.POST.get("deposit")
     notes = request.POST.get("notes")
+    log.info(f"Add Tenant: <{first_name} {last_name}> {email}")
 
     application_id = request.POST.get("application_id")
     application = HangarApplication.get(application_id) if application_id else None

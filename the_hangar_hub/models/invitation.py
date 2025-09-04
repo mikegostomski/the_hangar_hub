@@ -214,7 +214,7 @@ class Invitation(models.Model):
                 airport=self.airport,
                 role_code=self.role_code,
                 invited_by=self.invited_by,
-                email__iexact=self.email_address,
+                email__iexact=self.email,
                 hangar=self.hangar
             )
             if existing:

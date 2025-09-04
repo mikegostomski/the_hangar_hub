@@ -126,6 +126,10 @@ pay_paths = [
     path('dashboard', payment.payment_dashboard,  name='dashboard'),
     path('autopay/set', payment.set_auto_pay,  name='set_auto_pay'),
 
+    path('<slug:airport_identifier>/dashboard', payment.rent_collection_dashboard,  name='rent_collection_dashboard'),
+    path('<slug:airport_identifier>/rental/refresh', payment.refresh_rental_status,  name='refresh_rental_status_tbd'),
+    path('<slug:airport_identifier>/rental/refresh/<int:rental_id>', payment.refresh_rental_status,  name='refresh_rental_status'),
+
 ]
 
 

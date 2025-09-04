@@ -16,27 +16,40 @@ env = EnvHelper()
 
 class UserProfile:
 
+    @property
+    def is_user(self):
+        return type(self.user) not in [AnonymousUser, None]
+
+    @property
+    def bio(self):
+        if self.is_user:
+            return self.user
+        elif self._cached_contact:
+            return self._cached_contact
+        else:
+            return None
+
     # Properties matching the Django User model
     # ------------------------------------------------------
     @property
     def id(self):
-        return self.user.id if self.user else None
+        return self.user.id if self.is_user else None
 
     @property
     def first_name(self):
-        return self.user.first_name if self.user else None
+        return self.bio.first_name if self.bio else None
 
     @property
     def last_name(self):
-        return self.user.last_name if self.user else None
+        return self.bio.last_name if self.bio else None
 
     @property
     def username(self):
-        return self.user.username if self.user else None
+        return self.user.username if self.is_user else None
 
     @property
     def email(self):
-        return self.user.email.lower() if self.user else None
+        return self.bio.email.lower() if self.bio else None
 
     @property
     def is_staff(self):
@@ -76,15 +89,21 @@ class UserProfile:
         return list(set([x.email.lower() for x in self.verified_email_records()] + [self.email]))
 
     def verified_email_records(self):
-        return list(EmailAddress.objects.filter(user=self.user, verified=True))
+        if self.is_user:
+            return list(EmailAddress.objects.filter(user=self.user, verified=True))
+        else:
+            return []
 
     def allauth_email_records(self):
-        return list(EmailAddress.objects.filter(user=self.user))
+        if self.is_user:
+            return list(EmailAddress.objects.filter(user=self.user))
+        else:
+            return []
 
     def get_avatar_url(self):
         try:
             du = self.user
-            if du:
+            if self.is_user and du:
                 for account in SocialAccount.objects.filter(user=du):
                     if account.get_avatar_url():
                         return account.get_avatar_url()
@@ -148,7 +167,7 @@ class UserProfile:
         return self.id and self.is_active
 
     def populate_supplemental_data(self, get_contact=True, get_authorities=True):
-        if self.user and self.user.id:
+        if self.is_user and self.user.id:
             if get_authorities:
                 self.populate_authorities()
             if get_contact:
@@ -156,7 +175,7 @@ class UserProfile:
 
     def __init__(self, user_data, get_contact=True, get_authorities=True):
         # If anonymous
-        if user_data is None:
+        if user_data is None or type(user_data) is AnonymousUser:
             self._make_anonymous()
             return
 
@@ -173,14 +192,14 @@ class UserProfile:
             try:
                 if str(user_data).isnumeric():
                     self.user = User.objects.get(pk=user_data)
-                elif '@' in user_data:
+                elif '@' in str(user_data):
                     try:
                         self.user = User.objects.get(email__iexact=user_data)
                     except User.DoesNotExist:
                         # Look at other confirmed emails
                         confirmed_email = EmailAddress.objects.get(email__iexact=user_data, verified=True)
                         self.user = confirmed_email.user
-                elif user_data.startswith("cus_") and "base_stripe" in env.get_setting("INSTALLED_APPS"):
+                elif str(user_data).startswith("cus_") and "base_stripe" in env.get_setting("INSTALLED_APPS"):
                     from base_stripe.models.customer import Customer
                     sc = Customer.get(user_data)
                     if sc:
@@ -194,7 +213,12 @@ class UserProfile:
             except EmailAddress.DoesNotExist:
                 self._make_anonymous()
 
-        self.populate_supplemental_data(get_contact, get_authorities)
+        # If no user is found, look for a contact (can only be done via email)
+        if type(self.user) in [AnonymousUser, None]:
+            if '@' in str(user_data):
+                self._cached_contact = Contact.get(user_data)
+        else:
+            self.populate_supplemental_data(get_contact, get_authorities)
 
     def _make_anonymous(self):
         self.authorities = []
@@ -225,7 +249,7 @@ class UserProfile:
             return
 
         # Contact is linked to User
-        if not self.user:
+        if not self.is_user:
             return
 
         # Get contact from User

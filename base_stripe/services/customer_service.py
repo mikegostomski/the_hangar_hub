@@ -47,7 +47,7 @@ def create_stripe_customer(full_name=None, email=None, user=None):
     # If user was not provided, look for one via email address
     if not user_profile:
         user_profile = Auth.lookup_user_profile(email)
-        if user_profile:
+        if user_profile.is_user:
             user = user_profile.user
 
     # Look for existing customer record
@@ -126,11 +126,12 @@ def get_customer_model(customer):
 
 
 def customer_has_payment_method(customer_id):
+    log.trace(customer_id)
     customer = get_stripe_customer(customer_id)
 
     # Does customer have a payment method saved in Stripe?
-    default_pay_method = customer.get("invoice_settings", {}).get("default_payment_method")
-    default_source = customer.get("default_source")
+    default_pay_method = customer.default_payment_method
+    default_source = customer.default_source
     return default_pay_method or default_source
 
 

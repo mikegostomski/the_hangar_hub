@@ -9,7 +9,7 @@ env = EnvHelper()
 
 class CustomerSubscription:
     subscription_data = None
-    customer_data = None
+    customer_class = None
     invoice_data = None
 
     # IDs
@@ -45,7 +45,7 @@ class CustomerSubscription:
 
     @property
     def delinquent(self):
-        return self.customer_data.get("delinquent")
+        return self.customer_class.delinquent
 
 
     # Latest Invoice Data
@@ -142,7 +142,7 @@ class CustomerSubscription:
     def __init__(self, subscription_id):
         self.subscription_data = customer_service.get_subscription(subscription_id) or {}
         self.invoice_data = self.subscription_data.get("latest_invoice") or {}
-        self.customer_data = customer_service.get_stripe_customer(self.customer_id) or {}
+        self.customer_class = customer_service.get_stripe_customer(self.customer_id) or {}
 
 
 

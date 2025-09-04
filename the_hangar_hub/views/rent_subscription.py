@@ -67,7 +67,8 @@ def create_subscription(request, airport_identifier):
 
 
     if collection_start_date_str:
-        collection_start_date = date_service.string_to_date(collection_start_date_str, request.airport.timezone)
+        # This date should be in UTC, not airport's timezone  (request.airport.timezone)
+        collection_start_date = date_service.string_to_date(collection_start_date_str)
         if not collection_start_date:
             message_service.post_error("Invalid rent collection start date")
             return redirect("manage:hangar", airport_identifier, rental.hangar.id)
@@ -101,7 +102,7 @@ def create_subscription(request, airport_identifier):
         "billing_cycle_anchor": billing_cycle_anchor,
         "days_until_due": days_until_due,
     }
-
+    log.debug(f"Subscription Params: {params}")
     subscription = stripe_service.create_rent_subscription(request.airport, rental, **params)
     if subscription:
         message_service.post_success("Rental subscription created!")

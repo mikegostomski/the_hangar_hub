@@ -11,7 +11,7 @@ from base_stripe.services import price_service, accounts_service, customer_servi
 from base_stripe.models.connected_account import ConnectedAccount
 from base_stripe.models.subscription import Subscription
 from base_stripe.models.customer import Customer
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 log = Log()
 env = EnvHelper()
@@ -239,6 +239,7 @@ def create_rent_subscription(airport, rental, **kwargs):
 
         amount_due = int(rental.rent * 100)  # In cents
         now = datetime.now(timezone.utc)
+        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
         # Need to know what date rent starts getting charged (this may be in the past)
         if kwargs.get("collection_start_date"):
@@ -265,9 +266,17 @@ def create_rent_subscription(airport, rental, **kwargs):
         # If not specific period refresh day is requested
         if billing_cycle_anchor_day is None:
             # If collection started in the past
-            if collection_start_date < now:
+            if collection_start_date < today:
                 backdate_start_date = int(collection_start_date.timestamp())
                 billing_cycle_anchor = next_anchor_date(now, collection_start_date.day)
+                billing_cycle_anchor_config = None
+
+            # If collection started today, but before now
+            elif collection_start_date < now:
+                # Set anchor to two minutes in the future
+                anchor_time = now + timedelta(minutes=2)
+                backdate_start_date = None
+                billing_cycle_anchor = int(anchor_time.timestamp())
                 billing_cycle_anchor_config = None
             else:
                 backdate_start_date = None
@@ -350,7 +359,7 @@ def create_rent_subscription(airport, rental, **kwargs):
             billing_cycle_anchor_config=billing_cycle_anchor_config,
             trial_end=trial_end,
             backdate_start_date=backdate_start_date,
-            proration_behavior="none" if collection_start_date > now else None,
+            proration_behavior="none" # if collection_start_date > now else None,
         )
 
         subscription_id = subscription.get("id")

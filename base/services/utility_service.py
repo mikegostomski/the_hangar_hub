@@ -547,7 +547,7 @@ def format_phone(phone_number, no_special_chars=False):
 def format_decimal(amount, prefix="", use_commas=True, show_decimals=True):
     try:
         # Return empty-string for None values
-        if amount is None:
+        if amount is None or amount == "":
             return None
 
         # Convert to Decimal

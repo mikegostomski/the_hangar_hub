@@ -6,6 +6,7 @@ from django.db.models import Q
 from the_hangar_hub.services import stripe_service
 from base_stripe.services import customer_service
 from base_stripe.classes.customer_subscription import CustomerSubscription
+from base_stripe.models.subscription import Subscription
 
 log = Log()
 
@@ -97,6 +98,10 @@ class Rental(models.Model):
             return self.start_date
         else:
             return now
+
+    def get_stripe_subscription_model(self):
+        if self.stripe_subscription_id:
+            return Subscription.get(self.stripe_subscription_id)
 
     @classmethod
     def current_rentals(cls):
