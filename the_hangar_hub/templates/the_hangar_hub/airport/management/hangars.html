@@ -29,7 +29,7 @@
                 </td>
                 <td align="right">{%format_currency hangar.rent%}</td>
                 <td>
-                    {%for rental in hangar.current_rentals%}
+                    {%for rental in hangar.present_rental_agreements%}
                         {{rental.tenant.display_name}}
                     {%empty%}
                         {%for future_rental in hangar.future_rentals%}

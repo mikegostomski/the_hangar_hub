@@ -4,9 +4,9 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from the_hangar_hub.models.tenant import Tenant, Rental
+from the_hangar_hub.models.rental_models import Tenant, RentalAgreement
 from the_hangar_hub.models.airport_manager import AirportManager
-from the_hangar_hub.models.hangar import Building, Hangar
+from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
 from base.services import message_service, date_service
@@ -34,7 +34,7 @@ def get_subscription_form(request, airport_identifier):
     """
     try:
         rental_id = request.GET.get("rental_id")
-        rental = Rental.get(rental_id)
+        rental = RentalAgreement.get(rental_id)
         if not rental:
             message_service.post_error("Rental agreement was not found.")
             return HttpResponseForbidden()
@@ -56,7 +56,7 @@ def get_subscription_form(request, airport_identifier):
 @require_airport_manager()
 def create_subscription(request, airport_identifier):
     rental_id = request.POST.get("rental_id")
-    rental = Rental.get(rental_id)
+    rental = RentalAgreement.get(rental_id)
     if not rental:
         message_service.post_error("Specified rental agreement could not be found")
         return redirect("manage:buildings", airport_identifier)
@@ -119,7 +119,7 @@ def create_subscription(request, airport_identifier):
 # @require_airport_manager()
 # def create_invoice(request, airport_identifier):
 #     rental_id = request.POST.get("rental_id")
-#     rental = Rental.get(rental_id)
+#     rental = RentalAgreement.get(rental_id)
 #     if not rental:
 #         message_service.post_error("Specified rental agreement could not be found")
 #     else:

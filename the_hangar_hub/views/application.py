@@ -6,7 +6,7 @@ from base.models.utility.error import EnvHelper, Log, Error
 from base.classes.auth.session import Auth
 from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
-from the_hangar_hub.models.hangar import Building, Hangar
+from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from base.services import message_service, utility_service, email_service, contact_service
 from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service, tenant_service

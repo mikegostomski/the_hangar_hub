@@ -12,7 +12,7 @@ from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from the_hangar_hub.models.maintenance import MaintenanceRequest, MaintenanceComment
 from the_hangar_hub.models.airport import Airport
-from the_hangar_hub.models.hangar import Building, Hangar
+from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service, utility_service, email_service, date_service
 from base.decorators import require_authority, require_authentication, report_errors

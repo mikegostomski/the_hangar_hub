@@ -2,7 +2,7 @@ from django.db import models
 from base.classes.util.log import Log
 from datetime import datetime, timezone
 
-from the_hangar_hub.models.tenant import Rental
+from the_hangar_hub.models.rental_models import RentalAgreement
 
 log = Log()
 
@@ -48,8 +48,8 @@ class Hangar(models.Model):
     electric = models.BooleanField(default=False)
     default_rent = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Default passed to tenant
 
-    def current_rentals(self):
-        return Rental.current_rentals().filter(hangar=self)
+    def present_rental_agreements(self):
+        return RentalAgreement.present_rental_agreements().filter(hangar=self)
 
     def future_rentals(self):
         now = datetime.now(timezone.utc)

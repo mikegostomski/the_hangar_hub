@@ -5,9 +5,9 @@ from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from base_stripe.models.subscription import Subscription
-from the_hangar_hub.models.tenant import Tenant, Rental
+from the_hangar_hub.models.rental_models import Tenant, RentalAgreement
 from the_hangar_hub.models.airport_manager import AirportManager
-from the_hangar_hub.models.hangar import Building, Hangar
+from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
 from base.services import message_service, date_service
@@ -127,7 +127,7 @@ def rent_collection_dashboard(request, airport_identifier):
     Airport Manager view to see who is current/late on rent payments
     """
     airport = request.airport
-    rentals = Rental.current_rentals().filter(hangar__building__airport=airport)
+    rentals = RentalAgreement.present_rental_agreements().filter(hangar__building__airport=airport)
 
     return render(
         request, "the_hangar_hub/airport/management/rent/payments/dashboard.html",
@@ -143,7 +143,7 @@ def refresh_rental_status(request, airport_identifier, rental_id=None):
     Sync rent subscription model with Stripe data
     """
     try:
-        rental = Rental.get(rental_id or request.POST.get("rental_id"))
+        rental = RentalAgreement.get(rental_id or request.POST.get("rental_id"))
         if rental:
             subscription = rental.get_stripe_subscription_model()
             subscription.sync()

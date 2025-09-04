@@ -57,7 +57,7 @@
             <th scope="col">Notes</th>
             <th scope="col">Invoice</th>
         </tr>
-        {%for rental in hangar.current_rentals%}
+        {%for rental in hangar.present_rental_agreements%}
             {%include "the_hangar_hub/airport/management/one_hangar/_rental_row.html" with rental=rental%}
         {%empty%}
             <tr>

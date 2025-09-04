@@ -1,9 +1,9 @@
-import the_hangar_hub.models.hangar
+import the_hangar_hub.models.infrastructure_models
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.airport_manager import AirportManager
-from the_hangar_hub.models.tenant import Rental
+from the_hangar_hub.models.rental_models import RentalAgreement
 from base.services import message_service
 from base.models.utility.error import Error
 
@@ -50,7 +50,7 @@ def get_airport_tenant_rentals(user=None, airport=None):
         return None
 
     try:
-        result = Rental.current_rentals().filter(tenant__user=user, airport=airport)
+        result = RentalAgreement.present_rental_agreements().filter(tenant__user=user, airport=airport)
         if use_recall:
             env.store(result)
     except Exception as ee:
@@ -99,9 +99,9 @@ def get_managed_airport(airport_identifier, post_error=True):
         if can_query_user(user):
             if type(airport_identifier) is the_hangar_hub.models.airport.Airport:
                 airport = airport_identifier
-            elif type(airport_identifier) is the_hangar_hub.models.hangar.Building:
+            elif type(airport_identifier) is the_hangar_hub.models.infrastructure_models.Building:
                 airport = airport_identifier.airport
-            elif type(airport_identifier) is the_hangar_hub.models.hangar.Hangar:
+            elif type(airport_identifier) is the_hangar_hub.models.infrastructure_models.Hangar:
                 airport = airport_identifier.building.airport
             else:
                 airport = Airport.get(airport_identifier)

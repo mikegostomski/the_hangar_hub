@@ -2,7 +2,7 @@ from django.db import models
 from base.classes.util.log import Log
 from django.utils import timezone
 from zoneinfo import ZoneInfo
-from the_hangar_hub.models.hangar import Hangar
+from the_hangar_hub.models.infrastructure_models import Hangar
 from the_hangar_hub.models.application import HangarApplication
 from the_hangar_hub.classes.waitlist import Waitlist
 from base_upload.services import retrieval_service

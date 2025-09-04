@@ -7,7 +7,7 @@ from base.classes.util.log import Log
 from base.classes.auth.session import Auth
 from base.services.message_service import post_error
 from the_hangar_hub.models.airport import Airport
-from the_hangar_hub.models.hangar import Building, Hangar, Rental
+from the_hangar_hub.models.infrastructure_models import Building, Hangar, RentalAgreement
 from base.services import message_service, utility_service, email_service
 from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service, tenant_service
@@ -33,7 +33,7 @@ def my_hangar(request, airport_identifier, hangar_id):
             return redirect("hub:home")
 
     # Get the rental agreement(s) for this user at this airport in this hangar
-    rentals = Rental.objects.filter(
+    rentals = RentalAgreement.objects.filter(
         hangar__building__airport=request.airport, tenant__user=Auth.current_user(), hangar__code=hangar_id
     ).order_by("-start_date")
     if not rentals:

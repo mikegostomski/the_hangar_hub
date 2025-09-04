@@ -4,9 +4,9 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from the_hangar_hub.models.tenant import Tenant, Rental
+from the_hangar_hub.models.rental_models import Tenant, RentalAgreement
 from the_hangar_hub.models.airport_manager import AirportManager
-from the_hangar_hub.models.hangar import Building, Hangar
+from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
 from base.services import message_service, date_service
@@ -446,7 +446,7 @@ def one_hangar(request, airport_identifier, hangar_id):
         return redirect("manage:buildings", airport.identifier)
     airport = hangar.building.airport
 
-    rentals = Rental.objects.filter(hangar=hangar)
+    rentals = RentalAgreement.objects.filter(hangar=hangar)
 
     Breadcrumb.add(
         f"Hangar {hangar.code}", ("manage:hangar", airport.identifier, hangar_id),
@@ -603,7 +603,7 @@ def add_tenant(request, airport_identifier, hangar_id):
 
     # Create the rental record
     try:
-        rental = Rental()
+        rental = RentalAgreement()
         rental.tenant = tenant
         rental.hangar = hangar
         rental.start_date = start_date

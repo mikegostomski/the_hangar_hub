@@ -1,8 +1,8 @@
-import the_hangar_hub.models.hangar
+import the_hangar_hub.models.infrastructure_models
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from the_hangar_hub.models import Hangar
-from the_hangar_hub.models.tenant import Tenant, Rental
+from the_hangar_hub.models.rental_models import Tenant, RentalAgreement
 from the_hangar_hub.models.application import HangarApplication
 from the_hangar_hub.models.airport_manager import AirportManager
 from base.services import message_service
