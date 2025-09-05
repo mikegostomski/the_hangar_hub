@@ -1,7 +1,5 @@
 function refresh_rental_status(el, rental_id){
     let td = el.closest("td");
-
-
     $.ajax({
         type:   "POST",
         url:    "{%url 'pay:refresh_rental_status_tbd' airport.identifier%}",

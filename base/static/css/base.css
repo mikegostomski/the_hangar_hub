@@ -864,12 +864,16 @@ strong {
   --bs-alert-border-color: var(--base-color-bs-info-bg);
 }
 
-.hobbs-alert strong::before{
+.hobbs-alert strong::before, .hobbs-tip strong::before{
     content: url("../images/hobbs-transparent-sm.png");
     margin-right: 5px;
 }
 .hobbs-alert strong{
     display:block;
+}
+.hobbs-tip{
+    background-color: inherit;
+    color: inherit;
 }
 
 .text-bg-info {

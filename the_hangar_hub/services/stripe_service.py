@@ -109,6 +109,8 @@ def modify_customer_from_airport(airport):
 
 
 def get_checkout_session_hh_subscription(airport, price_id):
+    trial_days = 30
+    # trial_end_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=trial_days)
     try:
         set_stripe_api_key()
         checkout_session = stripe.checkout.Session.create(
@@ -120,6 +122,9 @@ def get_checkout_session_hh_subscription(airport, price_id):
                 },
             ],
             mode='subscription',
+            subscription_data={
+                "trial_period_days": trial_days,
+            },
             success_url=f"{env.absolute_root_url}{reverse('airport:subscription_success', args=[airport.identifier])}",
             cancel_url=f"{env.absolute_root_url}{reverse('airport:subscription_failure', args=[airport.identifier])}",
         )
@@ -539,7 +544,7 @@ def get_session_details(session_id):
         return stripe.checkout.Session.retrieve(session_id)
     except Exception as ee:
         Error.unexpected(
-            "Unable to retrieve checkout session status", ee
+            "Unable to retrieve checkout session status", ee, session_id
         )
         return None
 

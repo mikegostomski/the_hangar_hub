@@ -544,6 +544,19 @@ def format_phone(phone_number, no_special_chars=False):
         else:
             return initial_string.upper()
 
+
+def convert_to_decimal(amount):
+    if amount is None or amount == "":
+        return None
+
+    # Convert to Decimal
+    try:
+        amount_str = str(amount).replace(",", "").replace("$", "")
+        return Decimal(amount_str)
+    except Exception as ee:
+        log.warning(f"Decimal conversion error: {amount} -- ({ee})")
+
+
 def format_decimal(amount, prefix="", use_commas=True, show_decimals=True):
     try:
         # Return empty-string for None values
@@ -551,8 +564,7 @@ def format_decimal(amount, prefix="", use_commas=True, show_decimals=True):
             return None
 
         # Convert to Decimal
-        amount_str = str(amount).replace(",", "").replace("$", "")
-        amount_decimal = Decimal(amount_str)
+        amount_decimal = convert_to_decimal(amount)
 
         # Format the number as a string
         if use_commas and show_decimals:

@@ -126,7 +126,17 @@ pay_paths = [
     path('dashboard', payment.payment_dashboard,  name='dashboard'),
     path('autopay/set', payment.set_auto_pay,  name='set_auto_pay'),
 
+    # MANAGER PAYMENT ACTIONS
+
+    # Rent Collection Dashboard
     path('<slug:airport_identifier>/dashboard', payment.rent_collection_dashboard,  name='rent_collection_dashboard'),
+
+    # Rental Invoices
+    path('<slug:airport_identifier>/invoices/<int:rental_id>', payment.rental_invoices,  name='rental_invoices'),
+    path('<slug:airport_identifier>/invoices/<int:rental_id>/create', payment.create_rental_invoice,  name='create_rental_invoice'),
+    path('<slug:airport_identifier>/invoices/<int:rental_id>/update', payment.update_rental_invoice,  name='update_rental_invoice'),
+
+    # Refresh data from Stripe API
     path('<slug:airport_identifier>/rental/refresh', payment.refresh_rental_status,  name='refresh_rental_status_tbd'),
     path('<slug:airport_identifier>/rental/refresh/<int:rental_id>', payment.refresh_rental_status,  name='refresh_rental_status'),
 

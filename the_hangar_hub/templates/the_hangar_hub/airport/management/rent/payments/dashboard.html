@@ -19,7 +19,7 @@
         {%for rental in rentals%}
         {%with subscription=rental.get_stripe_subscription_model%}
         <tr>
-            <td>{{rental.hangar.code}}</td>
+            <td><a href="{%url 'pay:rental_invoices' airport.identifier rental.id%}">{{rental.hangar.code}}</a></td>
             <td>{{rental.tenant.display_name}}</td>
             <td>{%format_currency rental.rent%}</td>
             <td>

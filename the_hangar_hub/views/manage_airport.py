@@ -604,6 +604,7 @@ def add_tenant(request, airport_identifier, hangar_id):
     # Create the rental record
     try:
         rental = RentalAgreement()
+        rental.airport = airport
         rental.tenant = tenant
         rental.hangar = hangar
         rental.start_date = start_date

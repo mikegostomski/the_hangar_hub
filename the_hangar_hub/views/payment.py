@@ -5,7 +5,7 @@ from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from base_stripe.models.subscription import Subscription
-from the_hangar_hub.models.rental_models import Tenant, RentalAgreement
+from the_hangar_hub.models.rental_models import Tenant, RentalAgreement, RentalInvoice
 from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
@@ -24,7 +24,7 @@ from the_hangar_hub.services import stripe_service
 from base_stripe.services import customer_service, invoice_service
 from django.contrib.auth.models import User
 from base_stripe.models.customer import Customer
-
+from base.services import utility_service
 
 log = Log()
 env = EnvHelper()
@@ -135,6 +135,193 @@ def rent_collection_dashboard(request, airport_identifier):
             "rentals": rentals,
         }
     )
+
+
+@require_airport_manager()
+def rental_invoices(request, airport_identifier, rental_id):
+    """
+    Manage rental agreement invoices
+    """
+    airport = request.airport
+    rental_agreement = RentalAgreement.get(rental_id)
+    if not rental_agreement:
+        message_service.post_error("Could not find specified rental agreement")
+        return redirect("pay:rent_collection_dashboard", airport.identifier)
+    if rental_agreement.airport.id != airport.id:
+        message_service.post_error("Specified rental agreement is for a different airport.")
+        return redirect("pay:rent_collection_dashboard", airport.identifier)
+
+    return render(
+        request, "the_hangar_hub/airport/management/rent/payments/invoices.html",
+        {
+            "rental_agreement": rental_agreement,
+            "blank_invoice": RentalInvoice(),
+        }
+    )
+
+
+@require_airport_manager()
+def create_rental_invoice(request, airport_identifier, rental_id):
+    """
+    Create a rental agreement invoice
+    """
+    airport = request.airport
+    rental_agreement = RentalAgreement.get(rental_id)
+    if not rental_agreement:
+        message_service.post_error("Could not find specified rental agreement")
+        return redirect("pay:rent_collection_dashboard", airport.identifier)
+    if rental_agreement.airport.id != airport.id:
+        message_service.post_error("Specified rental agreement is for a different airport.")
+        return redirect("pay:rent_collection_dashboard", airport.identifier)
+
+    period_start = request.POST.get("period_start")
+    period_end = request.POST.get("period_end")
+    amount_charged = request.POST.get("amount_charged")
+    collection = request.POST.get("collection") or "airport"
+    invoice_number = request.POST.get("invoice_number")
+
+    # In case something goes wrong...
+    prefill = {
+        "period_start": period_start,
+        "period_end": period_end,
+        "amount_charged": amount_charged,
+        "collection": collection,
+    }
+
+    if not (period_start and period_end and amount_charged):
+        message_service.post_error("Date range and amount charged are required parameters.")
+        env.set_flash_scope("prefill", prefill)
+        return redirect("pay:rental_invoices", airport.identifier, rental_agreement.id)
+
+    period_start_date = date_service.string_to_date(period_start, airport.timezone)
+    period_end_date = date_service.string_to_date(period_end, airport.timezone)
+    if not (period_start_date and period_end_date):
+        message_service.post_error("An invalid date was specified. Please check the given dates.")
+        env.set_flash_scope("prefill", prefill)
+        return redirect("pay:rental_invoices", airport.identifier, rental_agreement.id)
+
+    amount_charged_decimal = utility_service.convert_to_decimal(amount_charged)
+    if not amount_charged_decimal:
+        log.warning(f"Invalid amount_charged: {amount_charged}")
+        message_service.post_error("An invalid rent amount was specified. Please check the amount charged.")
+        env.set_flash_scope("prefill", prefill)
+        return redirect("pay:rental_invoices", airport.identifier, rental_agreement.id)
+
+    try:
+        invoice = RentalInvoice.objects.create(
+            agreement=rental_agreement,
+            stripe_invoice=None,
+            period_start_date=period_start_date,
+            period_end_date=period_end_date,
+            amount_charged=amount_charged_decimal,
+            status_code="O",  # Open
+
+            # If not using Stripe for invoicing
+            invoice_number=invoice_number,
+        )
+    except Exception as ee:
+        env.set_flash_scope("prefill", prefill)
+        Error.unexpected("Unable to create rental invoice", ee)
+
+    return redirect("pay:rental_invoices", airport.identifier, rental_agreement.id)
+
+
+@require_airport_manager()
+def update_rental_invoice(request, airport_identifier, rental_id):
+    """
+    Update a rental agreement invoice
+    """
+    airport = request.airport
+    invoice = RentalInvoice.get(request.POST.get("invoice_id"))
+    if not invoice:
+        message_service.post_error("Could not find specified rental invoice")
+        return redirect("pay:rent_collection_dashboard", airport.identifier)
+
+    rental_agreement = invoice.agreement
+    if rental_agreement.airport.id != airport.id:
+        message_service.post_error("Specified rental invoice is for a different airport.")
+        return redirect("pay:rent_collection_dashboard", airport.identifier)
+
+    back_to_invoice_list = redirect("pay:rental_invoices", airport.identifier, rental_agreement.id)
+    action = request.POST.get("action")
+    if not action:
+        message_service.post_warning("No action was requested. Returning to invoice list.")
+        return back_to_invoice_list
+
+    elif action == "cancel":
+        # If not using Stripe, just mark as canceled
+        if not invoice.stripe_invoice:
+            invoice.status_code = "X"
+            invoice.save()
+            message_service.post_success("Invoice has been canceled.")
+            return back_to_invoice_list
+
+        else:
+            # ToDo: Cancel Stripe invoice and/or subscription
+            message_service.post_error("Strip cancellation not yet implemented")
+            return back_to_invoice_list
+
+
+    elif action == "waive":
+        # If not using Stripe, just mark as waived
+        if not invoice.stripe_invoice:
+            invoice.status_code = "W"
+            invoice.save()
+            message_service.post_success("Invoice has been waived.")
+            return back_to_invoice_list
+
+        else:
+            # ToDo: Waive charges for Stripe invoice and/or subscription
+            message_service.post_error("Strip cancellation not yet implemented")
+            return back_to_invoice_list
+
+
+    elif action == "paid":
+        # A dollar amount may be specified for partial-payment
+        amount_paid = request.POST.get("amount_paid")
+        if amount_paid:
+            amount_paid = utility_service.convert_to_decimal(amount_paid)
+            if not amount_paid:
+                message_service.post_error("An invalid payment amount was specified.")
+                return back_to_invoice_list
+            if invoice.amount_paid and amount_paid < invoice.amount_charged:
+                amount_paid = invoice.amount_paid + amount_paid
+        else:
+            amount_paid = invoice.amount_charged
+
+        paid_in_full = amount_paid >= invoice.amount_charged
+        payment_method_code = request.POST.get("payment_method_code")
+
+        # If not using Stripe, just mark as paid
+        if not invoice.stripe_invoice:
+            invoice.amount_paid = amount_paid
+            invoice.status_code = "P" if paid_in_full else "O"
+            invoice.payment_method_code = payment_method_code
+            if paid_in_full:
+                invoice.date_paid = datetime.now(timezone.utc)
+            invoice.save()
+            if paid_in_full:
+                message_service.post_success("Invoice has been marked as paid.")
+            else:
+                message_service.post_success("Partial invoice payment has been recorded.")
+            return back_to_invoice_list
+
+        else:
+            # ToDo: Record payment for Stripe invoice and/or subscription
+            message_service.post_error("Stripe cancellation not yet implemented")
+            return back_to_invoice_list
+
+    elif action == "stripe":
+        # ToDo: Convert into a Stripe invoice (one-time)
+        message_service.post_error("Stripe conversion not yet implemented")
+        return back_to_invoice_list
+
+    else:
+        message_service.post_warning("Invalid action was requested. Returning to invoice list.")
+        return back_to_invoice_list
+
+    # invoice
+
 
 
 @require_airport()

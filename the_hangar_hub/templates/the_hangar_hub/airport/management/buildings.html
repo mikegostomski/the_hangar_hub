@@ -5,6 +5,12 @@
 
 {% block main_content %}
     <h1>Buildings at {{airport.identifier}}</h1>
+    <div class="alert alert-info hobbs-tip">
+        <strong>&nbsp;</strong>
+        Hangars are expected to be units within buildings.
+        If this is not the case at {{airport.identifier}}, you may create any group that makes sense for your situation.<br />
+        For tie-down spaces, for example, you may create a building named "Ramp" and define individual spaces within it.
+    </div>
 
     <form method="POST" action="{%url 'manage:add_building' airport.identifier%}">
         {%csrf_token%}

@@ -184,6 +184,6 @@ def subscription_success(request, airport_identifier):
 @require_airport()
 def subscription_failure(request, airport_identifier):
     co_session_id = env.get_session_variable("stripe_checkout_session_id", reset=True)
-    co_session = stripe_service.get_session_details(co_session_id)
+    co_session = stripe_service.get_session_details(co_session_id) if co_session_id else None
 
     return render(request, "the_hangar_hub/airport/subscriptions/hh/failure.html", {"co_session": co_session})

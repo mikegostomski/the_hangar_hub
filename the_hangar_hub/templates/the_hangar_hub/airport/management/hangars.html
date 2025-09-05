@@ -5,6 +5,8 @@
 
 {% block main_content %}
     <h1>Hangars in {{building.code}}</h1>
+    <em>Note: Each hangar code must be unique to your airport. By default, the building code will be prepended to numbered hangar codes.</em><br />
+    <br />
 
     <form method="POST" action="{%url 'manage:add_hangar' airport.identifier building.id%}">
         {%csrf_token%}
@@ -82,12 +84,20 @@
 
     </form>
 
-    To bulk-add hangars with sequenced codes, enter the number of desired hangars in brackets in the building code.<br />
+<div class="alert alert-info hobbs-tip">
+    <strong>Add Hangars in Bulk</strong><br />
+    To bulk-add hangars with sequenced codes, enter the number of desired hangars in brackets.<br />
     Example:<br />
-    <div class="indent">
-        Hangar Code: "A-[5]" would create hangars A-1 through A-5
-    </div>
+    <div class="indent list-group">
+        <div class="list-group-item">
+            Hangar Code: "[5]" would create hangars {{building.code}}-1 through {{building.code}}-5
+        </div>
+        <div class="list-group-item">
+            Hangar Code: "Alpha-[5]" would create hangars Alpha-1 through Alpha-5
+        </div>
 
+    </div>
+</div>
     {%include "the_hangar_hub/airport/management/_selected_application.html"%}
 
     <script type="text/javascript">
