@@ -1,0 +1,43 @@
+{% load base_taglib %}
+
+{## Parameter: invoice ##}
+
+<tr data-invoice_id="{{invoice.id}}">
+    <td>{%humanized_date invoice.date_created%}</td>
+    <td>
+        {{invoice.period_start_date|date:preferred_date_format}} - {{invoice.period_end_date|date:preferred_date_format}}
+    </td>
+    <td>
+        {%if not invoice.stripe_invoice%}
+            Manual Collection
+        {%elif not invoice.stripe_subscription%}
+            Stripe (One-Time)
+        {%else%}
+            Stripe (Monthly)
+        {%endif%}
+    </td>
+    <td>{%format_currency invoice.amount_charged%}</td>
+    <td>
+        {%format_currency invoice.amount_paid%}<br />
+        {%if invoice.payment_method_code%}
+            <em class="text-sm text-muted">{{invoice.payment_method}}</em>
+        {%endif%}
+    </td>
+    <td>{{invoice.status}}</td>
+    <td>
+        {%if invoice.status_code == "O"%}
+            {%if not invoice.stripe_invoice%}
+                {%icon bi-cash-coin text-success title="Mark as Paid" onclick="show_payment_form($(this));" %}
+                &nbsp;
+                {%icon bi-credit-card title="Collect via Stripe"%}
+                &nbsp;
+                {%icon bi-slash-circle text-danger title="Cancel Invoice"%}
+            {%elif not invoice.stripe_subscription%}
+                Stripe (One-Time)
+            {%else%}
+                Stripe (Monthly)
+            {%endif%}
+        {%endif%}
+
+    </td>
+</tr>

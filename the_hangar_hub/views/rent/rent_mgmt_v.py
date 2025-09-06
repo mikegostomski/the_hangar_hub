@@ -140,22 +140,24 @@ def update_rental_invoice(request, airport_identifier, rental_id):
     """
     Update a rental agreement invoice
     """
+    tr_html = "the_hangar_hub/airport/rent/management/invoices/_tr_invoice.html"
+
     airport = request.airport
     invoice = RentalInvoice.get(request.POST.get("invoice_id"))
+
     if not invoice:
         message_service.post_error("Could not find specified rental invoice")
-        return redirect("rent:rent_collection_dashboard", airport.identifier)
+        return HttpResponseForbidden()
 
     rental_agreement = invoice.agreement
     if rental_agreement.airport.id != airport.id:
         message_service.post_error("Specified rental invoice is for a different airport.")
-        return redirect("rent:rent_collection_dashboard", airport.identifier)
+        return HttpResponseForbidden()
 
-    back_to_invoice_list = redirect("rent:rental_invoices", airport.identifier, rental_agreement.id)
     action = request.POST.get("action")
     if not action:
         message_service.post_warning("No action was requested. Returning to invoice list.")
-        return back_to_invoice_list
+        return HttpResponseForbidden()
 
     elif action == "cancel":
         # If not using Stripe, just mark as canceled
@@ -163,12 +165,12 @@ def update_rental_invoice(request, airport_identifier, rental_id):
             invoice.status_code = "X"
             invoice.save()
             message_service.post_success("Invoice has been canceled.")
-            return back_to_invoice_list
+            return render(request, tr_html,{"invoice": invoice})
 
         else:
             # ToDo: Cancel Stripe invoice and/or subscription
             message_service.post_error("Strip cancellation not yet implemented")
-            return back_to_invoice_list
+            return HttpResponseForbidden()
 
 
     elif action == "waive":
@@ -177,12 +179,12 @@ def update_rental_invoice(request, airport_identifier, rental_id):
             invoice.status_code = "W"
             invoice.save()
             message_service.post_success("Invoice has been waived.")
-            return back_to_invoice_list
+            return render(request, tr_html,{"invoice": invoice})
 
         else:
             # ToDo: Waive charges for Stripe invoice and/or subscription
             message_service.post_error("Strip cancellation not yet implemented")
-            return back_to_invoice_list
+            return HttpResponseForbidden()
 
 
     elif action == "paid":
@@ -192,7 +194,7 @@ def update_rental_invoice(request, airport_identifier, rental_id):
             amount_paid = utility_service.convert_to_decimal(amount_paid)
             if not amount_paid:
                 message_service.post_error("An invalid payment amount was specified.")
-                return back_to_invoice_list
+                return HttpResponseForbidden()
             if invoice.amount_paid and amount_paid < invoice.amount_charged:
                 amount_paid = invoice.amount_paid + amount_paid
         else:
@@ -213,23 +215,22 @@ def update_rental_invoice(request, airport_identifier, rental_id):
                 message_service.post_success("Invoice has been marked as paid.")
             else:
                 message_service.post_success("Partial invoice payment has been recorded.")
-            return back_to_invoice_list
+            return render(request, tr_html,{"invoice": invoice})
 
         else:
             # ToDo: Record payment for Stripe invoice and/or subscription
             message_service.post_error("Stripe cancellation not yet implemented")
-            return back_to_invoice_list
+            return HttpResponseForbidden()
 
     elif action == "stripe":
         # ToDo: Convert into a Stripe invoice (one-time)
         message_service.post_error("Stripe conversion not yet implemented")
-        return back_to_invoice_list
+        return HttpResponseForbidden()
 
     else:
         message_service.post_warning("Invalid action was requested. Returning to invoice list.")
-        return back_to_invoice_list
+        return HttpResponseForbidden()
 
-    # invoice
 
 
 

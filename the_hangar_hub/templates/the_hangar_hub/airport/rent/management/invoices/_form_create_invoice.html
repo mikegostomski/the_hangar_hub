@@ -1,0 +1,38 @@
+{% load base_taglib %}
+
+{## Parameter: rental_agreement ##}
+
+<div class="content-800" style="padding:10px;">
+    <form method="post" action="{%url 'rent:create_rental_invoice' airport.identifier rental_agreement.id%}">
+        {%csrf_token%}
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="period_start">Period Start Date</label>
+            <input type="date" id="period_start" name="period_start" value="{{rental_agreement.default_collection_start_date|date:'Y-m-d'}}" class="form-control" />
+        </div>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="period_end">Period End Date</label>
+            <input type="date" id="period_end" name="period_end" value="{{rental_agreement.default_collection_start_period_end_date|date:'Y-m-d'}}" class="form-control" />
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="amount_charged">Amount Charged</label>
+            <input type="text" id="amount_charged" name="amount_charged" value="{%format_currency rental_agreement.rent%}" class="form-control" />
+        </div>
+
+        <fieldset>
+            <legend>Collection Options</legend>
+            <label>
+                <input type="radio" name="collection" value="stripe_subscription" /> Recurring Stripe Invoice
+            </label><br />
+            <label>
+                <input type="radio" name="collection" value="stripe_invoice" /> One-Time Stripe Invoice
+            </label><br />
+            <label>
+                <input type="radio" name="collection" value="manual" /> Airport Will Collect
+            </label><br />
+        </fieldset>
+
+        <button type="submit" class="btn btn-success">Create Invoice</button>
+    </form>
+</div>

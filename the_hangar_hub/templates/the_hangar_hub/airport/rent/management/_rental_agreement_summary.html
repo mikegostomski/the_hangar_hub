@@ -1,0 +1,13 @@
+{% load base_taglib %}
+
+{## Parameter: rental_agreement ##}
+
+<section class="text-lg">
+    {%icon bi-person title="Tenant"%} {{rental_agreement.tenant.display_name}}<br />
+    {%icon bi-shop-window title="Hangar"%} {{rental_agreement.hangar.code}}<br />
+    {%icon bi-cash-coin title="Rent"%} {%format_currency rental_agreement.rent%}<br />
+
+    {%icon bi-calendar4-week title="Rental Term"%}
+    {{rental_agreement.start_date|date:preferred_date_format|default:'xxx'}} -
+    {{rental_agreement.end_date|date:preferred_date_format|default:'<em class="text-muted">No End Date</em>'}}<br />
+</section>

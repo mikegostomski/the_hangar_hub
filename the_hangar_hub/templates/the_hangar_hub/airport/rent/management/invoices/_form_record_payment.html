@@ -1,0 +1,38 @@
+{% load base_taglib %}
+
+{## Parameter: blank_invoice ##}
+
+<div class="popup hidden" id="invoice-payment-container" style="width:600px;max-width:90%;">
+    <form method="post" action="{%url 'rent:update_rental_invoice' airport.identifier rental_agreement.id%}" id="invoice-payment-form">
+        {%csrf_token%}
+        <input type="hidden" name="action" value="paid" />
+        <input type="hidden" name="invoice_id" id="invoice-payment-invoice_id" />
+        <strong id="invoice-payment-invoice_label"></strong><br />
+        <br />
+        You may record a partial payment by entering the partial amount below.<br />
+        Leave blank to record as paid-in-full.<br />
+        <br />
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="invoice-payment-amount_paid">Amount Paid</label>
+            <input type="text" id="invoice-payment-amount_paid" name="amount_paid" class="form-control" placeholder="Paid in Full" />
+        </div>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="invoice-payment-payment_method_code">Payment Method</label>
+            {%select_menu options=blank_invoice.payment_method_options id="invoice-payment-payment_method_code" name="payment_method_code" class="form-select" null_label="Not Specified"%}
+        </div>
+        <br />
+        <div class="indent">
+            <label>
+                <input type="checkbox" id="invoice-payment-waive" name="waive" value="Y" />
+                Waive remaining charges
+            </label>
+        </div>
+        <br />
+        <br />
+        <div class="text-center">
+            <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Cancel</button>
+            <button type="submit" class="btn btn-success">Record Payment</button>
+        </div>
+    </form>
+
+</div>
