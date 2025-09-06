@@ -1,0 +1,41 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Rental Payment Dashboard{%endblock%}
+
+{% block main_content %}
+<h1>Rental Payment Dashboard</h1>
+<br />
+
+<h2>Current Rental Agreements</h2>
+<section>
+    <table class="table">
+        <tr>
+            <th scope="row">Hangar</th>
+            <th scope="row">Tenant</th>
+            <th scope="row">Rent</th>
+            <th scope="row">Status</th>
+        </tr>
+        {%for rental in rentals%}
+        {%with subscription=rental.get_stripe_subscription_model%}
+        <tr>
+            <td><a href="{%url 'rent:rental_invoices' airport.identifier rental.id%}">{{rental.hangar.code}}</a></td>
+            <td>{{rental.tenant.display_name}}</td>
+            <td>{%format_currency rental.rent%}</td>
+            <td>
+                {{subscription.status}}
+                {%if subscription%}
+                    {%icon bi-arrow-repeat title="Refresh rental status" onclick="refresh_rental_status($(this), {{rental.id}});"%}
+                {%endif%}
+            </td>
+        </tr>
+        {%endwith%}
+        {%endfor%}
+    </table>
+</section>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/rent/management/collection/script.js"%}
+</script>
+
+{%endblock%}

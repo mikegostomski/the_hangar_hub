@@ -1,0 +1,65 @@
+{% load base_taglib %}
+
+{%if is_manager%}
+function mark_reviewed(){
+    _change_status('R');
+}
+
+
+
+function amr_selection(el){
+    let public_note_container = $("#amr-public")
+    let private_note_container = $("#amr-private")
+    let wl_group_container = $("#amr-wl-group")
+    let selected_value = el.val();
+
+    if(selected_value == "L"){
+        wl_group_container.removeClass("hidden");
+    }
+    else{
+        wl_group_container.addClass("hidden");
+    }
+
+}
+
+
+
+
+
+
+{%endif%}
+
+function withdraw_application(){
+    {%js_confirm icon="bi-slash-circle" title="Withdraw Application" onconfirm="_change_status('W');"%}
+        Are you sure you want to withdraw your application?<br />
+        <br />
+        If you are on a waitlist, you may be giving up your position in the queue.
+        {%if airport.has_application_fee%}
+            <br /><br />
+            Your application fee will not be automatically refunded. Inquire with the airport manager if
+            you would like your application fee refunded.
+        {%endif%}
+    {%end_js_confirm%}
+}
+
+function resubmit_application(){
+    _change_status('S');
+}
+
+
+function _change_status(new_status){
+    $.ajax({
+        type: "POST",
+        url: "{%url 'application:change_status' application.id%}",
+        data: {csrfmiddlewaretoken: '{{ csrf_token }}', "new_status": new_status},
+        beforeSend:function(){
+            setAjaxLoadDiv();
+        },
+        success: function(data){
+            $("#application-status-container").html("Application status has been updated to: " + data)
+        },
+        complete:function(){
+            clearAjaxLoadDiv();
+        }
+    });
+}

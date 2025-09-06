@@ -30,7 +30,7 @@
                         </ul>
                     </p>
                     <div class="text-center">
-                        <a href="{%url 'manage:mx_dashboard' request.airport.identifier%}" class="btn btn-info">Maintenance Dashboard</a>
+                        <a href="{%url 'mx:mx_dashboard' request.airport.identifier%}" class="btn btn-info">Maintenance Dashboard</a>
                     </div>
                 </div>
             </div>
@@ -62,7 +62,7 @@
                             <li>Submit a new application</li>
                         </ul>
                         <div class="text-center">
-                            <a href="{%url 'apply:dashboard'%}" class="btn btn-primary">Application Dashboard</a>
+                            <a href="{%url 'application:dashboard'%}" class="btn btn-primary">Application Dashboard</a>
                         </div>
                     </p>
                 </div>
@@ -99,7 +99,7 @@
                         </ul>
                     </p>
                     <div class="text-center">
-                        <a href="{%url 'tenant:mx_dashboard'%}" class="btn btn-info">Maintenance Dashboard</a>
+                        <a href="{%url 'mx:mx_dashboard'%}" class="btn btn-info">Maintenance Dashboard</a>
                     </div>
                 </div>
             </div>
@@ -131,7 +131,7 @@
                     Fill out an application for a hangar at {{airport.display_name}}
                 </p>
                 <div class="text-center">
-                    <a href="{%url 'apply:airport_form' airport.identifier%}" class="btn btn-primary">Apply</a>
+                    <a href="{%url 'application:airport_form' airport.identifier%}" class="btn btn-primary">Apply</a>
                 </div>
             </div>
         </div>

@@ -6,7 +6,7 @@
 {% block main_content %}
 <h1>Maintenance Request Form</h1>
 
-<form method="post" action="{%url 'tenant:submit_mx_request' request.airport.identifier rental.hangar.code%}" onsubmit="show_page_loading();">
+<form method="post" action="{%url 'mx:submit_mx_request' request.airport.identifier rental.hangar.code%}" onsubmit="show_page_loading();">
     {%csrf_token%}
     <div class="content-800 content-block">
         <h2>Hangar {{rental.hangar.code}}</h2>

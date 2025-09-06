@@ -43,7 +43,7 @@ def change_airport_link(context, *args, **kwargs):
     env.set_session_variable("thh-after-ap-selection-url", next_url)
 
     # Where to go to lookup airport
-    url = "hub:search"
+    url = "public:search"
 
     # An additional action may be needed (delete incomplete application)
     oc = kwargs.get("onclick")

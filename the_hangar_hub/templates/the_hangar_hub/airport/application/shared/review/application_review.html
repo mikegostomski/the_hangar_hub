@@ -1,0 +1,211 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load hub_taglib %}
+
+{%block title%}
+The Hangar public: Hangar Application -
+{%if is_manager%}
+    {{application.user.first_name}} {{application.user.last_name}}
+{%else%}
+    {{airport.identifier}}
+{%endif%}
+{%endblock%}
+
+{% block main_content %}
+
+<h1>
+    Hangar Application -
+    {%if is_manager%}
+        {{application.user.first_name}} {{application.user.last_name}}
+    {%else%}
+        {{airport.identifier}}
+    {%endif%}
+</h1>
+
+<div class="content-800 content-block">
+    <span class="xlg">{{request.airport.display_name}} ({{request.airport.identifier}})</span>
+    <br />
+    <br />
+    <div class="alert alert-info" id="application-status-container">
+        {%if application.status_code == "S"%}
+            Application submitted on {{application.status_change_date}}
+        {%elif application.status_code == "R"%}
+            Application reviewed on {{application.status_change_date}}
+        {%else%}
+            <b>Application Status:</b> {{application.status}}<br />
+            <b>Since:</b> {{application.status_change_date}}
+        {%endif%}
+    </div>
+</div>
+
+    <div class="content-800 content-block">
+        <h2>Personal Data</h2>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="applicant_name">Applicant Name</label>
+            <input type="text" id="applicant_name" value="{{application.user.first_name}} {{application.user.last_name}}" class="form-control" readonly />
+        </div>
+
+        {%if "preferred_email" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="preferred_email">Email Address {%if "preferred_email" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="email" id="preferred_email" value="{{application.preferred_email|default:''}}" class="form-control" readonly />
+        </div>
+        {%endif%}
+
+        {%if "preferred_phone" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="preferred_phone">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" id="preferred_phone" value="{{application.preferred_phone.formatted_number|default:''}}" class="form-control" readonly />
+        </div>
+        {%endif%}
+
+        {%if "mailing_address" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="mailing_address">Mailing Address {%if "mailing_address" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <textarea id="mailing_address" class="form-control" readonly>{{application.mailing_address|default:''}}</textarea>
+        </div>
+        {%endif%}
+
+    </div>
+
+    <div class="content-800 content-block">
+        <h2>Aircraft Data</h2>
+        {%if "aircraft_type_code" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_type_code">Category {%if "aircraft_type_code" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" id="aircraft_type_code" value="{{application.aircraft_type}}" class="form-control" readonly />
+        </div>
+        {%endif%}
+
+        {%if "aircraft_make" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_make">Make {%if "aircraft_make" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" name="aircraft_make" id="aircraft_make" value="{{application.aircraft_make|default:''}}" class="form-control" readonly/>
+        </div>
+        {%endif%}
+
+        {%if "aircraft_model" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_model">Model {%if "aircraft_model" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" name="aircraft_model" id="aircraft_model" value="{{application.aircraft_model|default:''}}" class="form-control" readonly />
+        </div>
+        {%endif%}
+
+        {%if "registration_number" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="registration_number">Registration Number {%if "registration_number" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" name="registration_number" id="registration_number" value="{{application.registration_number|default:''}}" class="form-control" readonly />
+        </div>
+        {%endif%}
+
+        {%if "aircraft_wingspan" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_wingspan">Wingspan ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_wingspan" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="number" name="aircraft_wingspan" id="aircraft_wingspan" value="{{application.aircraft_wingspan|default:''}}"  class="form-control" readonly />
+        </div>
+        {%endif%}
+
+        {%if "aircraft_height" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_height">Height ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_height" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="number" name="aircraft_height" id="aircraft_height" value="{{application.aircraft_height|default:''}}"  class="form-control" readonly />
+        </div>
+        {%endif%}
+
+    </div>
+
+    <div class="content-800 content-block">
+        <h2>Other Information</h2>
+
+        {%if "hangar_type_code" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="hangar_type_code">Hangar Preference {%if "hangar_type_code" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" id="hangar_type_code" class="form-control" value="{{application.hangar_type}}" readonly />
+        </div>
+        {%endif%}
+        {%if "applicant_notes" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="applicant_notes">Applicant Notes {%if "applicant_notes" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <textarea name="applicant_notes" id="applicant_notes" class="form-control" readonly>{{application.applicant_notes|default:''}}</textarea>
+        </div>
+        {%endif%}
+    </div>
+
+
+    {%if is_manager%}
+    <form method="post" action="{%url 'application:submit_review' application.id%}">
+        {%csrf_token%}
+        <div class="content-800 content-block">
+            <h2>Airport Management Review</h2>
+
+            <fieldset>
+                <legend class="visually-hidden">Decision</legend>
+                <label>
+                    <input type="radio" name="decision" value="S" {%if application.status_code == "S"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Decide Later
+                </label><br />
+                <label>
+                    <input type="radio" name="decision" value="L" {%if application.status_code == "L"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Add to Waitlist
+                </label><br />
+                <label>
+                    <input type="radio" name="decision" value="A" {%if application.status_code == "A"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Assign a Hangar
+                </label><br />
+                <label>
+                    <input type="radio" name="decision" value="R" {%if application.status_code == "R"%}checked{%endif%} onclick="amr_selection($(this));" />
+                    Reject this Application
+                </label><br />
+            </fieldset>
+            <br />
+
+            <div class="input-group mb-3 {%if application.status_code != 'L'%}hidden{%endif%}" id="amr-wl-group">
+                <label class="input-group-text" for="wl_group_code">Waitlist Priority</label>
+                {%with wl_priority=application.wl_group_code|default:"C"%}
+                {%select_menu options=application.wl_group_options value=wl_priority class="form-select" id="wl_group_code" name="wl_group_code" nullable=False%}
+                {%endwith%}
+            </div>
+            <div class="input-group mb-3" id="amr-public">
+                <label class="input-group-text" for="manager_notes_public">Response to Applicant</label>
+                <textarea name="manager_notes_public" id="manager_notes_public" class="form-control">{{application.manager_notes_public|default:''}}</textarea>
+            </div>
+            <div class="input-group mb-3" id="amr-private">
+                <label class="input-group-text" for="manager_notes_private">Internal Notes</label>
+                <textarea name="manager_notes_private" id="manager_notes_private" class="form-control" rows="6">{{application.manager_notes_private|default:''}}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                {%icon bi-floppy%} Save Review
+            </button>
+
+        </div>
+    </form>
+    {%endif%}
+
+
+    <div class="content-800 content-block">
+
+        {%if is_applicant and application.is_active%}
+            <button class="btn btn-danger" onclick="withdraw_application();">Withdraw Application</button>
+        {%elif application.status_code == "W"%}
+            <button class="btn btn-primary" onclick="resubmit_application();">Resubmit Application</button>
+        {%endif%}
+
+    </div>
+
+<script type="text/javascript">
+{%include 'the_hangar_hub/airport/application/shared/review/application.js'%}
+</script>
+<style>
+    .content-800 .input-group-text{
+        width: 190px;
+        font-weight: bold;
+    }
+    span.required{
+        color: red;
+        font-size: 1.2em;
+        margin-left: 3px;
+    }
+</style>
+
+{%endblock%}

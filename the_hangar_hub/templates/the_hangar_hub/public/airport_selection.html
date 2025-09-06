@@ -2,7 +2,7 @@
 {% load base_taglib %}
 {% load static %}
 
-{%block title%}The Hangar Hub: Airport Selection{%endblock%}
+{%block title%}The Hangar public: Airport Selection{%endblock%}
 
 {% block main_content %}
 <div class="content-800 content-center">
@@ -51,7 +51,7 @@
                 <td>{{match.display_name}}</td>
                 <td>{{match.city}}, {{match.state}}</td>
                 <td>
-                    <a href="{%url 'hub:select' match.identifier%}" class="btn btn-info btn-sm">Select</a>
+                    <a href="{%url 'public:select' match.identifier%}" class="btn btn-info btn-sm">Select</a>
                 </td>
             </tr>
             {%endfor%}

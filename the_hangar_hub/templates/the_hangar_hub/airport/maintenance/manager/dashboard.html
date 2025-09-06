@@ -21,11 +21,11 @@
             {%for mx_request in new_requests%}
                 <tr>
                     <td>
-                        <a href="{%url 'manage:hangar' request.airport.identifier mx_request.hangar.code%}">{{mx_request.hangar.code}}</a>
+                        <a href="{%url 'infrastructure:hangar' request.airport.identifier mx_request.hangar.code%}">{{mx_request.hangar.code}}</a>
 
                     </td>
                     <td>
-                        <a href="{%url 'manage:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
+                        <a href="{%url 'mx:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
                     </td>
                     <td>{%humanized_date mx_request.date_created%}</td>
                     <td>{{mx_request.priority}}</td>
@@ -92,7 +92,7 @@
                     <td>{{mx_request.hangar.building.airport.identifier}}</td>
                     <td>{{mx_request.hangar.code}}</td>
                     <td>
-                        <a href="{%url 'manage:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
+                        <a href="{%url 'mx:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
                     </td>
                     <td>{%humanized_date mx_request.date_created%}</td>
                     <td>{{mx_request.priority}}</td>

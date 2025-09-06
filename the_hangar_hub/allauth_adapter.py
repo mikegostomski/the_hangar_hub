@@ -47,9 +47,9 @@ class HubAccountAdapter(DefaultAccountAdapter):
                 tenant = [ii.hangar.building.airport.identifier, ii.hangar.id]
 
         if manager:
-            env.set_session_variable("after_auth_url", reverse("manage:airport", args=[manager]))
+            env.set_session_variable("after_auth_url", reverse("airport:airport", args=[manager]))
         elif tenant:
-            env.set_session_variable("after_auth_url", reverse("tenant:hangar", args=tenant))
+            env.set_session_variable("after_auth_url", reverse("rent:hangar", args=tenant))
 
 
 

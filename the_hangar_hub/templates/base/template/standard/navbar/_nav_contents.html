@@ -22,17 +22,17 @@
         Tenant Services
     </li>
     <li>
-        <a href="{%url 'apply:dashboard'%}" class="dropdown-item">Hangar Applications</a>
+        <a href="{%url 'application:dashboard'%}" class="dropdown-item">Hangar Applications</a>
     </li>
     <li>
-        <a href="{%url 'pay:dashboard'%}" class="dropdown-item">Payment Dashboard</a>
+        <a href="{%url 'rent:dashboard'%}" class="dropdown-item">Payment Dashboard</a>
     </li>
     <li class="dropdown-header">
         My Hangars
     </li>
     {%for rental in my_rentals%}
     <li>
-        <a href="{%url 'tenant:hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
+        <a href="{%url 'rent:hangar' rental.hangar.building.airport.identifier rental.hangar.code%}" class="dropdown-item">{{rental.hangar}}</a>
     </li>
     {%endfor%}
 {%endif%}
@@ -71,7 +71,7 @@
             </li>
 
             <li>
-                <a href="{%url 'manage:application_dashboard' airport.identifier%}" class="dropdown-item">
+                <a href="{%url 'application:mgmt_dashboard' airport.identifier%}" class="dropdown-item">
                     Application Dashboard
                     {%with unreviewed_applications=airport.get_unreviewed_applications%}
                         {%if unreviewed_applications%}
@@ -84,16 +84,16 @@
 
 
             <li>
-                <a href="{%url 'manage:airport' airport.identifier%}" class="dropdown-item">Manage Airport</a>
+                <a href="{%url 'airport:airport' airport.identifier%}" class="dropdown-item">Manage Airport</a>
             </li>
             <li>
-                <a href="{%url 'manage:buildings' airport.identifier%}" class="dropdown-item">Manage Hangars</a>
+                <a href="{%url 'infrastructure:buildings' airport.identifier%}" class="dropdown-item">Manage Hangars</a>
             </li>
             <li>
-                <a href="{%url 'pay:rent_collection_dashboard' airport.identifier%}" class="dropdown-item">Rent Collection</a>
+                <a href="{%url 'rent:rent_collection_dashboard' airport.identifier%}" class="dropdown-item">Rent Collection</a>
             </li>
             <li>
-                <a href="{%url 'apply:preferences' airport.identifier%}" class="dropdown-item">Application Preferences</a>
+                <a href="{%url 'application:preferences' airport.identifier%}" class="dropdown-item">Application Preferences</a>
             </li>
 
             <li>

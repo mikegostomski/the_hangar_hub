@@ -199,13 +199,13 @@ def create_connected_account(airport):
 
 def get_onboarding_link(airport):
     return accounts_service.create_account_onboarding_url(
-        airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
+        airport.stripe_account_id, reverse("airport:airport", args=[airport.identifier])
     )
 
 def get_account_login_link(airport):
     return None
 #     link = accounts_service.create_account_login_link(
-#         airport.stripe_account_id, reverse("manage:airport", args=[airport.identifier])
+#         airport.stripe_account_id, reverse("airport:airport", args=[airport.identifier])
 #     )
 #     if link:
 #         return link.url
@@ -523,8 +523,8 @@ def get_checkout_session_application_fee(application):
                     'quantity': 1,
                 },
             ],
-            success_url=f"{env.absolute_root_url}{reverse('apply:record_payment', args=[application.id])}",
-            cancel_url=f"{env.absolute_root_url}{reverse('apply:record_payment', args=[application.id])}",
+            success_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
+            cancel_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
             stripe_account= airport.stripe_account_id,
             # application_fee_amount=airport.application_fee_stripe * .01,  # 1% fee for HangarHub
         )
@@ -569,7 +569,7 @@ def get_customer_portal_session(airport):
             set_stripe_api_key()
             session = stripe.billing_portal.Session.create(
                 customer=airport.stripe_customer_id,
-                return_url=f"{env.absolute_root_url}{reverse('manage:airport', args=[airport.identifier])}",
+                return_url=f"{env.absolute_root_url}{reverse('airport:airport', args=[airport.identifier])}",
             )
             if session and hasattr(session, "url"):
                 return session.url

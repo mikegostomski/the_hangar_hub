@@ -1,0 +1,73 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load hub_taglib %}
+
+{%block title%}
+The Hangar public: Hangar Application Dashboard
+{%endblock%}
+
+{% block main_content %}
+
+<h1>
+    Hangar Application Dashboard
+</h1>
+
+{%if applications%}
+<div class="content-800 content-block">
+    <h2>My Applications</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Airport</th>
+            <th scope="col">Application Date</th>
+            <th scope="col">Application Status</th>
+            <th scope="col">Waitlist Position</th>
+            <th scope="col">Actions</th>
+        </tr>
+        {%for application in applications%}
+        <tr>
+            <td>{{application.airport.identifier}}</td>
+            <td>{{application.submission_date|date:preferred_datetime_format}}</td>
+            <td>{{application.status}}</td>
+            <td>
+                {%with waitlist=application.airport.get_waitlist%}
+                    {%if application.status_code != "L"%}
+                        <em class="text-muted">-</em>
+                    {%elif waitlist.num_waiting == 0%}
+                        <em class="text-muted">N/A</em>
+                    {%elif waitlist.current_user_position == 0%}
+                        {%icon bi-watch title="Waiting for application review"%}
+                    {%else%}
+                        {{waitlist.current_user_position}} of {{waitlist.num_waiting}}
+                    {%endif%}
+                {%endwith%}
+            </td>
+            <td>
+                {%if application.is_incomplete%}
+                    <a href="{%url 'application:resume' application.id%}">
+                        {%icon bi-pencil-square title="Resume Application"%}
+                    </a>
+                {%else%}
+                    <a href="{%url 'application:review' application.id%}">
+                        {%icon bi-search title="View Application"%}
+                    </a>
+                {%endif%}
+            </td>
+        </tr>
+        {%endfor%}
+    </table>
+</div>
+{%endif%}
+
+<div class="content-800 content-block">
+    <h2>Start a New Application</h2>
+
+    <a href="{%url 'application:form'%}" class="btn btn-primary">Apply Now</a>
+</div>
+
+<script type="text/javascript">
+{%include 'the_hangar_hub/airport/application/tenant/dashboard/dashboard.js'%}
+</script>
+<style>
+</style>
+
+{%endblock%}

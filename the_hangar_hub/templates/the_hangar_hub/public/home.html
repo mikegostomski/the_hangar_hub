@@ -24,9 +24,9 @@
                         </ul>
                     </p>
                     {%if incomplete_application%}
-                        <a href="{%url 'apply:resume' incomplete_application.id%}" class="btn btn-primary">Resume Application</a>
+                        <a href="{%url 'application:resume' incomplete_application.id%}" class="btn btn-primary">Resume Application</a>
                     {%else%}
-                        <a href="{%url 'apply:form'%}" class="btn btn-primary">Apply Now</a>
+                        <a href="{%url 'application:form'%}" class="btn btn-primary">Apply Now</a>
                     {%endif%}
                 </div>
             </div>

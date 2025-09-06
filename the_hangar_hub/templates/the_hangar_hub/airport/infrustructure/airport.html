@@ -1,0 +1,228 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load upload_taglib %}
+
+{%block title%}The Hangar public: Manage Airport - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+    <h1>Manage Airport: {{airport.identifier}}</h1>
+    <br />
+
+    <section>
+        <h2>Subscription Data</h2>
+        {%with sub_data=airport.subscriptions%}
+            {%for subscription in sub_data%}
+                <div class="card float-left" style="border-left: 10px solid #000;border-color:{%if subscription.amount_remaining <= 0 %}green{%elif not airport.is_current%}red{%else%}#777{%endif%};">
+                    <div class="card-body">
+                        <table>
+                            <tr>
+                                <th scope="row">Billing Period:</th>
+                                <td style="padding-left:20px;">
+                                    {{subscription.current_period_start|date:preferred_date_format}} - {{subscription.current_period_end|date:preferred_date_format}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Charged:</th>
+                                <td align="right">{%format_currency subscription.amount_due%}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Paid:</th>
+                                <td align="right">{%format_currency subscription.amount_paid%}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Balance:</th>
+                                <td align="right">{%format_currency subscription.amount_remaining%}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Documents:</th>
+                                <td align="right"><a href="{{subscription.hosted_invoice_url}}" target="_blank">{%icon bi-file-earmark-pdf%} Invoice/Receipt</a></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Manage:</th>
+                                <td align="right"><a href="{%url 'airport:subscription' airport.identifier%}">{%icon bi-credit-card%} Payment Portal</a></td>
+                            </tr>
+                        </table>
+
+
+                    </div>
+                </div>
+            {%endfor%}
+        {%endwith%}
+        <br style="clear:both" />
+    </section>
+
+    <section>
+        <h2>Stripe Account Data</h2>
+        <em>This determines your ability to collect payments from airport tenants.</em>
+        {%with acct_data=airport.connected_account%}
+            <div class="card" style="border-left: 10px solid #000;border-color:{%if acct_data.onboarding_complete %}green{%elif not acct_data%}red{%else%}#777{%endif%};">
+                <div class="card-body">
+                    <table>
+                        <tr>
+                            <th scope="row">Charges Enabled:</th>
+                            <td>
+                                {%if acct_data.charges_enabled%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    You can collect payments from your tenants
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    You cannot collect payments from your tenants
+                                {%endif%}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Transfers Enabled:</th>
+                            <td>
+                                {%if acct_data.transfers_enabled%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    Tenant payments go directly to your account
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    Tenant payments cannot go directly to your account
+                                {%endif%}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Payouts Enabled:</th>
+                            <td>
+                                {%if acct_data.payouts_enabled%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    Payments via Stripe will be transferred to your bank
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    Payments via Stripe will not be transferred to your bank
+                                {%endif%}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row" style="padding-right: 30px;">Onboarding Complete:</th>
+                            <td>
+                                {%if acct_data.onboarding_complete%}
+                                    {%icon bi-check2-square text-success title="Yes"%}
+                                    You have provided all required information
+                                {%else%}
+                                    {%icon bi-exclamation-square text-danger title="No"%}
+                                    You must provide more information to Stripe for payment processing
+                                {%endif%}
+                            </td>
+                        </tr>
+                        {%if onboarding_link%}
+                        <tr valign="top">
+                            <th scope="row">Manage:</th>
+                            <td align="left" style="padding-top:10px;">
+                                <a class="btn btn-primary" href="{{onboarding_link}}">
+                                {%if acct_data.onboarding_complete%}
+                                    Manage Account Data
+                                {%else%}
+                                    Complete Onboarding
+                                {%endif%}
+                                </a>
+                            </td>
+                        </tr>
+                        {%endif%}
+                    </table>
+                </div>
+            </div>
+        {%endwith%}
+        <br style="clear:both" />
+    </section>
+
+
+    <section>
+        <h2>Airport Data</h2>
+        <table class="table">
+            <tr>
+                <th scope="row">Airport Name</th>
+                <td><input type="text" class="form-control" name="display_name" value="{{airport.display_name}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Airport Identifier</th>
+                <td><input type="text" class="form-control" name="identifier" value="{{airport.identifier}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">City</th>
+                <td><input type="text" class="form-control" name="city" value="{{airport.city}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">State</th>
+                <td><input type="text" class="form-control" name="state" value="{{airport.state}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Timezone</th>
+                <td>
+                    {%select_menu options=timezone_options value=airport.timezone name="timezone" onchange="update_airport_data($(this));" class="form-select"%}
+                </td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Public Email Address</th>
+                <td><input type="email" class="form-control" name="info_email" value="{{airport.info_email|default:''}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Website Address</th>
+                <td><input type="text" class="form-control" name="url" value="{{airport.url|default:''}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+            <tr>
+                <th scope="row">Logo</th>
+                <td>
+                    <div class="float-left">
+                        {%include 'base/upload/_dnd_input.html' with input_name="logo_file" upload_url="airport:upload_logo" upload_url_arg=airport.identifier %}
+                        {%include 'base/upload/_dnd_assets.html'%}
+                    </div>
+
+                    <div class="float-right">
+                        {%with logo=airport.get_logo%}
+                        {%if logo%}
+                            {%display_image file=logo class="img-fluid" style="max-width:100px;max-height:100px;" %}
+                        {%endif%}
+                        {%endwith%}
+                    </div>
+                    <br style="clear:both;" />
+                </td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>Billing Data</h2>
+        {%include "the_hangar_hub/airport/subscription/_billing_data_fields.html" with use_ajax=True%}
+    </section>
+
+    <section>
+        <h2>Airport Managers</h2>
+        <div id="managers-container">
+            {%include "the_hangar_hub/airport/infrastructure/_manager_table.html"%}
+        </div>
+
+        <h3>Add an Airport Manager</h3>
+        <em>
+            Enter the email address of the person you would like to invite to be an airport manager.
+            If the person you have in mind already has a HangarHub account, you may enter their username instead.
+        </em><br />
+        <br />
+
+        <div class="content-800 content-center">
+            <div class="input-group mb-3">
+                <input type="text" id="invitee" name="invitee" class="form-control" placeholder="Username or Email Address" maxlength="128" />
+                <button class="btn btn-success" type="button" onclick="invite_manager($(this));">
+                    {%icon bi-send title="Submit"%}
+                </button>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/infrastructure/scripts.js" %}
+</script>
+
+{%endblock%}

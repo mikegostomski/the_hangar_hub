@@ -1,0 +1,20 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}The Hangar public: Inactive Airport - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+    <h1>{{airport.display_name}}</h1>
+    <br />
+    <div class="alert alert-danger">
+        {%icon bi-moon-stars%} {{airport.display_name}} is not currently active on The Hangar Hub.
+    </div>
+    <br />
+    <strong>Are you an airport manager looking to start using the Hanger Hub?</strong><br />
+    <a href="{%url 'airport:claim' airport.identifier%}" class="btn btn-primary">Claim This Airport</a>
+</div>
+
+<br />
+<br />
+{%endblock%}

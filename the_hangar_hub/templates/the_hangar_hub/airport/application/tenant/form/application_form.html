@@ -1,0 +1,211 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load hub_taglib %}
+
+{%block title%}The Hangar public: Hangar Application - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+
+<h1>Hangar Application</h1>
+
+<div class="content-800 content-block">
+    <span class="xlg">{{airport.display_name}} ({{airport.identifier}})</span>
+
+    <br />
+    {%icon bi-geo-alt%} {{airport.city}}, {{airport.state}}<br />
+    {%if airport.info_email%}
+        {%icon bi-envelope-at%} {{airport.info_email}}<br />
+    {%endif%}
+    <br />
+    {%change_airport_link 'application:airport_form' 'IDENTIFIER' onclick="delete_application_in_background();" button=True%}
+</div>
+
+<form method="post" action="{%url 'application:submit' application.id%}" id="application-form" onsubmit="setAjaxLoadDiv();">
+    {%csrf_token%}
+    <div class="content-800">
+        <h2>Personal Data</h2>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="applicant_name">Applicant Name</label>
+            <input type="text" id="applicant_name" value="{{applicant.display_name}}" class="form-control" readonly />
+        </div>
+
+        {%if "preferred_email" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="preferred_email">Email Address {%if "preferred_email" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            {%select_menu options=applicant.emails value=application.preferred_email name="preferred_email" id="preferred_email" class="form-select" nullable=False%}
+        </div>
+        {%endif%}
+
+        {%if "preferred_phone" not in airport_preferences.ignored_fields%}
+            {%if applicant.contact.phone_number_options%}
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="preferred_phone">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+                    {%select_menu options=applicant.contact.phone_number_options value=application.preferred_phone_id name="preferred_phone" id="preferred_phone" class="form-select" nullable=False%}
+                </div>
+            {%else%}
+                <fieldset class="input-group mb-3">
+                    <legend class="input-group-text">Phone Number {%if "preferred_phone" in airport_preferences.required_fields%}{%required%}{%endif%}</legend>
+
+                    <label for="phone_type" class="visually-hidden">Phone Type</label>
+                    {%select_menu options=phone_options nullable=False name="phone_type" id="phone_type" class="form-select" style="width:40px;"%}
+
+                    <label for="phone_prefix" class="visually-hidden">Country Code</label>
+                    <input type="text" name="phone_prefix" id="phone_prefix" placeholder="1-" size="1" class="form-control" />
+
+                    <label for="phone_number" class="visually-hidden">10-Digit Phone Number</label>
+                    <input type="tel" name="phone_number" id="phone_number" placeholder="10-digit phone" class="form-control" style="width:120px;" />
+
+                    <label for="phone_ext" class="visually-hidden">Extension</label>
+                    <input type="text" name="phone_ext" id="phone_ext" placeholder="extension" size="5" class="form-control" />
+
+                </fieldset>
+            {%endif%}
+        {%endif%}
+
+        {%if "mailing_address" not in airport_preferences.ignored_fields%}
+            {%if applicant.contact.address_options%}
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="mailing_address">Mailing Address {%if "mailing_address" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+                    {%select_menu options=applicant.contact.address_options value=application.mailing_address_id name="mailing_address" id="mailing_address" class="form-select" nullable=False%}
+                </div>
+            {%else%}
+                <div class="input-group mb-3">
+                    <label for="address_type" class="input-group-text">Address Type</label>
+                    {%select_menu options=address_options nullable=False name="address_type" id="address_type" class="form-select"%}
+                </div>
+                <div class="input-group mb-3">
+                    <label for="street_1" class="input-group-text">Street Line 1</label>
+                    <input type="text" name="street_1" id="street_1" placeholder="Street Line 1" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="street_2" class="input-group-text">Street Line 2</label>
+                    <input type="text" name="street_2" id="street_2" placeholder="Street Line 2" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="street_3" class="input-group-text">Street Line 3</label>
+                    <input type="text" name="street_3" id="street_3" placeholder="Street Line 3" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="city" class="input-group-text">City</label>
+                    <input type="text" name="city" id="city" placeholder="City" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="state" class="input-group-text">State</label>
+                    <input type="text" name="state" id="state" placeholder="State" class="form-control" />
+                </div>
+                <div class="input-group mb-3">
+                    <label for="zip_code" class="input-group-text">Zip Code</label>
+                    <input type="text" name="zip_code" id="zip_code" placeholder="Zip Code" class="form-control" />
+                </div>
+            {%endif%}
+        {%endif%}
+
+        If you need to update your personal information, you may do so in your profile.
+        <a href="{%url 'base:profile'%}" class="btn btn-secondary float-right" onclick="save_changes();">Edit Profile Information</a>
+        <br style="clear:both;" />
+
+    </div>
+    <br />
+    <br />
+
+    <div class="content-800">
+        <h2>Aircraft Data</h2>
+        {%if "aircraft_type_code" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_type_code">Category {%if "aircraft_type_code" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            {%select_menu options=application.aircraft_type_options value=application.aircraft_type_code name="aircraft_type_code" id="aircraft_type_code" class="form-select" nullable=False%}
+        </div>
+        {%endif%}
+
+        {%if "aircraft_make" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_make">Make {%if "aircraft_make" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" name="aircraft_make" id="aircraft_make" value="{{application.aircraft_make|default:''}}" placeholder="Cessna, Mooney, Piper, etc" class="form-control" />
+        </div>
+        {%endif%}
+
+        {%if "aircraft_model" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_model">Model {%if "aircraft_model" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" name="aircraft_model" id="aircraft_model" value="{{application.aircraft_model|default:''}}" placeholder="150, M20C, Cub, etc" class="form-control" />
+        </div>
+        {%endif%}
+
+        {%if "registration_number" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="registration_number">Registration Number {%if "registration_number" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="text" name="registration_number" id="registration_number" value="{{application.registration_number|default:''}}" placeholder="{%if airport.country == 'CAN'%}C-GIYT{%else%}N12345{%endif%}" class="form-control" />
+        </div>
+        {%endif%}
+
+        {%if "aircraft_wingspan" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_wingspan">Wingspan ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_wingspan" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="number" name="aircraft_wingspan" id="aircraft_wingspan" value="{{application.aircraft_wingspan|default:''}}"  class="form-control" />
+        </div>
+        {%endif%}
+
+        {%if "aircraft_height" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="aircraft_height">Height ({%if airport.country == "USA"%}Feet{%else%}Meters{%endif%}) {%if "aircraft_height" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <input type="number" name="aircraft_height" id="aircraft_height" value="{{application.aircraft_height|default:''}}"  class="form-control" />
+        </div>
+        {%endif%}
+
+    </div>
+    <br />
+    <br />
+
+    <div class="content-800">
+        <h2>Other Information</h2>
+
+        {%if "hangar_type_code" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="hangar_type_code">Hangar Preference {%if "hangar_type_code" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            {%select_menu options=application.hangar_type_options value=application.hangar_type_code name="hangar_type_code" id="hangar_type_code" class="form-select" nullable=False%}
+        </div>
+        {%endif%}
+        {%if "applicant_notes" not in airport_preferences.ignored_fields%}
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="applicant_notes">Notes {%if "applicant_notes" in airport_preferences.required_fields%}{%required%}{%endif%}</label>
+            <textarea name="applicant_notes" id="applicant_notes" class="form-control">{{application.applicant_notes|default:''}}</textarea>
+        </div>
+        {%endif%}
+    </div>
+    <br />
+    <br />
+
+    <div class="content-800">
+        {%if airport.has_application_fee%}
+        <div class="alert alert-info">
+            <div class="text-xl">
+                {%icon bi-cash-coin%} Application Fee
+            </div>
+            {{airport.display_name}} charges a
+            {%format_currency airport.application_fee_amount%}
+            application fee, which will be collected upon submission.
+        </div>
+        <br />
+        {%endif%}
+        <button type="button" class="btn btn-secondary" onclick="save_changes();">
+            {%icon bi-floppy%} Save Changes
+        </button>
+        <button type="submit" class="btn btn-success">
+            {%icon bi-send%} Submit Application
+        </button>
+        <button type="button" class="btn btn-danger float-right" onclick="delete_application();">
+            {%icon bi-trash%} Delete Application
+        </button>
+    </div>
+</form>
+
+
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/application/tenant/form/application.js" %}
+</script>
+
+<style>
+</style>
+
+{%endblock%}

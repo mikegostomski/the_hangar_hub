@@ -78,7 +78,7 @@ def require_airport(after_selection_url=None):
             if invalid_path_id and invalid_path_id in send_to:
                 send_to = None
             env.set_session_variable("thh-after-ap-selection-url", send_to)
-            return decorator_redirect(request, "hub:search")
+            return decorator_redirect(request, "public:search")
 
         return _wrapped_view
     return decorator
@@ -129,7 +129,7 @@ def require_airport_tenant():
             rentals = tenant_service.get_tenant_rentals()
             if not rentals:
                 return render(
-                    request, "the_hangar_hub/airport/error_pages/tenants_only.html",
+                    request, "the_hangar_hub/error_pages/tenants_only.html",
                     {"rentals": rentals}
                 )
 
@@ -145,7 +145,7 @@ def require_airport_tenant():
                     return view_func(request, *args, **kwargs)
                 else:
                     return render(
-                        request, "the_hangar_hub/airport/error_pages/tenants_only.html",
+                        request, "the_hangar_hub/error_pages/tenants_only.html",
                         {"rentals": rentals}
                     )
 

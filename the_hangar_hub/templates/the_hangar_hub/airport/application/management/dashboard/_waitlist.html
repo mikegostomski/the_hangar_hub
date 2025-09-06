@@ -1,0 +1,78 @@
+{% load base_taglib %}
+{%with waitlist=request.airport.get_waitlist%}
+    <table class="table">
+        <tr>
+            <th scope="col">Position</th>
+            <th scope="col">Applicant</th>
+            <th scope="col" width="160">Priority</th>
+            <th scope="col">Move</th>
+            <th scope="col">
+                Application Date
+                {%icon bi-arrow-counterclockwise title="Restore submission date ordering" onclick="update_wl_index($(this));"%}
+            </th>
+            <th scope="col">Hangar Type</th>
+            <th scope="col">Aircraft</th>
+            <th scope="col">Email</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Actions</th>
+        </tr>
+    {%for application in waitlist.applications%}
+        <tr class="group-{{application.wl_group_code}} {%if application.wl_index == waitlist.applications_per_group|get:application.wl_group_code%}group-bottom{%endif%}">
+            <td>{{forloop.counter}}</td>
+            <td>{{application.user.first_name}} {{application.user.last_name}}</td>
+            <td>
+                <label>
+                    <span class="visually-hidden">Waitlist Priority</span>
+                    {%select_menu options=application.wl_group_options value=application.wl_group_code data_application_id=application.id class="form-select" name="wl_group_code" nullable=False onchange="update_wl_priority($(this));"%}
+                </label>
+            </td>
+            <td>
+                {%if application.wl_index > 1%}
+                    {%icon bi-chevron-up title="Move up one position" data_application_id=application.id onclick="update_wl_index($(this));"%} &nbsp;
+                    {%icon bi-chevron-bar-up title="Move to top of priority group" data_application_id=application.id onclick="update_wl_index($(this));"%}<br />
+                {%endif%}
+                {%if application.wl_index < waitlist.applications_per_group|get:application.wl_group_code%}
+                    {%icon bi-chevron-down title="Move down one position" data_application_id=application.id onclick="update_wl_index($(this));"%} &nbsp;
+                    {%icon bi-chevron-bar-down title="Move to bottom of priority group" data_application_id=application.id onclick="update_wl_index($(this));"%}<br />
+                {%elif application.wl_index == 1%}
+                    {%icon bi-dash style="color:#DDD"%} &nbsp;
+                    {%icon bi-dash style="color:#DDD"%}<br />
+                {%endif%}
+
+            </td>
+            <td>{{application.submission_date}}</td>
+            <td>{{application.hangar_type|default:''}}</td>
+            <td>{{application.aircraft_make|default:''}} {{application.aircraft_model|default:''}}</td>
+            <td>{{application.preferred_email|default:''}}</td>
+            <td>{{application.preferred_phone.formatted_number|default:''}}</td>
+            <td>
+                <a href="{%url 'application:review' application.id%}">{%icon bi-search title="View Application"%}</a>
+                <a href="{%url 'application:select' application.id%}">{%icon bi-house-add title="Assign Hangar"%}</a>
+
+
+
+
+            </td>
+        </tr>
+    {%endfor%}
+    </table>
+
+    <style>
+        .group-A td select{
+            border: 1px solid red;
+        }
+        .group-B td select{
+            border: 1px solid orange;
+        }
+        .group-C td select{
+            border: 1px solid #777;
+        }
+        .group-D td select{
+            border: 1px solid #CCC;
+            color: #999;
+        }
+        .group-bottom td{
+            border-bottom: 7px solid #EEE;
+        }
+    </style>
+{%endwith%}

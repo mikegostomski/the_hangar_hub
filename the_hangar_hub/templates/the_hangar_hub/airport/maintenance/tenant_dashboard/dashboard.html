@@ -19,7 +19,7 @@
                 <td>{{rental.hangar.building.airport.identifier}}</td>
                 <td>{{rental.hangar.code}}</td>
                 <td>
-                    <a href="{%url 'tenant:mx_request_form' rental.hangar.building.airport.identifier rental.hangar.code%}" class="btn btn-info btn-sm">
+                    <a href="{%url 'mx:mx_request_form' rental.hangar.building.airport.identifier rental.hangar.code%}" class="btn btn-info btn-sm">
                         Request Maintenance
                     </a>
                 </td>
@@ -44,7 +44,7 @@
                 <td>{{mx_request.hangar.building.airport.identifier}}</td>
                 <td>{{mx_request.hangar.code}}</td>
                 <td>
-                    <a href="{%url 'tenant:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
+                    <a href="{%url 'mx:view_mx_request' request.airport.identifier mx_request.id%}">{{mx_request.summary}}</a>
                 </td>
                 <td>{%humanized_date mx_request.date_created%}</td>
                 <td>{{mx_request.priority}}</td>

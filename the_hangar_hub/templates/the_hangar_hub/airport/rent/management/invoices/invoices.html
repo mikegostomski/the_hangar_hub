@@ -1,0 +1,154 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Rental Agreement Invoices{%endblock%}
+
+{% block main_content %}
+<h1>Rental Agreement Invoices</h1>
+<br />
+<section class="text-lg">
+    {%icon bi-person title="Tenant"%} {{rental_agreement.tenant.display_name}}<br />
+    {%icon bi-shop-window title="Hangar"%} {{rental_agreement.hangar.code}}<br />
+    {%icon bi-cash-coin title="Rent"%} {%format_currency rental_agreement.rent%}<br />
+
+    {%icon bi-calendar4-week title="Rental Term"%}
+    {{rental_agreement.start_date|date:preferred_date_format|default:'xxx'}} -
+    {{rental_agreement.end_date|date:preferred_date_format|default:'<em class="text-muted">No End Date</em>'}}<br />
+</section>
+
+<section>
+{%if rental_agreement.invoice_models%}
+    <h2>Invoices</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">Created</th>
+            <th scope="col">Period</th>
+            <th scope="col">Collection Method</th>
+            <th scope="col">Charged</th>
+            <th scope="col">Paid</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+        </tr>
+        {%for invoice in rental_agreement.invoice_models%}
+        <tr data-invoice_id="{{invoice.id}}">
+            <td>{%humanized_date invoice.date_created%}</td>
+            <td>
+                {{invoice.period_start_date|date:preferred_date_format}} - {{invoice.period_end_date|date:preferred_date_format}}
+            </td>
+            <td>
+                {%if not invoice.stripe_invoice%}
+                    Manual Collection
+                {%elif not invoice.stripe_subscription%}
+                    Stripe (One-Time)
+                {%else%}
+                    Stripe (Monthly)
+                {%endif%}
+            </td>
+            <td>{%format_currency invoice.amount_charged%}</td>
+            <td>
+                {%format_currency invoice.amount_paid%}<br />
+                {%if invoice.payment_method_code%}
+                    <em class="text-sm text-muted">{{invoice.payment_method}}</em>
+                {%endif%}
+            </td>
+            <td>{{invoice.status}}</td>
+            <td>
+                {%if invoice.status_code == "O"%}
+                    {%if not invoice.stripe_invoice%}
+                        {%icon bi-cash-coin text-success title="Mark as Paid" onclick="show_payment_form($(this));" %}
+                        &nbsp;
+                        {%icon bi-credit-card title="Collect via Stripe"%}
+                        &nbsp;
+                        {%icon bi-slash-circle text-danger title="Cancel Invoice"%}
+                    {%elif not invoice.stripe_subscription%}
+                        Stripe (One-Time)
+                    {%else%}
+                        Stripe (Monthly)
+                    {%endif%}
+                {%endif%}
+
+            </td>
+        </tr>
+        {%endfor%}
+    </table>
+
+    <div class="popup hidden" id="invoice-payment-container" style="width:600px;max-width:90%;">
+        <form method="post" action="{%url 'rent:update_rental_invoice' airport.identifier rental_agreement.id%}">
+            {%csrf_token%}
+            <input type="hidden" name="action" value="paid" />
+            <input type="hidden" name="invoice_id" id="invoice-payment-invoice_id" />
+            <strong id="invoice-payment-invoice_label"></strong><br />
+            <br />
+            You may record a partial payment by entering the partial amount below.<br />
+            Leave blank to record as paid-in-full.<br />
+            <br />
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="invoice-payment-amount_paid">Amount Paid</label>
+                <input type="text" id="invoice-payment-amount_paid" name="amount_paid" class="form-control" placeholder="Paid in Full" />
+            </div>
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="invoice-payment-payment_method_code">Payment Method</label>
+                {%select_menu options=blank_invoice.payment_method_options id="invoice-payment-payment_method_code" name="payment_method_code" class="form-select" null_label="Not Specified"%}
+            </div>
+            <br />
+            <div class="indent">
+                <label>
+                    <input type="checkbox" id="invoice-payment-waive" name="waive" value="Y" />
+                    Waive remaining charges
+                </label>
+            </div>
+            <br />
+            <br />
+            <div class="text-center">
+                <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Cancel</button>
+                <button type="submit" class="btn btn-success">Record Payment</button>
+            </div>
+        </form>
+
+    </div>
+{%endif%}
+</section>
+
+<section>
+    <h2>Create an Invoice</h2>
+    <div class="content-800" style="padding:10px;">
+    <form method="post" action="{%url 'rent:create_rental_invoice' airport.identifier rental_agreement.id%}">
+        {%csrf_token%}
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="period_start">Period Start Date</label>
+            <input type="date" id="period_start" name="period_start" value="{{rental_agreement.default_collection_start_date|date:'Y-m-d'}}" class="form-control" />
+        </div>
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="period_end">Period End Date</label>
+            <input type="date" id="period_end" name="period_end" value="{{rental_agreement.default_collection_start_period_end_date|date:'Y-m-d'}}" class="form-control" />
+        </div>
+
+        <div class="input-group mb-3">
+            <label class="input-group-text" for="amount_charged">Amount Charged</label>
+            <input type="text" id="amount_charged" name="amount_charged" value="{%format_currency rental_agreement.rent%}" class="form-control" />
+        </div>
+
+        <fieldset>
+            <legend>Collection Options</legend>
+            <label>
+                <input type="radio" name="collection" value="stripe_subscription" /> Recurring Stripe Invoice
+            </label><br />
+            <label>
+                <input type="radio" name="collection" value="stripe_invoice" /> One-Time Stripe Invoice
+            </label><br />
+            <label>
+                <input type="radio" name="collection" value="manual" /> Airport Will Collect
+            </label><br />
+        </fieldset>
+
+        <button type="submit" class="btn btn-success">Create Invoice</button>
+    </form>
+    </div>
+</section>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/rent/management/invoices/invoice.js"%}
+</script>
+
+{%endblock%}

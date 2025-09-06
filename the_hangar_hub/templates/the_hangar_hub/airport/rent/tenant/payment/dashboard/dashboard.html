@@ -1,0 +1,128 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Payment Dashboard{%endblock%}
+
+{% block main_content %}
+<h1>Payment Dashboard</h1>
+<br />
+
+<h2>Payment Information</h2>
+<section>
+    <table class="table" style="max-width: 800px;">
+        <tr>
+            <th scope="row">Email</th>
+            <td>{{stripe_customer.email}}</td>
+        </tr>
+        <tr>
+            <th scope="row">Phone</th>
+            <td>{%format_phone stripe_customer.phone%}</td>
+        </tr>
+        <tr>
+            <th scope="row">Address</th>
+            <td>
+                {%for line in stripe_customer.address_lines%}
+                    {{line}}<br />
+                {%empty%}
+                    <em class="text-muted">No Address Info</em>
+                {%endfor%}
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">Account Status</th>
+            <td>
+                {%if stripe_customer.delinquent%}
+                    <div class="alert alert-danger text-center alert-sm">Delinquent</div>
+                {%else%}
+                    Active
+                {%endif%}
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">Default Payment Method</th>
+            <td>
+                {%if stripe_customer.default_payment_method%}
+                    {{stripe_customer.default_payment_method_display}}
+                {%else%}
+                    <div class="alert alert-danger text-center alert-sm">No Payment Method</div>
+                {%endif%}
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">Auto-Pay</th>
+            <td>
+                {%if stripe_customer.default_payment_method%}
+                    {%with use_auto_pay=customer_model.use_auto_pay%}
+                        <div id="autopay-on" class="autopay-ind {%if not use_auto_pay%}hidden{%endif%}">
+                            {%icon bi-toggle-on text-xl onclick="update_auto_pay($(this));" title="Disable auto-pay"%}
+                            &nbsp;
+                            <span class="badge text-bg-success">Auto-Pay Enabled</span>
+                        </div>
+                        <div id="autopay-off" class="autopay-ind {%if use_auto_pay%}hidden{%endif%}">
+                            {%icon bi-toggle-off text-xl onclick="update_auto_pay($(this));" title="Enable auto-pay"%}
+                            &nbsp;
+                            <span class="badge text-bg-warning">Auto-Pay Disabled</span>
+                        </div>
+                        {%if open_invoices%}
+                        <em class="text-muted text-sm">
+                            This setting affects <b>future</b> invoices.
+                            {%if open_invoices|length == 1 and open_invoices.0.auto_pay != use_auto_pay%}
+                                {%if open_invoices|length == 1 and open_invoices.0.auto_pay%}
+                                    Your existing invoice will still be auto-paid.
+                                    You may be able to change this in the
+                                    <a href="{{'STRIPE_PORTAL_LINK'|get_setting}}" target="_blank">Stripe Customer Portal</a>.
+                                {%elif open_invoices|length == 1 and not open_invoices.0.auto_pay%}
+                                    You must manually pay your existing invoice below.
+                                {%else%}
+                                    Invoices listed below will not be affected.
+                                {%endif%}
+                            {%endif%}
+                        </em><br />
+                        {%endif%}
+
+                    {%endwith%}
+                {%else%}
+                    You must save your payment information in Stripe before you can enroll in auto-pay.
+                {%endif%}
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">Billing Portal</th>
+            <td>
+                <p class="text-sm">
+                We use Stripe to securely handle all billing and payments.<br />
+                You can manage your payment information in the Stripe Customer Portal.<br />
+                Be sure to use <b>{{stripe_customer.email}}</b> as your email address.<br />
+                </p>
+                <div class="">
+                <a href="{{'STRIPE_PORTAL_LINK'|get_setting}}" class="btn btn-primary btn-sm" target="_blank">
+                    <span class="visually-hidden">manage your payment information in the</span>
+                    Stripe Customer Portal
+                </a>
+                </div>
+            </td>
+        </tr>
+    </table>
+</section>
+
+<section>
+    <h2>Open Invoices</h2>
+    <br />
+    <div id="open-invoice-container">
+        {%include "the_hangar_hub/airport/rent/tenant/payment/dashboard/_invoice_table.html" with stripe_invoices=open_invoices%}
+    </div>
+</section>
+
+<section>
+    <h2>Recent Invoices</h2>
+    <br />
+    <div id="recent-invoice-container">
+        {%include "the_hangar_hub/airport/rent/tenant/payment/dashboard/_invoice_table.html" with stripe_invoices=recent_invoices%}
+    </div>
+</section>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/rent/tenant/payment/dashboard/script.js"%}
+</script>
+
+{%endblock%}

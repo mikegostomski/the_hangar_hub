@@ -1,0 +1,83 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load hub_taglib %}
+
+{%block title%}The Hangar public: Hangar Application Preferences - {{airport.identifier}}{%endblock%}
+
+{% block main_content %}
+
+<section>
+<h1>Hangar Application Preferences</h1>
+<span class="xl">{{airport.display_name}} ({{airport.identifier}})</span>
+</section>
+
+<form method="post" action="{%url 'application:save_preferences' airport.identifier%}" id="preference-form">
+    {%csrf_token%}
+
+    <section>
+        <h2>Application Questions</h2>
+        <div class="content-800">
+
+        <table class="table" id="field-table">
+            <tr>
+                <th scope="col">Field</th>
+                <th scope="col">Required</th>
+                <th scope="col">Optional</th>
+                <th scope="col">Ignored</th>
+            </tr>
+            {%for ff in ha_preferences.fields%}
+            <tr>
+                <td>
+                    {{ff.verbose_name}}<br />
+                    {{ff.help_text}}<br />
+                </td>
+                {%if ff.null and ff.blank%}
+                    <td><input type="checkbox" name="required_fields" value="{{ff.name}}" {%if ff.name in ha_preferences.required_fields%}checked{%endif%}/></td>
+                    <td><input type="checkbox" name="optional_fields" value="{{ff.name}}" {%if ff.name in ha_preferences.optional_fields%}checked{%endif%}/></td>
+                    <td><input type="checkbox" name="ignored_fields" value="{{ff.name}}" {%if ff.name in ha_preferences.ignored_fields%}checked{%endif%}/></td>
+                {%elif ff.default%}
+                    <td><input type="checkbox" name="required_fields" value="{{ff.name}}" {%if ff.name in ha_preferences.required_fields%}checked{%endif%}/></td>
+                    <td><input type="checkbox" name="optional_fields" value="{{ff.name}}" {%if ff.name in ha_preferences.optional_fields%}checked{%endif%}/></td>
+                    <td><input type="checkbox" name="ignored_fields" value="{{ff.name}}" {%if ff.name in ha_preferences.ignored_fields%}checked{%endif%}/></td>
+                {%else%}
+                    <td>{%icon bi-check-square title="Required"%}</td>
+                    <td>-</td>
+                    <td>-</td>
+                {%endif%}
+            </tr>
+            {%endfor%}
+        </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>Application Fee</h2>
+        To charge an application fee, enter the fee amount.  Application fees will be collected upon submission.
+        <br />
+        <br />
+        <div class="input-group mb-3">
+            <label for="application_fee" class="visually-hidden">Application Fee Amount</label>
+            <span class="input-group-text">$</span>
+            <input type="text" name="application_fee" id="application_fee" value="{{airport.application_fee_amount|default:''}}" class="form-control" placeholder="No Fee" />
+        </div>
+    </section>
+
+    <button type="submit" class="btn btn-success" onclick="setAjaxLoadDiv();">
+        {%icon bi-floppy%} Save Changes
+    </button>
+</form>
+
+
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/application/management/preferences/preference.js" %}
+</script>
+
+<style>
+    .content-800 .input-group-text{
+        width: 180px;
+        font-weight: bold;
+    }
+</style>
+
+{%endblock%}
