@@ -31,7 +31,7 @@
                 &nbsp;
                 {%icon bi-credit-card title="Collect via Stripe"%}
                 &nbsp;
-                {%icon bi-slash-circle text-danger title="Cancel Invoice"%}
+                {%icon bi-slash-circle text-danger title="Cancel Invoice" onclick="cancel_invoice($(this));"%}
             {%elif not invoice.stripe_subscription%}
                 Stripe (One-Time)
             {%else%}
