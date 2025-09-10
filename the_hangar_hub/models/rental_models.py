@@ -6,9 +6,8 @@ from base.classes.util.log import Log
 from datetime import datetime, timezone, timedelta
 from django.db.models import Q
 from the_hangar_hub.services import stripe_service
-from base_stripe.services import customer_service
 from base_stripe.classes.customer_subscription import CustomerSubscription
-from base_stripe.models.subscription import Subscription
+from base_stripe.models.payment_models import Subscription
 
 log = Log()
 
@@ -145,13 +144,6 @@ class RentalAgreement(models.Model):
         return None
 
 
-    # def get_customer_data(self):
-    #     if self.stripe_customer_id:
-    #         return customer_service.get_stripe_customer(self.stripe_customer_id)
-    #     else:
-    #         return None
-
-
     @classmethod
     def present_rental_agreements(cls):
         """
@@ -223,6 +215,27 @@ class RentalInvoice(models.Model):
 
     def payment_method(self):
         return self.payment_method_options().get(self.payment_method_code) or self.payment_method_code
+
+    @property
+    def is_stripe_invoice(self):
+        return self.stripe_invoice_id
+
+    @property
+    def stripe_id(self):
+        return self.stripe_invoice.stripe_id if self.is_stripe_invoice else None
+
+    def stripe_due_date(self):
+        # Due date must be in the future
+        now = datetime.now(timezone.utc) + timedelta(minutes=5)
+        if self.period_start_date > now:
+            return int(self.period_start_date.timestamp())
+        else:
+            return int(now.timestamp())
+
+    def stripe_status(self):
+        if self.stripe_invoice:
+            return self.stripe_invoice.status
+        return None
 
     @classmethod
     def get(cls, data):

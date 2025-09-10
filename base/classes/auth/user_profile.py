@@ -200,7 +200,7 @@ class UserProfile:
                         confirmed_email = EmailAddress.objects.get(email__iexact=user_data, verified=True)
                         self.user = confirmed_email.user
                 elif str(user_data).startswith("cus_") and "base_stripe" in env.get_setting("INSTALLED_APPS"):
-                    from base_stripe.models.customer import Customer
+                    from base_stripe.models.payment_models import Customer
                     sc = Customer.get(user_data)
                     if sc:
                         self.user = sc.user

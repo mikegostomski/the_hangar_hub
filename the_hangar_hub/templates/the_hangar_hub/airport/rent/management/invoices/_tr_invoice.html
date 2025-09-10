@@ -23,17 +23,34 @@
             <em class="text-sm text-muted">{{invoice.payment_method}}</em>
         {%endif%}
     </td>
-    <td>{{invoice.status}}</td>
+    <td>
+        {{invoice.status}}
+        {%if invoice.is_stripe_invoice%}
+            <br />
+            {{invoice.stripe_status}}
+            {%if invoice.stripe_status == "draft"%}
+                {%icon bi-floppy text-success title="Finalize Invoice" onclick="finalize_invoice($(this));"%}
+            {%endif%}
+        {%endif%}
+    </td>
     <td>
         {%if invoice.status_code == "O"%}
-            {%if not invoice.stripe_invoice%}
-                {%icon bi-cash-coin text-success title="Mark as Paid" onclick="show_payment_form($(this));" %}
+            {%icon bi-cash-coin text-success title="Record Payment" onclick="show_payment_form($(this));" %}
                 &nbsp;
-                {%icon bi-credit-card title="Collect via Stripe"%}
+            {%icon bi-slash-circle text-danger title="Cancel Invoice" onclick="cancel_invoice($(this));"%}
                 &nbsp;
-                {%icon bi-slash-circle text-danger title="Cancel Invoice" onclick="cancel_invoice($(this));"%}
+
+
+
+
+            {%if not invoice.is_stripe_invoice%}
+                {%icon bi-credit-card title="Collect via Stripe" onclick="convert_to_stripe($(this));" %}
+                &nbsp;
             {%elif not invoice.stripe_subscription%}
-                Stripe (One-Time)
+
+
+
+
             {%else%}
                 Stripe (Monthly)
             {%endif%}

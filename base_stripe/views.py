@@ -11,9 +11,7 @@ from base_stripe.classes.webhook_validation import WebhookValidation
 from base_stripe.models.events import WebhookEvent
 from base.models.utility.error import Error
 from base.decorators import require_authority, require_authentication, report_errors
-from base_stripe.models.invoice import Invoice
-from base_stripe.models.customer import Customer
-from base_stripe.models.subscription import Subscription
+from base_stripe.models.payment_models import Invoice, Customer, Subscription
 
 
 log = Log()
@@ -65,83 +63,116 @@ def react_to_events(request):
     """
     affected_objects = {}
     webhook_events = WebhookEvent.objects.filter(refreshed=False)
+    processed_object_ids = []
+    processed_events = []
+
+    # Some objects are currently not being tracked locally
+    ignore = [
+        "payment_intent",
+    ]
+
     for event in webhook_events:
-        if event.object_type not in affected_objects:
-            affected_objects[event.object_type] = []
-        affected_objects[event.object_type].append(event.object_id)
+        object_type = event.object_type
+        parts = event.event_type.split(".")
+        event_type = parts[len(parts)-1]
 
-    # Only need to update object types that have associated models
-    updated_counts = {
-        "customer": 0,
-        "subscription": 0,
-        "invoice": 0,
-        "webhook_events": 0,
-    }
-    error_counts = {
-        "customer": 0,
-        "subscription": 0,
-        "invoice": 0,
-        "webhook_events": 0,
-    }
+        # Some objects are currently not being tracked locally
+        if object_type in ignore:
+            processed_events.append(event)
+            continue
 
-    # CUSTOMERS
-    for customer_id in list(set(affected_objects.get("customer") or [])):
-        try:
-            customer_model = Customer.get(customer_id)
-            if not customer_model:
-                customer_model = Customer()
-                customer_model.stripe_id = customer_id
-                # Sync() will fill in the rest
-            customer_model.sync()
-            customer_model.save()
-            updated_counts["customer"] += 1
-        except Exception as ee:
-            Error.record(ee, customer_id)
-            error_counts["customer"] += 1
+        """
+        INVOICES
+        """
+        if object_type == "invoice":
+            # If a new invoice was created, insert a local record to track it
+            if event_type == "created":
+                if Invoice.create_from_stripe(event.object_id):
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
 
-    # SUBSCRIPTIONS
-    for subscription_id in list(set(affected_objects.get("subscription") or [])):
-        try:
-            subscription_model = Subscription.get(subscription_id)
-            if not subscription_model:
-                subscription_model = Subscription()
-                subscription_model.stripe_id = subscription_id
-                # Sync() will fill in the rest
-            subscription_model.sync()
-            subscription_model.save()
-            updated_counts["subscription"] += 1
-        except Exception as ee:
-            Error.record(ee, subscription_id)
-            error_counts["subscription"] += 1
+            # If a draft invoice was deleted
+            elif event_type == "deleted":
+                del_inv = Invoice.get(event.object_id)
+                if del_inv:
+                    log.info(f"Invoice #{del_inv.id} was deleted in Stripe: {event.object_id}")
+                    del_inv.status = "deleted"
+                    del_inv.save()
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
 
-    # INVOICES
-    for invoice_id in list(set(affected_objects.get("invoice") or [])):
-        try:
-            invoice_model = Invoice.get(invoice_id)
-            if not invoice_model:
-                invoice_model = Invoice()
-                invoice_model.stripe_id = invoice_id
-                # Sync() will fill in the rest
-            invoice_model.sync()
-            invoice_model.save()
-            updated_counts["invoice"] += 1
-        except Exception as ee:
-            Error.record(ee, invoice_id)
-            error_counts["invoice"] += 1
+            # If object processed as insert or delete, data is current and does not need to be updated
+            elif event.object_id in processed_object_ids:
+                processed_events.append(event)
+                continue
+
+            # Refresh invoice with latest data
+            else:
+                # The create function will return an existing record, or create if needed
+                inv = Invoice.create_from_stripe(event.object_id)
+                if inv.sync():
+                    log.debug(f"UPDATING INVOICE {event.object_id}")
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
+
+
+        """
+        CUSTOMERS
+        """
+        if object_type == "customer":
+            # If a new customer was created, insert a local record to track it
+            if event_type == "created":
+                if Customer.get_or_create(stripe_id=event.object_id):
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
+
+            # If a customer was deleted
+            elif event_type == "deleted":
+                cust = Customer.get(event.object_id)
+                if cust:
+                    log.info(f"Deleting customer #{cust.id}: {event.object_id}")
+                    cust.status = "deleted"
+                    cust.save()
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
+
+            # If object processed as insert or delete, data is current and does not need to be updated
+            elif event.object_id in processed_object_ids:
+                processed_events.append(event)
+                continue
+
+            # Refresh customer with latest data
+            else:
+                cust = Customer.get_or_create(stripe_id=event.object_id)
+                if cust.sync():
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
+
+
+        """
+        SUBSCRIPTIONS
+        """
+        if object_type == "subscription":
+            continue
+
 
     # Mark Webhook Events as "refreshed"
     try:
-        for whe in webhook_events:
-            whe.refreshed = True
-        WebhookEvent.objects.bulk_update(webhook_events, ['refreshed'])
-        updated_counts["webhook_events"] = len(webhook_events)
+        if processed_events:
+            for whe in processed_events:
+                whe.refreshed = True
+            WebhookEvent.objects.bulk_update(webhook_events, ['refreshed'])
     except Exception as ee:
         Error.record(ee)
-        error_counts["webhook_events"] = len(webhook_events)
 
     return JsonResponse({
-        "updated": updated_counts,
-        "errors": error_counts,
+        "processed_events": len(webhook_events),
     })
 
 

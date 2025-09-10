@@ -25,14 +25,67 @@ function _cancel_invoice(invoice_id, tr){
                 tr.remove();
             },
             error:function(){
-
             },
             complete:function(){
                 clearAjaxLoadDiv();
             }
-
         });
 
+}
+
+function finalize_invoice(el){
+    let td = el.closest("td");
+    let tr = td.closest("tr");
+    let invoice_id = tr.data("invoice_id");
+    $.ajax({
+            type: "POST",
+            url: "{%url 'rent:update_rental_invoice' airport.identifier rental_agreement.id%}",
+            data:   {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                action: "finalize",
+                invoice_id: invoice_id,
+            },
+            beforeSend:function(){
+                setAjaxLoadDiv();
+            },
+            success: function(data){
+                tr.after(data);
+                tr.remove();
+            },
+            error:function(){
+            },
+            complete:function(){
+                clearAjaxLoadDiv();
+            }
+        });
+
+}
+
+function convert_to_stripe(el){
+    let td = el.closest("td");
+    let tr = td.closest("tr");
+    let invoice_id = tr.data("invoice_id");
+    $.ajax({
+            type: "POST",
+            url: "{%url 'rent:update_rental_invoice' airport.identifier rental_agreement.id%}",
+            data:   {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                action: "stripe",
+                invoice_id: invoice_id,
+            },
+            beforeSend:function(){
+                setAjaxLoadDiv();
+            },
+            success: function(data){
+                tr.after(data);
+                tr.remove();
+            },
+            error:function(){
+            },
+            complete:function(){
+                clearAjaxLoadDiv();
+            }
+        });
 }
 
 

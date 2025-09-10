@@ -90,7 +90,9 @@ class Auth:
         Same as above, but returns Django User rather than a UserProfile
         Returns: User or None
         """
-        return cls.lookup_user_profile(user_data).user
+        profile = cls.lookup_user_profile(user_data)
+        return profile.user if profile.is_user else None
+
 
     @classmethod
     def audit(

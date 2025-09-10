@@ -48,6 +48,7 @@ class Airport(models.Model):
     stripe_customer_id = models.CharField(max_length=60, blank=True, null=True)
     stripe_account_id = models.CharField(max_length=60, blank=True, null=True)
     subscription_id = models.CharField(max_length=60, blank=True, null=True)
+    stripe_tx_fee = models.DecimalField(decimal_places=4, max_digits=5, null=False, blank=False, default=0.01)
     billing_email = models.CharField(max_length=150, blank=True, null=True)
     billing_phone = models.CharField(max_length=10, blank=True, null=True)
     billing_street_1 = models.CharField(max_length=100, blank=True, null=True)

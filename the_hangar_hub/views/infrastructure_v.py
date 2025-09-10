@@ -20,7 +20,6 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 from base_upload.services import upload_service, retrieval_service
 from base.models.utility.error import Error
 from the_hangar_hub.services import stripe_service
-from base_stripe.services import customer_service, invoice_service
 
 
 log = Log()

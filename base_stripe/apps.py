@@ -9,10 +9,10 @@ log = Log()
 _DEFAULTS = {
     # Admin Menu Items
     "BASE_STRIPE_ADMIN_LINKS": [
-        # {
-        #     'url': "stripe:stripe_index", 'label': "Manage Stripe", 'icon': "bi-whatever",
-        #     'authorities': "admin"
-        # },
+        {
+            'url': "stripe:webhook_reaction", 'label': "Process Webhooks", 'icon': "bi-stripe",
+            'authorities': "developer"
+        },
     ]
 }
 

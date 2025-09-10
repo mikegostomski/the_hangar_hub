@@ -7,10 +7,10 @@ from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.services import price_service, accounts_service, customer_service
+from base_stripe.services import price_service, accounts_service
 from base_stripe.models.connected_account import ConnectedAccount
-from base_stripe.models.subscription import Subscription
-from base_stripe.models.customer import Customer
+from base_stripe.models.payment_models import Subscription
+from base_stripe.models.payment_models import Customer
 from datetime import datetime, timezone, timedelta
 
 log = Log()
@@ -235,7 +235,7 @@ def create_rent_subscription(airport, rental, **kwargs):
 
     try:
         customer_email = rental.tenant.email
-        customer_rec = customer_service.create_stripe_customer(
+        customer_rec = Customer.get_or_create(
             rental.tenant.contact.display_name, customer_email, rental.tenant.user
         )
         if not customer_rec:
@@ -325,7 +325,7 @@ def create_rent_subscription(airport, rental, **kwargs):
             charge_automatically = True
 
         # Can only charge automatically if customer has a defined payment method
-        if charge_automatically and not customer_service.customer_has_payment_method(customer_rec.stripe_id):
+        if charge_automatically and (customer_rec.default_payment_method or customer_rec.default_source):
             charge_automatically = False
 
         if kwargs.get("days_until_due"):
@@ -395,7 +395,7 @@ def create_rent_subscription(airport, rental, **kwargs):
 def create_rent_invoice(airport, rental, charge_automatically=False):
     try:
         customer_email = rental.tenant.email
-        customer_rec = customer_service.create_stripe_customer(
+        customer_rec = Customer.get_or_create(
             rental.tenant.contact.display_name, customer_email, rental.tenant.user
         )
         if not customer_rec:

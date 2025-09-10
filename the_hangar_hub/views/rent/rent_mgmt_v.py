@@ -4,7 +4,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from base_stripe.models.subscription import Subscription
+from base_stripe.models.payment_models import Subscription
 from the_hangar_hub.models.rental_models import Tenant, RentalAgreement, RentalInvoice
 from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
@@ -12,7 +12,7 @@ from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
 from base.services import message_service, date_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service
+from the_hangar_hub.services import airport_service, invoice_s
 from base.classes.breadcrumb import Breadcrumb
 import re
 from datetime import datetime, timezone
@@ -21,10 +21,10 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 from base_upload.services import upload_service, retrieval_service
 from base.models.utility.error import Error
 from the_hangar_hub.services import stripe_service
-from base_stripe.services import customer_service, invoice_service
 from django.contrib.auth.models import User
-from base_stripe.models.customer import Customer
+from base_stripe.models.payment_models import Customer
 from base.services import utility_service
+from base_stripe.services import invoice_service as stripe_invoice_service
 
 log = Log()
 env = EnvHelper()
@@ -89,48 +89,19 @@ def create_rental_invoice(request, airport_identifier, rental_id):
     collection = request.POST.get("collection") or "airport"
     invoice_number = request.POST.get("invoice_number")
 
-    # In case something goes wrong...
-    prefill = {
-        "period_start": period_start,
-        "period_end": period_end,
-        "amount_charged": amount_charged,
-        "collection": collection,
-    }
+    invoice = invoice_s.create_rental_invoice(
+        rental_agreement, period_start, period_end, amount_charged, collection, invoice_number
+    )
 
-    if not (period_start and period_end and amount_charged):
-        message_service.post_error("Date range and amount charged are required parameters.")
+    if not invoice:
+        prefill = {
+            "period_start": period_start,
+            "period_end": period_end,
+            "amount_charged": amount_charged,
+            "collection": collection,
+        }
         env.set_flash_scope("prefill", prefill)
         return redirect("rent:rental_invoices", airport.identifier, rental_agreement.id)
-
-    period_start_date = date_service.string_to_date(period_start, airport.timezone)
-    period_end_date = date_service.string_to_date(period_end, airport.timezone)
-    if not (period_start_date and period_end_date):
-        message_service.post_error("An invalid date was specified. Please check the given dates.")
-        env.set_flash_scope("prefill", prefill)
-        return redirect("rent:rental_invoices", airport.identifier, rental_agreement.id)
-
-    amount_charged_decimal = utility_service.convert_to_decimal(amount_charged)
-    if not amount_charged_decimal:
-        log.warning(f"Invalid amount_charged: {amount_charged}")
-        message_service.post_error("An invalid rent amount was specified. Please check the amount charged.")
-        env.set_flash_scope("prefill", prefill)
-        return redirect("rent:rental_invoices", airport.identifier, rental_agreement.id)
-
-    try:
-        invoice = RentalInvoice.objects.create(
-            agreement=rental_agreement,
-            stripe_invoice=None,
-            period_start_date=period_start_date,
-            period_end_date=period_end_date,
-            amount_charged=amount_charged_decimal,
-            status_code="O",  # Open
-
-            # If not using Stripe for invoicing
-            invoice_number=invoice_number,
-        )
-    except Exception as ee:
-        env.set_flash_scope("prefill", prefill)
-        Error.unexpected("Unable to create rental invoice", ee)
 
     return redirect("rent:rental_invoices", airport.identifier, rental_agreement.id)
 
@@ -159,73 +130,55 @@ def update_rental_invoice(request, airport_identifier, rental_id):
         message_service.post_warning("No action was requested. Returning to invoice list.")
         return HttpResponseForbidden()
 
-    elif action == "cancel":
-        # If not using Stripe, just mark as canceled
-        if not invoice.stripe_invoice:
-            invoice.status_code = "X"
-            invoice.save()
-            message_service.post_success("Invoice has been canceled.")
+    elif action == "finalize":
+        if stripe_invoice_service.finalize_invoice(invoice.stripe_invoice.stripe_id):
             return render(request, tr_html,{"invoice": invoice})
-
         else:
-            # ToDo: Cancel Stripe invoice and/or subscription
-            message_service.post_error("Strip cancellation not yet implemented")
             return HttpResponseForbidden()
 
+    elif action == "cancel":
+        if invoice_s.cancel_invoice(invoice):
+            return render(request, tr_html,{"invoice": invoice})
+        else:
+            return HttpResponseForbidden()
 
     elif action == "waive":
-        # If not using Stripe, just mark as waived
-        if not invoice.stripe_invoice:
-            invoice.status_code = "W"
-            invoice.save()
-            message_service.post_success("Invoice has been waived.")
-            return render(request, tr_html,{"invoice": invoice})
-
+        if invoice_s.waive_invoice(invoice):
+            return render(request, tr_html, {"invoice": invoice})
         else:
-            # ToDo: Waive charges for Stripe invoice and/or subscription
-            message_service.post_error("Strip cancellation not yet implemented")
             return HttpResponseForbidden()
-
 
     elif action == "paid":
         # A dollar amount may be specified for partial-payment
         amount_paid = request.POST.get("amount_paid")
-        if amount_paid:
-            amount_paid = utility_service.convert_to_decimal(amount_paid)
-            if not amount_paid:
-                message_service.post_error("An invalid payment amount was specified.")
-                return HttpResponseForbidden()
-            if invoice.amount_paid and amount_paid < invoice.amount_charged:
-                amount_paid = invoice.amount_paid + amount_paid
-        else:
-            amount_paid = invoice.amount_charged
-
-        paid_in_full = amount_paid >= invoice.amount_charged
+        waive_remainder = request.POST.get("waive") == "Y"
         payment_method_code = request.POST.get("payment_method_code")
 
-        # If not using Stripe, just mark as paid
-        if not invoice.stripe_invoice:
-            invoice.amount_paid = amount_paid
-            invoice.status_code = "P" if paid_in_full else "O"
-            invoice.payment_method_code = payment_method_code
-            if paid_in_full:
-                invoice.date_paid = datetime.now(timezone.utc)
-            invoice.save()
-            if paid_in_full:
-                message_service.post_success("Invoice has been marked as paid.")
+        # If waiving with no partial payment
+        if waive_remainder and not amount_paid:
+            if invoice_s.waive_invoice(invoice):
+                return render(request, tr_html, {"invoice": invoice})
             else:
-                message_service.post_success("Partial invoice payment has been recorded.")
-            return render(request, tr_html,{"invoice": invoice})
+                return HttpResponseForbidden()
 
         else:
-            # ToDo: Record payment for Stripe invoice and/or subscription
-            message_service.post_error("Stripe cancellation not yet implemented")
-            return HttpResponseForbidden()
+            # Mark full or partial payment
+            if not invoice_s.pay_invoice(invoice, amount_paid, payment_method_code):
+                return HttpResponseForbidden()
+
+            # Waive remainder if requested to do so on an Open invoice
+            if waive_remainder and invoice.status_code == "O":
+                if not invoice_s.waive_invoice(invoice):
+                    return HttpResponseForbidden()
+
+            return render(request, tr_html,{"invoice": invoice})
+
 
     elif action == "stripe":
-        # ToDo: Convert into a Stripe invoice (one-time)
-        message_service.post_error("Stripe conversion not yet implemented")
-        return HttpResponseForbidden()
+        if invoice_s.convert_to_stripe(invoice):
+            return render(request, tr_html, {"invoice": invoice})
+        else:
+            return HttpResponseForbidden()
 
     else:
         message_service.post_warning("Invalid action was requested. Returning to invoice list.")
@@ -400,7 +353,7 @@ def add_tenant(request, airport_identifier, hangar_id):
         Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
     # Create a Stripe customer record (for sending invoices and collecting rent)
-    customer_service.create_stripe_customer(full_name=f"{first_name} {last_name}", email=email, user=user)
+    Customer.get_or_create(full_name=f"{first_name} {last_name}", email=email, user=user)
 
     return redirect("infrastructure:hangar",airport_identifier, hangar.code)
 

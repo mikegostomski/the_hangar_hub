@@ -1,7 +1,9 @@
 from base.models.utility.error import EnvHelper, Log, Error
 from decimal import Decimal
-from base_stripe.services import customer_service
 from base.services import date_service
+import stripe
+from base_stripe.services.config_service import set_stripe_api_key
+from base_stripe.models.payment_models import Customer
 
 log = Log()
 env = EnvHelper()
@@ -140,9 +142,9 @@ class CustomerSubscription:
 
 
     def __init__(self, subscription_id):
-        self.subscription_data = customer_service.get_subscription(subscription_id) or {}
+        self.subscription_data = stripe.Subscription.retrieve(subscription_id, expand=['latest_invoice']) or {}
         self.invoice_data = self.subscription_data.get("latest_invoice") or {}
-        self.customer_class = customer_service.get_stripe_customer(self.customer_id) or {}
+        self.customer_class = Customer.get(self.customer_id).api_wrapper() or {}
 
 
 

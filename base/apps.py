@@ -20,6 +20,7 @@ _DEFAULTS = {
         # {'url': "base:session", 'label': "Session Contents", 'icon': "bi-cpu", 'authorities': "developer"},
         # {'url': "base:email", 'label': "Send Test Email", 'icon': "bi-send", 'authorities': "developer"},
         {'url': "base:export_db", 'label': "Database Export", 'icon': "bi-database", 'authorities': "developer"},
+        {'url': "stripe:webhook_reaction", 'label': "Process Webhooks x", 'icon': "bi-stripe", 'authorities': "developer"},
     ]
 }
 
