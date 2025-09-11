@@ -4,9 +4,56 @@
 {%block title%}Rental Agreement Invoices{%endblock%}
 
 {% block main_content %}
-<h1>Rental Agreement Invoices</h1>
+<h1>Invoices</h1>
 <br />
+<h2>Rental Agreement</h2>
 {%include "the_hangar_hub/airport/rent/management/_rental_agreement_summary.html"%}
+
+{%if rental_agreement.stripe_subscription%}
+<section>
+    <h2>Subscription</h2>
+
+    {%icon bi-heart-pulse title="Subscription Status"%}
+    {{rental_agreement.stripe_subscription.status_display}}<br />
+
+    {%icon bi-calendar4-week title="Current Period"%}
+    {%if rental_agreement.stripe_subscription.status == "trialing"%}
+        {{rental_agreement.stripe_subscription.trial_end_date|date:preferred_date_format}}
+    {%else%}
+        {{rental_agreement.stripe_subscription.current_period_start|date:preferred_date_format}}
+    {%endif%}
+    - {{rental_agreement.stripe_subscription.current_period_end|date:preferred_date_format}}<br />
+
+
+
+    {%icon bi-credit-card title="Recurring Charge"%}
+    {%format_currency rental_agreement.stripe_subscription.amount%}<br />
+
+    {%if rental_agreement.stripe_subscription.canceled_at%}
+        {%icon bi-calendar-x title="Canceled"%}
+        {{rental_agreement.stripe_subscription.canceled_at|date:preferred_date_format}}<br />
+
+    {%elif rental_agreement.stripe_subscription.ended_at%}
+        {%icon bi-calendar-x title="Ended"%}
+        {{rental_agreement.stripe_subscription.ended_at|date:preferred_date_format}}<br />
+
+    {%elif rental_agreement.stripe_subscription.cancel_at%}
+        {%icon bi-calendar-x text-danger title="Cancel at"%}
+        {{rental_agreement.stripe_subscription.ended_at|date:preferred_date_format}}<br />
+
+    {%elif rental_agreement.stripe_subscription.cancel_at_period_end%}
+        {%icon bi-slash-circle text-danger%}
+        Cancels at period end<br />
+    {%endif%}
+
+    {%if rental_agreement.stripe_subscription.cancellation_reason%}
+        {%icon bi-chat-left-text-fill title="Cancellation Reason"%}
+        {{rental_agreement.stripe_subscription.cancellation_reason}}<br />
+    {%endif%}
+
+
+</section>
+{%endif%}
 
 <section>
 {%if rental_agreement.relevant_invoice_models%}

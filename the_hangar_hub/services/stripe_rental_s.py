@@ -40,27 +40,38 @@ def sync_rental_agreement_subscriptions(rental_agreement):
         rental_agreement.stripe_subscription.sync()
 
     # Look for other active subscriptions
+    must_save = False
     customer_id = rental_agreement.tenant.stripe_customer_id
     required_metadata = f'"rental_agreement": "{rental_agreement.id}"'
-    log.debug(f"Require: {customer_id} && {required_metadata}")
     for sub in Subscription.objects.filter(
         status__in=["trialing", "active", "past_due", "unpaid", "paused"],  # Active subscriptions (indexed)
         customer__stripe_id=customer_id,                                    # For this customer (indexed)
         metadata__contains=required_metadata                                # For this RentalAgreement
     ):
-        log.debug(f"OTHER SUBSCRIPTION: {sub.stripe_id}")
         if sub.stripe_id == rental_agreement.stripe_subscription_id:
             continue
         elif sub.status == "trialing":
-            rental_agreement.future_stripe_subscription = sub
+            if rental_agreement.active_subscription:
+                rental_agreement.future_stripe_subscription = sub
+            else:
+                rental_agreement.stripe_subscription = sub
+            must_save = True
         elif not rental_agreement.active_subscription:
             rental_agreement.stripe_subscription = sub
+            must_save = True
         elif rental_agreement.stripe_subscription_status != "active" and sub.status == "active":
             rental_agreement.stripe_subscription = sub
+            must_save = True
         else:
             rental_agreement.future_stripe_subscription = sub
+            must_save = True
 
-    rental_agreement.save()
+        if rental_agreement.stripe_subscription == rental_agreement.future_stripe_subscription:
+            rental_agreement.future_stripe_subscription = None
+            must_save = True
+
+    if must_save:
+        rental_agreement.save()
 
 
 def sync_airport_invoices(airport):

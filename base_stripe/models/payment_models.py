@@ -210,8 +210,9 @@ class Invoice(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    customer = models.ForeignKey("base_stripe.Customer", models.CASCADE, related_name="customer_invoices", db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
+    customer = models.ForeignKey("base_stripe.Customer", models.CASCADE, related_name="customer_invoices", db_index=True)
+    subscription = models.ForeignKey("base_stripe.Subscription", models.CASCADE, related_name="subscription_invoices", null=True, blank=True, db_index=True)
     status = models.CharField(max_length=20, db_index=True)
     amount_charged = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
     amount_remaining = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
@@ -239,14 +240,6 @@ class Invoice(models.Model):
                 self.amount_remaining = utility_service.convert_to_decimal(invoice.amount_remaining/100)
                 self.metadata = invoice.metadata
                 self.save()
-                for sub_id in invoice.subscription_ids:
-                    try:
-                        log.debug(f"#### subscription_relations: {self.subscription_relations.all()}")
-                        self.subscription_relations.get(invoice=self, subscription__stripe_id=sub_id)
-                    except:
-                        subscription = Subscription.get(sub_id)
-                        if subscription:
-                            SubscriptionInvoice.objects.create(invoice=self, subscription=subscription)
                 return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
@@ -338,13 +331,18 @@ class Invoice(models.Model):
                         Error.record("Invoice metadata points to non-existing invoice model", metadata.get("model_id"))
                         # Allow to create a new model (?)
 
-            return cls.objects.create(
+            # If tied to a subscription...
+            subscription = Subscription.from_stripe_id(invoice.get("subscription")) if invoice.get("subscription") else None
+
+            inv = cls.objects.create(
                 customer=customer,
+                subscription=subscription,
                 stripe_id=stripe_id,
                 status=invoice.get("status"),
                 due_date=date_service.string_to_date(due_date) if due_date else None,
                 metadata=metadata,
             )
+
         except Exception as ee:
             Error.record(ee, stripe_id)
             return None
@@ -375,6 +373,18 @@ class Subscription(models.Model):
     status = models.CharField(max_length=20, db_index=True)
     metadata = models.CharField(max_length=500, null=True, blank=True)
 
+    amount = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+    start_date = models.DateTimeField(null=True, blank=True)
+    trial_end_date = models.DateTimeField(null=True, blank=True)
+    current_period_start = models.DateTimeField(null=True, blank=True)
+    current_period_end = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    cancel_at = models.DateTimeField(null=True, blank=True)
+    cancel_at_period_end = models.BooleanField(null=True, blank=True)
+    canceled_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.CharField(max_length=30, null=True, blank=True)
+
+
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)
 
@@ -382,20 +392,93 @@ class Subscription(models.Model):
     def is_active(self):
         return self.status in ["trialing", "active", "past_due", "unpaid", "paused"]
 
+    @property
+    def status_display(self):
+        return {
+            "incomplete": "Payment Attempt Failed",
+            "incomplete_expired": "Expired - Payment Failed",
+            "trialing": "Not Yet Started",
+            "active": "Active",
+            "past_due": "Past Due",
+            "canceled": "Canceled",
+            "unpaid": "Unpaid",
+            "paused": "Paused",
+        }.get(self.status) or self.status.title()
+
+    def api_data(self):
+        """
+        Get data from Stripe API
+        """
+        try:
+            config_service.set_stripe_api_key()
+            return stripe.Subscription.retrieve(self.stripe_id)
+        except Exception as ee:
+            Error.record(ee, self.stripe_id)
+
     def sync(self):
         """
         Update data from Stripe API
         """
         try:
-            config_service.set_stripe_api_key()
-            subscription = stripe.Subscription.retrieve(self.stripe_id)
+            subscription = self.api_data()
             if subscription:
                 self.status = subscription.status
                 self.metadata = subscription.metadata
                 self.customer = Customer.from_stripe_id(subscription.customer)
+
+                self.trial_end_date = date_service.string_to_date(subscription.trial_end)
+                self.ended_at = date_service.string_to_date(subscription.ended_at)
+                self.cancel_at = date_service.string_to_date(subscription.cancel_at)
+                self.cancel_at_period_end = subscription.cancel_at_period_end
+                self.canceled_at = date_service.string_to_date(subscription.canceled_at)
+                self.cancellation_reason = subscription.cancellation_details.reason
+
+                # Determine recurring charge (sum of items)
+                self._populate_recurring_charge(subscription)
+
+                # Determine current period (account for multiple items)
+                self._populate_current_period(subscription)
+
+                # Find the date of the first non-zero invoice in this subscription
+                self._populate_first_paid_date()
+
                 self.save()
         except Exception as ee:
             Error.record(ee, self.stripe_id)
+
+    def _populate_current_period(self, subscription_data=None):
+        if not subscription_data:
+            subscription_data = self.api_data()
+        period_start = period_end = 0
+        for item in subscription_data['items']['data']:
+            start = item['current_period_start']
+            end = item['current_period_end']
+            if end > period_end:
+                period_end = end
+            if period_start == 0 or start < period_start:
+                period_start = start
+        self.current_period_start = date_service.string_to_date(period_start)
+        self.current_period_end = date_service.string_to_date(period_end)
+
+    def _populate_recurring_charge(self, subscription_data=None):
+        if not subscription_data:
+            subscription_data = self.api_data()
+        recurring_amount = 0
+        for item in subscription_data['items']['data']:
+            price = item['price']
+            amount = price['unit_amount']  # in cents
+            quantity = item['quantity']
+            recurring_amount = amount * quantity / 100  # Convert to dollars
+        self.amount = recurring_amount
+
+    def _populate_first_paid_date(self):
+        if not self.start_date:
+            invoice_list = stripe.Invoice.list(subscription=self.stripe_id, limit=10)
+            for invoice in sorted(invoice_list.auto_paging_iter(), key=lambda i: i['created']):
+                if invoice['amount_due'] > 0:
+                    self.start_date = date_service.string_to_date(invoice['created'])
+                    break
+
 
     @classmethod
     def get(cls, xx):
@@ -425,14 +508,23 @@ class Subscription(models.Model):
         try:
             config_service.set_stripe_api_key()
             subscription = stripe.Subscription.retrieve(stripe_id)
-            customer = Customer.from_stripe_id(subscription.get("customer"))
-
-            return cls.objects.create(
-                customer=customer,
+            sub = cls.objects.create(
+                customer=Customer.from_stripe_id(subscription.get("customer")),
                 stripe_id=stripe_id,
                 status=subscription.get("status"),
                 metadata=subscription.get("metadata"),
+                ended_at=date_service.string_to_date(subscription.ended_at),
+                cancel_at=date_service.string_to_date(subscription.cancel_at),
+                cancel_at_period_end=subscription.cancel_at_period_end,
+                trial_end_date=date_service.string_to_date(subscription.trial_end),
+                canceled_at=date_service.string_to_date(subscription.canceled_at),
+                cancellation_reason=subscription.cancellation_details.reason,
             )
+            sub._populate_recurring_charge(subscription)
+            sub._populate_current_period(subscription)
+            sub._populate_first_paid_date()
+            sub.save()
+            return sub
         except Exception as ee:
             Error.record(ee, stripe_id)
             return None
@@ -443,12 +535,12 @@ class Subscription(models.Model):
 
 
 
-"""
-    SUBSCRIPTION-INVOICE (relation)
-    - Ties an invoice to a subscription
-"""
-class SubscriptionInvoice(models.Model):
-    date_created = models.DateTimeField(auto_now_add=True)
-    last_updated = models.DateTimeField(auto_now=True)
-    subscription = models.ForeignKey("base_stripe.Subscription", models.CASCADE, related_name="invoice_relations", db_index=True)
-    invoice = models.ForeignKey("base_stripe.Invoice", models.CASCADE, related_name="subscription_relations", db_index=True)
+# """
+#     SUBSCRIPTION-INVOICE (relation)
+#     - Ties an invoice to a subscription
+# """
+# class SubscriptionInvoice(models.Model):
+#     date_created = models.DateTimeField(auto_now_add=True)
+#     last_updated = models.DateTimeField(auto_now=True)
+#     subscription = models.ForeignKey("base_stripe.Subscription", models.CASCADE, related_name="invoice_relations", db_index=True)
+#     invoice = models.ForeignKey("base_stripe.Invoice", models.CASCADE, related_name="subscription_relations", db_index=True)
