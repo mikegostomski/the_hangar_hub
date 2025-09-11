@@ -87,7 +87,7 @@ def react_to_events(request):
         if object_type == "invoice":
             # If a new invoice was created, insert a local record to track it
             if event_type == "created":
-                if Invoice.create_from_stripe(event.object_id):
+                if Invoice.from_stripe_id(event.object_id):
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue
@@ -111,7 +111,7 @@ def react_to_events(request):
             # Refresh invoice with latest data
             else:
                 # The create function will return an existing record, or create if needed
-                inv = Invoice.create_from_stripe(event.object_id)
+                inv = Invoice.from_stripe_id(event.object_id)
                 if inv.sync():
                     log.debug(f"UPDATING INVOICE {event.object_id}")
                     processed_object_ids.append(event.object_id)
@@ -159,7 +159,26 @@ def react_to_events(request):
         SUBSCRIPTIONS
         """
         if object_type == "subscription":
-            continue
+
+            # If a new subscription was created, insert a local record to track it
+            if event_type == "created":
+                if Subscription.from_stripe_id(event.object_id):
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
+
+            # If object processed as insert, data is current and does not need to be updated
+            elif event.object_id in processed_object_ids:
+                processed_events.append(event)
+                continue
+
+            # Refresh subscription with latest data
+            else:
+                sub = Subscription.from_stripe_id(event.object_id)
+                if sub.sync():
+                    processed_object_ids.append(event.object_id)
+                    processed_events.append(event)
+                continue
 
 
     # Mark Webhook Events as "refreshed"

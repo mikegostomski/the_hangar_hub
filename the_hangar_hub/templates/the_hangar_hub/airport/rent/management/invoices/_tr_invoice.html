@@ -28,33 +28,29 @@
         {%if invoice.is_stripe_invoice%}
             <br />
             {{invoice.stripe_status}}
-            {%if invoice.stripe_status == "draft"%}
+            {%if invoice.stripe_status == "Draft"%}
                 {%icon bi-floppy text-success title="Finalize Invoice" onclick="finalize_invoice($(this));"%}
             {%endif%}
         {%endif%}
     </td>
     <td>
+        {%if invoice.status_code == "O" or invoice.status_code == "I"%}
+            {%icon bi-slash-circle text-danger title="Cancel Invoice" onclick="cancel_invoice($(this));"%}
+                &nbsp;
+        {%endif%}
         {%if invoice.status_code == "O"%}
             {%icon bi-cash-coin text-success title="Record Payment" onclick="show_payment_form($(this));" %}
                 &nbsp;
-            {%icon bi-slash-circle text-danger title="Cancel Invoice" onclick="cancel_invoice($(this));"%}
-                &nbsp;
-
-
-
-
             {%if not invoice.is_stripe_invoice%}
                 {%icon bi-credit-card title="Collect via Stripe" onclick="convert_to_stripe($(this));" %}
                 &nbsp;
-            {%elif not invoice.stripe_subscription%}
-
-
-
-
-            {%else%}
-                Stripe (Monthly)
+            {%endif%}
+            {%if not invoice.agreement.active_subscription%}
+                {%icon bi-arrow-clockwise title="Start Subscription" onclick="start_subscription($(this));" %}
+                &nbsp;
             {%endif%}
         {%endif%}
+
 
     </td>
 </tr>

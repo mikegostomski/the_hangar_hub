@@ -15,6 +15,7 @@ from datetime import datetime, timezone, timedelta
 from base.services import date_service, utility_service
 from the_hangar_hub.models.rental_models import RentalInvoice
 from base_stripe.models.payment_models import Invoice as StripeInvoice
+from the_hangar_hub.services import stripe_rental_s
 
 log = Log()
 env = EnvHelper()
@@ -245,68 +246,8 @@ def pay_invoice(invoice, amount_paid=None, payment_method_code=None):
 
 
 def convert_to_stripe(invoice):
-    rental_invoice = get_rental_invoice(invoice)
-    if not rental_invoice:
-        return False
+    return stripe_rental_s.stripe_invoice_from_rental_invoice(get_rental_invoice(invoice))
 
-    if rental_invoice.stripe_invoice:
-        message_service.post_warning("The specified invoice has already been created in Stripe")
-        return False
+def start_subscription(invoice):
+    return stripe_rental_s.stripe_subscription_from_rental_invoice(get_rental_invoice(invoice))
 
-    try:
-        # Gather data
-        rental_agreement = rental_invoice.agreement
-        tenant = rental_agreement.tenant
-        hangar = rental_agreement.hangar
-        airport = rental_agreement.airport
-
-        # Get customer's Stripe ID (required)
-        if tenant.stripe_customer_id:
-            stripe_customer = Customer.get(tenant.stripe_customer_id)
-        else:
-            stripe_customer = Customer.get_or_create(tenant.display_name, tenant.email, tenant.user)
-        if not stripe_customer:
-            message_service.post_error("Unable to obtain Stripe customer ID for tenant.")
-            return False
-
-        # Determine invoice amount and tx fee (in cents, as expected by Stripe)
-        invoice_amount = int((Decimal(rental_invoice.amount_charged) - Decimal(rental_invoice.amount_paid)) * 100)
-        tx_fee = int(invoice_amount * airport.stripe_tx_fee)
-
-        # Convert into a Stripe invoice (one-time)
-        parameters = {
-            "auto_advance": True,
-            "collection_method": "send_invoice",  # "charge_automatically"
-            "customer": stripe_customer.stripe_id,
-            "description": f"Manual Invoice for Hangar {hangar.code}",
-            "metadata": {
-                "airport": airport.identifier,
-                "agreement": rental_agreement.id, "hangar": hangar.code
-            },
-            "application_fee_amount": tx_fee,
-            "issuer": {"type": "account", "account": airport.stripe_account_id},
-            "on_behalf_of": airport.stripe_account_id,
-            "transfer_data": {"destination": airport.stripe_account_id},
-            "due_date": invoice.stripe_due_date(),
-        }
-        set_stripe_api_key()
-        invoice_data = stripe.Invoice.create(**parameters)
-        invoice_id = invoice_data.get("id")
-        # Create line item...
-        stripe.Invoice.add_lines(
-            invoice_id,
-            lines=[
-                {"description": f"Hanger {hangar.code}", "amount": invoice_amount},
-            ]
-        )
-
-        stripe_invoice = StripeInvoice.create_from_stripe(invoice_id)
-        rental_invoice.stripe_invoice = stripe_invoice
-        rental_invoice.save()
-
-        message_service.post_success("Stripe invoice was created.")
-        return True
-
-    except Exception as ee:
-        Error.unexpected("Unable to create Stripe invoice", ee, rental_invoice)
-        return None

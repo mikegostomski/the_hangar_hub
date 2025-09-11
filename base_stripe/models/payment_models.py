@@ -32,11 +32,12 @@ class Customer(models.Model):
     user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customer", null=True, blank=True, db_index=True)
     full_name = models.CharField(max_length=150)
 
-    use_auto_pay = models.BooleanField(default=False)
+    use_auto_pay = models.BooleanField(default=False)  # ToDo: Probably not used
     balance_cents = models.IntegerField(default=0)
     delinquent = models.BooleanField(default=False)
     invoice_prefix = models.CharField(max_length=10, null=True, blank=True)
     status = models.CharField(max_length=10, null=True, blank=True)
+    metadata = models.CharField(max_length=500, null=True, blank=True)
 
     def open_invoices(self):
         return self.customer_invoices.filter(status="open")
@@ -54,6 +55,7 @@ class Customer(models.Model):
                 self.balance_cents = customer.balance
                 self.delinquent = customer.delinquent
                 self.invoice_prefix = customer.invoice_prefix
+                self.metadata = customer.metadata
                 if not self.user:
                     self.user = Auth.lookup_user(self.email)
                 self.save()
@@ -97,6 +99,13 @@ class Customer(models.Model):
             return None
 
     @classmethod
+    def from_stripe_id(cls, stripe_id):
+        """
+        Get (or create if needed) the Customer model from a Stripe ID
+        """
+        return cls.get_or_create(stripe_id=stripe_id)
+
+    @classmethod
     def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None):
         """
         Create (if DNE) a Customer record in Stripe, and a local record that ties the Stripe ID to a User/email
@@ -127,6 +136,7 @@ class Customer(models.Model):
                     balance_cents=customer.balance,
                     delinquent=customer.delinquent,
                     invoice_prefix=customer.invoice_prefix,
+                    metadata=customer.metadata,
                     user=Auth.lookup_user(customer.email) if not user else user
                 )
             except Exception as ee:
@@ -205,6 +215,7 @@ class Invoice(models.Model):
     status = models.CharField(max_length=20, db_index=True)
     amount_charged = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
     amount_remaining = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
+    metadata = models.CharField(max_length=500, null=True, blank=True)
 
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)
@@ -226,6 +237,7 @@ class Invoice(models.Model):
                 self.status = invoice.status
                 self.amount_charged = utility_service.convert_to_decimal(invoice.total/100)
                 self.amount_remaining = utility_service.convert_to_decimal(invoice.amount_remaining/100)
+                self.metadata = invoice.metadata
                 self.save()
                 for sub_id in invoice.subscription_ids:
                     try:
@@ -256,6 +268,9 @@ class Invoice(models.Model):
                 self.id,
                 metadata=metadata
             )
+
+            self.metadata = metadata
+            self.save()
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -293,16 +308,19 @@ class Invoice(models.Model):
             return None
 
     @classmethod
-    def create_from_stripe(cls, stripe_invoice_id):
+    def from_stripe_id(cls, stripe_id):
+        """
+        Get (or create if needed) the Invoice model from a Stripe ID
+        """
         try:
             # Check for existing record linked to this Stripe invoice
-            return cls.objects.get(stripe_id=stripe_invoice_id)
+            return cls.objects.get(stripe_id=stripe_id)
         except cls.DoesNotExist:
             pass
 
         try:
             config_service.set_stripe_api_key()
-            invoice = stripe.Invoice.retrieve(stripe_invoice_id)
+            invoice = stripe.Invoice.retrieve(stripe_id)
             customer = Customer.get_or_create(stripe_id=invoice.get("customer"))
             due_date = invoice.get("due_date")
 
@@ -313,7 +331,7 @@ class Invoice(models.Model):
                 if existing_id:
                     existing = cls.get(existing_id)
                     if existing:
-                        existing.stripe_id = stripe_invoice_id
+                        existing.stripe_id = stripe_id
                         existing.save()
                         return existing
                     else:
@@ -322,12 +340,13 @@ class Invoice(models.Model):
 
             return cls.objects.create(
                 customer=customer,
-                stripe_id=stripe_invoice_id,
+                stripe_id=stripe_id,
                 status=invoice.get("status"),
                 due_date=date_service.string_to_date(due_date) if due_date else None,
+                metadata=metadata,
             )
         except Exception as ee:
-            Error.record(ee, stripe_invoice_id)
+            Error.record(ee, stripe_id)
             return None
 
 
@@ -354,9 +373,14 @@ class Subscription(models.Model):
 
     # incomplete, incomplete_expired, trialing, active, past_due, canceled, unpaid, or paused.
     status = models.CharField(max_length=20, db_index=True)
+    metadata = models.CharField(max_length=500, null=True, blank=True)
 
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)
+
+    @property
+    def is_active(self):
+        return self.status in ["trialing", "active", "past_due", "unpaid", "paused"]
 
     def sync(self):
         """
@@ -367,10 +391,8 @@ class Subscription(models.Model):
             subscription = stripe.Subscription.retrieve(self.stripe_id)
             if subscription:
                 self.status = subscription.status
-                # if not self.customer:
-                log.debug(f"#### Find customer: {subscription.customer}")
-                self.customer = Customer.get(subscription.customer)
-                log.debug(f"#### Found customer: {self.customer}")
+                self.metadata = subscription.metadata
+                self.customer = Customer.from_stripe_id(subscription.customer)
                 self.save()
         except Exception as ee:
             Error.record(ee, self.stripe_id)
@@ -387,6 +409,37 @@ class Subscription(models.Model):
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")
             return None
+
+
+    @classmethod
+    def from_stripe_id(cls, stripe_id):
+        """
+        Get (or create if needed) the Subscription model from a Stripe ID
+        """
+        try:
+            # Check for existing record linked to this Stripe subscription
+            return cls.objects.get(stripe_id=stripe_id)
+        except cls.DoesNotExist:
+            pass
+
+        try:
+            config_service.set_stripe_api_key()
+            subscription = stripe.Subscription.retrieve(stripe_id)
+            customer = Customer.from_stripe_id(subscription.get("customer"))
+
+            return cls.objects.create(
+                customer=customer,
+                stripe_id=stripe_id,
+                status=subscription.get("status"),
+                metadata=subscription.get("metadata"),
+            )
+        except Exception as ee:
+            Error.record(ee, stripe_id)
+            return None
+
+
+
+
 
 
 

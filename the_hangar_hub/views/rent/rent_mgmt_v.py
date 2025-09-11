@@ -25,6 +25,7 @@ from django.contrib.auth.models import User
 from base_stripe.models.payment_models import Customer
 from base.services import utility_service
 from base_stripe.services import invoice_service as stripe_invoice_service
+from the_hangar_hub.services import stripe_rental_s
 
 log = Log()
 env = EnvHelper()
@@ -53,6 +54,9 @@ def rental_invoices(request, airport_identifier, rental_id):
     """
     airport = request.airport
     rental_agreement = RentalAgreement.get(rental_id)
+    stripe_rental_s.sync_rental_agreement_subscriptions(rental_agreement)
+    stripe_rental_s.sync_rental_agreement_invoices(rental_agreement)
+
     if not rental_agreement:
         message_service.post_error("Could not find specified rental agreement")
         return redirect("rent:rent_collection_dashboard", airport.identifier)
@@ -176,6 +180,12 @@ def update_rental_invoice(request, airport_identifier, rental_id):
 
     elif action == "stripe":
         if invoice_s.convert_to_stripe(invoice):
+            return render(request, tr_html, {"invoice": invoice})
+        else:
+            return HttpResponseForbidden()
+
+    elif action == "subscribe":
+        if invoice_s.start_subscription(invoice):
             return render(request, tr_html, {"invoice": invoice})
         else:
             return HttpResponseForbidden()

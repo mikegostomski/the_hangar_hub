@@ -88,6 +88,33 @@ function convert_to_stripe(el){
         });
 }
 
+function start_subscription(el){
+    let td = el.closest("td");
+    let tr = td.closest("tr");
+    let invoice_id = tr.data("invoice_id");
+    $.ajax({
+            type: "POST",
+            url: "{%url 'rent:update_rental_invoice' airport.identifier rental_agreement.id%}",
+            data:   {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                action: "subscribe",
+                invoice_id: invoice_id,
+            },
+            beforeSend:function(){
+                setAjaxLoadDiv();
+            },
+            success: function(data){
+                tr.after(data);
+                tr.remove();
+            },
+            error:function(){
+            },
+            complete:function(){
+                clearAjaxLoadDiv();
+            }
+        });
+}
+
 
 function show_payment_form(el){
     let td = el.closest("td");

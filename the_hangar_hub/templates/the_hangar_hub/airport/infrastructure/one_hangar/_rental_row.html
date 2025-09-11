@@ -10,7 +10,7 @@
     <td>{{rental.notes}}</td>
     <td>
         {%if not rental.has_subscription%}
-            {%icon bi-cash-coin title="Create Rental Subscription" onclick="show_subscription_form($(this), '{{rental.id}}')"%}
+            {%icon bi-cash-coin text-danger title="Create Rental Subscription" %}{## onclick="show_subscription_form($(this), '{{rental.id}}')" ##}
         {%else%}
             {%with subscription_data=rental.get_subscription_data%}
                 {%if subscription_data.invoice_pdf%}

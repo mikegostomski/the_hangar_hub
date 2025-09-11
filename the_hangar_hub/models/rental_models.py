@@ -8,6 +8,7 @@ from django.db.models import Q
 from the_hangar_hub.services import stripe_service
 from base_stripe.classes.customer_subscription import CustomerSubscription
 from base_stripe.models.payment_models import Subscription
+from django.db.models import Q
 
 log = Log()
 
@@ -70,12 +71,37 @@ class RentalAgreement(models.Model):
     deposit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
+    # Most-recent active Stripe subscription
+    stripe_subscription = models.ForeignKey(
+        "base_stripe.Subscription", on_delete=models.CASCADE, related_name="rental_agreements", null=True, blank=True
+    )
+    future_stripe_subscription = models.ForeignKey(
+        "base_stripe.Subscription", on_delete=models.CASCADE, related_name="future_rental_agreements", null=True, blank=True
+    )
+
+    @property
+    def stripe_subscription_id(self):
+        return self.stripe_subscription.stripe_id if self.stripe_subscription else None
+
+    @property
+    def stripe_subscription_status(self):
+        return self.stripe_subscription.status if self.stripe_subscription else None
+
+    @property
+    def active_subscription(self):
+        return self.stripe_subscription.is_active if self.stripe_subscription else None
+
     # Related invoice models
     def invoice_models(self):
         return self.invoices.all()
 
-    # Most-recent active Stripe subscription
-    stripe_subscription_id = models.CharField(max_length=60, unique=True, null=True, blank=True)
+    def open_invoice_models(self):
+        return self.invoices.filter(status_code="O")
+
+    def relevant_invoice_models(self):
+        recent = datetime.now(timezone.utc) - timedelta(hours=1)
+        return self.invoices.filter(Q(status_code__in=["O", "P", "W"]) | Q(last_updated__gt=recent))
+
 
 
     # Past/Present/Future Rental Agreement?
@@ -190,13 +216,25 @@ class RentalInvoice(models.Model):
     # If not using Stripe for invoicing
     invoice_number = models.CharField(max_length=50, null=True, blank=True, db_index=True)
 
+    def sync(self):
+        if self.stripe_invoice:
+            if self.status_code == "W" and self.stripe_status_code == "P":
+                # Stripe marks waived invoices as Paid. Do not update Waived to Paid in local model
+                pass
+            else:
+                self.status_code = self.stripe_status_code
+            self.amount_charged = self.stripe_invoice.amount_charged
+            self.amount_paid = self.stripe_invoice.amount_charged - self.stripe_invoice.amount_remaining
+            self.save()
+
     @staticmethod
     def status_options():
         return {
-            "I": "Incomplete",
+            "I": "Draft",
             "O": "Open",
             "P": "Paid",
             "W": "Waived",
+            "U": "Uncollectible",
             "X": "Cancelled",
         }
 
@@ -234,7 +272,21 @@ class RentalInvoice(models.Model):
 
     def stripe_status(self):
         if self.stripe_invoice:
-            return self.stripe_invoice.status
+            return self.status_options().get(self.stripe_status_code) or self.stripe_status_code
+        return None
+
+    @property
+    def stripe_status_code(self):
+        # Codes come from base_stripe.Invoice
+        if self.stripe_invoice:
+            return {
+                "draft": "I",
+                "open": "O",
+                "paid": "P",
+                "uncollectible": "U",
+                "void": "X",
+                "deleted": "X",  # (a deleted draft invoice)
+            }.get(self.stripe_invoice.status)
         return None
 
     @classmethod
