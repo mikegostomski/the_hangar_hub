@@ -1,0 +1,33 @@
+{% load base_taglib %}
+<table class="table">
+    <tr valign="top">
+        <th scope="col">
+            Capacity<br />
+            <em>Number of planes</em>
+        </th>
+        <th scope="col">
+            Default Rent
+            <em>Can be overridden per rental</em>
+        </th>
+        <th scope="col">Features</th>
+    </tr>
+    <tr valign="top">
+        <td>
+            <label for="capacity" class="visually-hidden">Capacity</label>
+            <input type="number" id="capacity" name="capacity" value="{{hangar.capacity}}" min="1" max="100" class="form-control" />
+        </td>
+        <td>
+            <label for="default_rent" class="visually-hidden">Default Rent</label>
+            <input type="text" id="default_rent" name="default_rent" value="{{hangar.default_rent}}" class="form-control" />
+        </td>
+        <td>
+            <fieldset>
+                <legend class="visually-hidden">Features</legend>
+                <label>
+                    <input type="checkbox" value="1" name="electric" {%if hangar.electric %}checked{%endif%} />
+                    Electricity
+                </label>
+            </fieldset>
+        </td>
+    </tr>
+</table>

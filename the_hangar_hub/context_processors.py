@@ -1,10 +1,7 @@
-from base.services import utility_service, auth_service
-from base.classes.breadcrumb import Breadcrumb
-from django.conf import settings
 from base.classes.util.app_data import Log, EnvHelper, AppData
-from datetime import datetime, timezone
 from the_hangar_hub.services import airport_service, tenant_service, application_service
-from base.classes.auth.session import Auth
+from the_hangar_hub.services import stripe_s
+from base_stripe.services import webhook_service
 
 log = Log()
 env = EnvHelper()
@@ -14,6 +11,12 @@ app = AppData()
 def airport_data(request):
     if request.path.startswith("/accounts/"):
         return {}
+
+    # Some actions require immediate reaction to an expected Stripe action
+    # In those cases, don't wait for the scheduled reaction... do it now.
+    if stripe_s.webhook_reaction_needed():
+        log.info("Need to react to Stripe events")
+        webhook_service.react_to_events()
 
     managed_airports = airport_service.managed_airports()
     rentals = tenant_service.get_tenant_rentals()

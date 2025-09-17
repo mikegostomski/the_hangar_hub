@@ -37,7 +37,7 @@ def rent_collection_dashboard(request, airport_identifier):
     Airport Manager view to see who is current/late on rent payments
     """
     airport = request.airport
-    rentals = RentalAgreement.present_rental_agreements().filter(hangar__building__airport=airport)
+    rentals = RentalAgreement.relevant_rental_agreements().filter(hangar__building__airport=airport)
 
     return render(
         request, "the_hangar_hub/airport/rent/management/collection/dashboard.html",
@@ -48,12 +48,12 @@ def rent_collection_dashboard(request, airport_identifier):
 
 
 @require_airport_manager()
-def rental_invoices(request, airport_identifier, rental_id):
+def rental_invoices(request, airport_identifier, rental_agreement_id):
     """
     Manage rental agreement invoices
     """
     airport = request.airport
-    rental_agreement = RentalAgreement.get(rental_id)
+    rental_agreement = RentalAgreement.get(rental_agreement_id)
     stripe_rental_s.sync_rental_agreement_subscriptions(rental_agreement)
     stripe_rental_s.sync_rental_agreement_invoices(rental_agreement)
 
@@ -63,6 +63,9 @@ def rental_invoices(request, airport_identifier, rental_id):
     if rental_agreement.airport.id != airport.id:
         message_service.post_error("Specified rental agreement is for a different airport.")
         return redirect("rent:rent_collection_dashboard", airport.identifier)
+
+    if rental_agreement.tenant.customer:
+        rental_agreement.tenant.customer.sync()
 
     return render(
         request, "the_hangar_hub/airport/rent/management/invoices/invoices.html",
@@ -74,12 +77,12 @@ def rental_invoices(request, airport_identifier, rental_id):
 
 
 @require_airport_manager()
-def create_rental_invoice(request, airport_identifier, rental_id):
+def create_rental_invoice(request, airport_identifier, rental_agreement_id):
     """
     Create a rental agreement invoice
     """
     airport = request.airport
-    rental_agreement = RentalAgreement.get(rental_id)
+    rental_agreement = RentalAgreement.get(rental_agreement_id)
     if not rental_agreement:
         message_service.post_error("Could not find specified rental agreement")
         return redirect("rent:rent_collection_dashboard", airport.identifier)
@@ -111,7 +114,7 @@ def create_rental_invoice(request, airport_identifier, rental_id):
 
 
 @require_airport_manager()
-def update_rental_invoice(request, airport_identifier, rental_id):
+def update_rental_invoice(request, airport_identifier, rental_agreement_id):
     """
     Update a rental agreement invoice
     """

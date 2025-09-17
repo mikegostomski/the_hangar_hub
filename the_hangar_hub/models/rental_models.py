@@ -9,6 +9,7 @@ from the_hangar_hub.services import stripe_service
 from base_stripe.classes.customer_subscription import CustomerSubscription
 from base_stripe.models.payment_models import Subscription
 from django.db.models import Q
+from base.classes.util.date_helper import DateHelper
 
 log = Log()
 
@@ -23,8 +24,11 @@ class Tenant(models.Model):
 
     # There may not be a user at time of creation (or potentially ever)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
+    customer = models.ForeignKey("base_stripe.Customer", on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
 
-    stripe_customer_id = models.CharField(max_length=60, null=True, blank=True)
+    @property
+    def stripe_customer_id(self):
+        return self.customer.stripe_id if self.customer else None
 
     @property
     def display_name(self):
@@ -80,12 +84,20 @@ class RentalAgreement(models.Model):
     )
 
     @property
+    def stripe_customer_id(self):
+        return self.tenant.stripe_customer_id if self.tenant else None
+
+    @property
     def stripe_subscription_id(self):
         return self.stripe_subscription.stripe_id if self.stripe_subscription else None
 
     @property
     def stripe_subscription_status(self):
         return self.stripe_subscription.status if self.stripe_subscription else None
+
+    @property
+    def stripe_metadata_content(self):
+        return f'"rental_agreement": "{self.id}"'
 
     @property
     def active_subscription(self):
@@ -179,11 +191,26 @@ class RentalAgreement(models.Model):
         came into play (current, delinquent, etc.)
         """
         now = datetime.now(timezone.utc)
+        next_month = now + timedelta(days=30)
         return cls.objects.filter(
             Q(end_date__gt=now) | Q(end_date__isnull=True)
         ).filter(
             # Null start date assumes rental started before joining this site and date is not known
             Q(start_date__lte=now) | Q(start_date__isnull=True)
+        )
+
+    @classmethod
+    def relevant_rental_agreements(cls):
+        """
+        Query to get PRESENT and near-FUTURE rentals
+        """
+        now = datetime.now(timezone.utc)
+        next_month = now + timedelta(days=30)
+        return cls.objects.filter(
+            Q(end_date__gt=now) | Q(end_date__isnull=True)
+        ).filter(
+            # Null start date assumes rental started before joining this site and date is not known
+            Q(start_date__lte=next_month) | Q(start_date__isnull=True)
         )
 
     @classmethod
@@ -212,6 +239,13 @@ class RentalInvoice(models.Model):
     status_code = models.CharField(max_length=1, default="I", db_index=True)
     payment_method_code = models.CharField(max_length=2, null=True, blank=True)
     date_paid = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def period_description(self):
+        s = DateHelper(self.period_start_date)
+        e = DateHelper(self.period_end_date)
+        return f"{s.banner_date()} - {e.banner_date()}"
+
 
     # If not using Stripe for invoicing
     invoice_number = models.CharField(max_length=50, null=True, blank=True, db_index=True)
@@ -292,7 +326,12 @@ class RentalInvoice(models.Model):
     @classmethod
     def get(cls, data):
         try:
-            return cls.objects.get(pk=data)
+            if str(data).startswith("in_"):
+                log.debug(f"GET BY STRIPE_ID: '{data}'")
+                return cls.objects.get(stripe_invoice__stripe_id=data)
+            else:
+                log.debug(f"GET BY MODEL ID: '{data}'")
+                return cls.objects.get(pk=data)
         except cls.DoesNotExist:
             return None
         except Exception as ee:

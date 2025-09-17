@@ -6,7 +6,7 @@ function update_auto_pay(btn_el){
 
         $.ajax({
             type:   "POST",
-            url:    '{%url 'pay:set_auto_pay'%}',
+            url:    '{%url 'rent:set_auto_pay'%}',
             data:   {
                 csrfmiddlewaretoken: '{{ csrf_token }}',
                 use_auto_pay: use_auto_pay,

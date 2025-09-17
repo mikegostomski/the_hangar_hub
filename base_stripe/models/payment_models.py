@@ -1,4 +1,3 @@
-from decimal import Decimal
 
 from django.db import models
 from base.classes.util.env_helper import EnvHelper, Log
@@ -39,6 +38,13 @@ class Customer(models.Model):
     status = models.CharField(max_length=10, null=True, blank=True)
     metadata = models.CharField(max_length=500, null=True, blank=True)
 
+    default_payment_method = models.CharField(max_length=50, null=True, blank=True)
+    default_source = models.CharField(max_length=50, null=True, blank=True)
+
+    @property
+    def default_payment(self):
+        return self.default_payment_method or self.default_source
+
     def open_invoices(self):
         return self.customer_invoices.filter(status="open")
 
@@ -48,7 +54,7 @@ class Customer(models.Model):
         """
         try:
             config_service.set_stripe_api_key()
-            customer = stripe.Customer.retrieve(self.stripe_id)
+            customer = stripe.Customer.retrieve(self.stripe_id, expand=["invoice_settings.default_payment_method"])
             if customer:
                 self.full_name = customer.name
                 self.email = customer.email
@@ -58,6 +64,12 @@ class Customer(models.Model):
                 self.metadata = customer.metadata
                 if not self.user:
                     self.user = Auth.lookup_user(self.email)
+
+                inv_settings = customer.get("invoice_settings") or {}
+                dpm = inv_settings.get("default_payment_method") or {}
+                self.default_payment_method = dpm.get("type")
+                self.default_source = customer.get("default_source")
+
                 self.save()
                 return True
         except Exception as ee:
@@ -128,7 +140,12 @@ class Customer(models.Model):
 
                 log.info(f"Creating new Customer model: {stripe_id}")
                 config_service.set_stripe_api_key()
-                customer = stripe.Customer.retrieve(stripe_id)
+                customer = stripe.Customer.retrieve(stripe_id, expand=["invoice_settings.default_payment_method"])
+
+                inv_settings = customer.get("invoice_settings") or {}
+                dpm = inv_settings.get("default_payment_method") or {}
+
+
                 return cls.objects.create(
                     stripe_id=stripe_id,
                     full_name=customer.name,
@@ -137,7 +154,9 @@ class Customer(models.Model):
                     delinquent=customer.delinquent,
                     invoice_prefix=customer.invoice_prefix,
                     metadata=customer.metadata,
-                    user=Auth.lookup_user(customer.email) if not user else user
+                    user=Auth.lookup_user(customer.email) if not user else user,
+                    default_payment_method=dpm.get("type"),
+                    default_source=customer.get("default_source"),
                 )
             except Exception as ee:
                 Error.record(ee, stripe_id)
@@ -221,6 +240,8 @@ class Invoice(models.Model):
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)
 
+    period_start = models.DateTimeField(null=True, blank=True)
+    period_end = models.DateTimeField(null=True, blank=True)
     due_date = models.DateTimeField(null=True, blank=True)
 
     def sync(self):
@@ -232,15 +253,28 @@ class Invoice(models.Model):
             return True
         try:
             config_service.set_stripe_api_key()
-            invoice = InvoiceAPI(stripe.Invoice.retrieve(self.stripe_id))
-            if invoice:
-                self.customer = Customer.get(invoice.customer)
-                self.status = invoice.status
-                self.amount_charged = utility_service.convert_to_decimal(invoice.total/100)
-                self.amount_remaining = utility_service.convert_to_decimal(invoice.amount_remaining/100)
-                self.metadata = invoice.metadata
-                self.save()
-                return True
+            invoice = stripe.Invoice.retrieve(self.stripe_id, expand=["lines"])
+            self.customer = Customer.get(invoice.customer)
+            self.status = invoice.status
+            self.amount_charged = utility_service.convert_to_decimal(invoice.total/100)
+            self.amount_remaining = utility_service.convert_to_decimal(invoice.amount_remaining/100)
+            self.metadata = invoice.metadata
+
+            try:
+                for line in invoice.get("lines").get("data"):
+                    if "period" in line:
+                        self.period_start = date_service.string_to_date(line.get('period').get("start"))
+                        self.period_end = date_service.string_to_date(line.get('period').get("end"))
+                    if not self.subscription:
+                        if "parent" in line:
+                            subscription_id = line.get('parent').get("subscription_item_details").get("subscription")
+                            if subscription_id:
+                                self.subscription = Subscription.from_stripe_id(subscription_id)
+            except Exception as ee:
+                log.error(f"Error in ChatGPT-created code: {ee}")
+
+            self.save()
+            return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
         return False
@@ -317,6 +351,16 @@ class Invoice(models.Model):
             customer = Customer.get_or_create(stripe_id=invoice.get("customer"))
             due_date = invoice.get("due_date")
 
+            subscription_id = invoice.get("subscription")
+            if not subscription_id:
+                # Sometimes the subscription ID is on the line item instead (so says ChatGPT)
+                try:
+                    first_line = invoice["lines"]["data"][0] if invoice["lines"]["data"] else None
+                    if first_line and "subscription" in first_line:
+                        subscription_id = first_line["subscription"]
+                except:
+                    pass
+
             # If a model ID was stored in the invoice metadata, retrieve the model that way
             metadata = invoice.get("metadata")
             if metadata and metadata.get("model_id"):
@@ -332,7 +376,11 @@ class Invoice(models.Model):
                         # Allow to create a new model (?)
 
             # If tied to a subscription...
-            subscription = Subscription.from_stripe_id(invoice.get("subscription")) if invoice.get("subscription") else None
+            if subscription_id:
+                log.info(f"Invoice {stripe_id} generated by subscription {subscription_id}")
+                subscription = Subscription.from_stripe_id(subscription_id)
+            else:
+                subscription = None
 
             inv = cls.objects.create(
                 customer=customer,
@@ -346,13 +394,6 @@ class Invoice(models.Model):
         except Exception as ee:
             Error.record(ee, stripe_id)
             return None
-
-
-
-
-
-
-
 
 
 
@@ -388,9 +429,13 @@ class Subscription(models.Model):
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)
 
+    @staticmethod
+    def active_statuses():
+        return ["trialing", "active", "past_due", "unpaid", "paused"]
+
     @property
     def is_active(self):
-        return self.status in ["trialing", "active", "past_due", "unpaid", "paused"]
+        return self.status in self.active_statuses()
 
     @property
     def status_display(self):

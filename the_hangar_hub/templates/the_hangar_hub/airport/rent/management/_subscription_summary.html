@@ -1,0 +1,53 @@
+{% load base_taglib %}
+
+{## Parameter: rental_agreement ##}
+
+{%with subscription=rental_agreement.stripe_subscription%}
+    {%if subscription%}
+        {%icon bi-heart-pulse title="Subscription Status"%}
+        {{subscription.status_display}}<br />
+
+        {%icon bi-calendar4-week title="Current Period"%}
+        {{subscription.current_period_start|date:preferred_date_format}} -
+        {{subscription.current_period_end|date:preferred_date_format}}<br />
+
+
+        {%icon bi-credit-card title="Recurring Charge"%}
+        {%format_currency subscription.amount%}<br />
+
+        {%if subscription.canceled_at%}
+            {%icon bi-calendar-x title="Canceled"%}
+            {{subscription.canceled_at|date:preferred_date_format}}<br />
+
+        {%elif subscription.ended_at%}
+            {%icon bi-calendar-x title="Ended"%}
+            {{subscription.ended_at|date:preferred_date_format}}<br />
+
+        {%elif subscription.cancel_at%}
+            {%icon bi-calendar-x text-danger title="Cancel at"%}
+            {{subscription.ended_at|date:preferred_date_format}}<br />
+
+        {%elif subscription.cancel_at_period_end%}
+            {%icon bi-slash-circle text-danger%}
+            Cancels at period end<br />
+        {%endif%}
+
+        {%if subscription.cancellation_reason%}
+            {%icon bi-chat-left-text-fill title="Cancellation Reason"%}
+            {{subscription.cancellation_reason}}<br />
+        {%endif%}
+    {%else%}
+        <div class="list-group">
+            <a href="{%url 'rent:subscription_checkout' airport.identifier rental_agreement.id%}" class="list-group-item">
+                {%icon bi-credit-card%} Start Auto-Pay<br />
+                <em style="font-size:.9em;">Must have a credit card on-hand</em>
+            </a>
+            <a href="" class="list-group-item">
+                {%icon bi-credit-card%} Configure Auto-Pay<br />
+                <em style="font-size:.9em;">Tenant must complete later</em>
+            </a>
+        </div>
+
+
+    {%endif%}
+{%endwith%}

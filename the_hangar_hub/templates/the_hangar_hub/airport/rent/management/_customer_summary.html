@@ -1,0 +1,35 @@
+{% load base_taglib %}
+{% load static %}
+
+{## Parameter: rental_agreement ##}
+
+{%with customer=rental_agreement.tenant.customer%}
+    {%if customer%}
+        {%if customer.delinquent%}
+            {%icon bi-heart-pulse text-danger%}
+            Delinquent<br />
+            {%icon bi-cash-coin text-danger title="Balance"%}
+            {%format_currency customer.balance_cents%}<br />
+        {%else%}
+            {%icon bi-heart-pulse%}
+            Active<br />
+        {%endif%}
+
+        {%icon bi-credit-card title="Payment Method"%}
+        {{customer.default_payment|default:"No Saved Payment Method"}}<br />
+
+        {%icon bi-envelope-at title="Billing Email"%}
+        {{customer.email}}<br />
+
+        <img src="{% static 'images/hobbs-transparent-icon.png' %}" style="max-width:25px;" aria-hidden="true" />
+        {%if customer.user%}
+            Has HangarHub Account<br />
+        {%else%}
+            No HangarHub Account<br />
+        {%endif%}
+
+    {%else%}
+        {%icon bi-exclamation-diamond%}
+        Not Setup in Stripe
+    {%endif%}
+{%endwith%}

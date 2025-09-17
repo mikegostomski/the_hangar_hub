@@ -106,7 +106,9 @@ def create_rental_invoice(
         return rental_invoice
 
     elif collection == "stripe_subscription":
-        # ToDo: Stripe subscription and invoice
+        # Create a recurring Stripe invoice
+        if not start_subscription(rental_invoice):
+            log.warning("Invoice left in manual collection state")
         return rental_invoice
 
     else:
@@ -243,6 +245,28 @@ def pay_invoice(invoice, amount_paid=None, payment_method_code=None):
     else:
         message_service.post_success("Partial invoice payment has been recorded.")
     return True
+
+
+def get_paid_through_date(rental_agreement):
+    invoices = RentalInvoice.objects.filter(agreement=rental_agreement, status_code__in=["P", "W"])
+    return max([x.period_end_date for x in invoices]) if invoices else None
+
+
+def get_next_collection_start_date(rental_agreement):
+    paid_through_date = get_paid_through_date(rental_agreement)
+    return paid_through_date + timedelta(days=1) if paid_through_date else rental_agreement.start_date
+
+
+def cancel_open_invoices(rental_agreement):
+    invoices = RentalInvoice.objects.filter(agreement=rental_agreement, status_code__in=["I", "O"])
+    paid_through_dates = []
+    for invoice in invoices:
+        if invoice.amount_paid:
+            # Do not cancel an invoice that is partially paid
+            message_service.post_error(f"Could not cancel partially-paid invoice: {invoice.period_description}")
+            continue
+        if not cancel_invoice(invoice):
+            message_service.post_error(f"Unable to cancel existing invoice: {invoice.period_description}")
 
 
 def convert_to_stripe(invoice):

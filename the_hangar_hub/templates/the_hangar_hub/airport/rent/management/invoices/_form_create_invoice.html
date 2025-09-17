@@ -22,17 +22,28 @@
 
         <fieldset>
             <legend>Collection Options</legend>
-            <label>
-                <input type="radio" name="collection" value="stripe_subscription" /> Recurring Stripe Invoice
-            </label><br />
-            <label>
-                <input type="radio" name="collection" value="stripe_invoice" /> One-Time Stripe Invoice
-            </label><br />
-            <label>
-                <input type="radio" name="collection" value="manual" /> Airport Will Collect
-            </label><br />
+            <div class="list-group">
+                <div class="list-group-item">
+                    <label>
+                        <input type="radio" name="collection" value="manual" checked /> <b>Collect Payment Manually</b>
+                    </label><br />
+                    <em>
+                        Use this option to accept payment via cash, check, or other in-person payment method.
+                    </em><br />
+                </div>
+                <div class="list-group-item">
+                    <label>
+                        <input type="radio" name="collection" value="stripe_invoice" /> <b>One-Time Stripe Invoice</b>
+                    </label><br />
+                    <em>
+                        Use this option to request non-recurring credit card payment via Stripe.<br />
+                        This is ideal for situations where you are charging an amount other than the agreed upon monthly rent amount.
+                    </em><br />
+                </div>
+            </div>
         </fieldset>
 
+        <br />
         <button type="submit" class="btn btn-success">Create Invoice</button>
     </form>
 </div>
