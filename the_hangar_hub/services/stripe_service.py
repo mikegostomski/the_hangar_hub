@@ -344,7 +344,7 @@ def create_rent_subscription(airport, rental, **kwargs):
                 "issuer": {"type": "account", "account": airport.stripe_account_id}
             },
 
-            description=f"Hanger {rental.hangar.code} at {airport.display_name}",
+            description=f"Hangar {rental.hangar.code} at {airport.display_name}",
             items=[{
                 "price_data": {
                     "unit_amount": amount_due,
@@ -429,7 +429,7 @@ def create_rent_invoice(airport, rental, charge_automatically=False):
 
         # invoice_item = stripe.InvoiceItem.create(
         #     customer=customer_rec.stripe_id,
-        #     description=f"Hanger {rental.hangar.code}",
+        #     description=f"Hangar {rental.hangar.code}",
         #     price_data={
         #         "unit_amount": amount_due,
         #         "product": "prod_SlruA5rXT1JeD2",
@@ -442,7 +442,7 @@ def create_rent_invoice(airport, rental, charge_automatically=False):
         log.info("Creating invoice...")
         invoice = stripe.Invoice.create(
             customer=customer_rec.stripe_id,
-            description=f"Hanger {rental.hangar.code} at {airport.display_name}",
+            description=f"Hangar {rental.hangar.code} at {airport.display_name}",
             # amount_due=amount_due,
             application_fee_amount=int(amount_due * 0.01),  # ToDo: Save fee amount per airport
             due_date=due_date,
@@ -462,7 +462,7 @@ def create_rent_invoice(airport, rental, charge_automatically=False):
             inv_lines = stripe.Invoice.add_lines(
                 invoice_id,
                 lines=[
-                    {"description": f"Hanger {rental.hangar.code}", "amount": amount_due},
+                    {"description": f"Hangar {rental.hangar.code}", "amount": amount_due},
                 ]
             )
             if inv_lines and inv_lines.get("object") == "invoice":
@@ -471,7 +471,7 @@ def create_rent_invoice(airport, rental, charge_automatically=False):
             return invoice
         else:
             message_service.post_error(
-                f"Unable to crete invoice for hanger {rental.hangar.code} ({rental.tenant.contact.display_name})"
+                f"Unable to crete invoice for hangar {rental.hangar.code} ({rental.tenant.contact.display_name})"
             )
             return None
     except Exception as ee:

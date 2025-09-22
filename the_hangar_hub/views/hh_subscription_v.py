@@ -138,7 +138,7 @@ def subscription_success(request, airport_identifier):
 
     # If payment was completed, make this user an airport manager
     if success:
-        message_service.post_success("You have successfully subscribed to The Hanger Hub!")
+        message_service.post_success("You have successfully subscribed to The Hangar Hub!")
         airport.status_code = "A"
         airport.save()
         airport_service.set_airport_manager(airport, Auth.current_user())

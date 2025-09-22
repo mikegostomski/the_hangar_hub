@@ -83,7 +83,7 @@ def delete_application(request, application_id):
 
     Auth.audit(
         "D", "APPLICATION",
-        reference_code="HangerApplication", reference_id=application.id,
+        reference_code="HangarApplication", reference_id=application.id,
         comments=f"Deleted Application: {application.user} at {application.airport.identifier}"
     )
     application.delete()

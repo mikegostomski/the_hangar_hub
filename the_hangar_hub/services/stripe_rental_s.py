@@ -179,7 +179,7 @@ def stripe_invoice_from_rental_invoice(rental_invoice):
         stripe.Invoice.add_lines(
             invoice_id,
             lines=[
-                {"description": f"Hanger {hangar.code}", "amount": invoice_amount},
+                {"description": f"Hangar {hangar.code}", "amount": invoice_amount},
             ]
         )
 
@@ -472,7 +472,7 @@ def stripe_subscription_from_rental_invoice(rental_invoice):
                     }
                 },
 
-                description=f"Hanger {hangar.code} at {airport.display_name}",
+                description=f"Hangar {hangar.code} at {airport.display_name}",
                 items=[{
                     "price_data": {
                         "unit_amount": amount_due,
