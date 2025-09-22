@@ -54,6 +54,9 @@ def get_rental_invoice(invoice, post_error=True):
 
     return rental_invoice
 
+def get_tenant_invoices(tenant):
+    pass
+
 
 def create_rental_invoice(
         rental_agreement, period_start, period_end, amount_charged, collection=None, invoice_number=None

@@ -4,12 +4,43 @@ import stripe
 from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service, utility_service
+from base_stripe.models import Customer, Invoice
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.classes.api.invoice import Invoice
+from base_stripe.classes.api.invoice import Invoice as InvoiceAPI
 from datetime import datetime, timezone, timedelta
 
 log = Log()
 env = EnvHelper()
+
+
+def find_invoices(customer, limit=10):
+    """
+    Find invoices created in stripe that did not get caught by a webhook
+    """
+    try:
+        customer_model = Customer.get(customer)
+        if customer_model:
+            log.trace([customer_model, customer_model.stripe_id])
+            set_stripe_api_key()
+            invoices = stripe.Invoice.list(
+                customer=customer_model.stripe_id,
+                limit=limit,
+            )
+            if invoices:
+                ids = [x.id for x in invoices.data]
+                models = Invoice.objects.filter(stripe_id__in=ids)
+                model_ids = [x.stripe_id for x in models] if models else []
+                for stripe_id in ids:
+                    if stripe_id not in model_ids:
+                        inv = Invoice.from_stripe_id(stripe_id)
+                        log.info(f"Found stripe invoice {stripe_id}. Created {inv}")
+    except Exception as ee:
+        Error.unexpected("Could not find customer invoices", ee, customer)
+
+
+
+
+
 
 
 # ToDo: Eventually use only the Invoice model
@@ -27,7 +58,7 @@ def get_customer_invoices(customer_id, status="open", since_days=None):
             status=status,
             created={"gte": since} if since else None,
         )
-        return [Invoice(ii) for ii in invoices]
+        return [InvoiceAPI(ii) for ii in invoices]
     except Exception as ee:
         Error.unexpected("Could not retrieve customer invoices", ee, customer_id)
 

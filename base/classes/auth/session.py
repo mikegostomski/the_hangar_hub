@@ -8,6 +8,8 @@ from base.services import message_service
 from base.classes.auth.user_profile import UserProfile
 from base.classes.util.app_data import EnvHelper, Log, AppData
 from base.models.utility.audit import Audit
+from django.contrib.auth.models import User, AnonymousUser
+from django.utils.functional import SimpleLazyObject
 
 log = Log()
 env = EnvHelper()
@@ -93,6 +95,9 @@ class Auth:
         profile = cls.lookup_user_profile(user_data)
         return profile.user if profile.is_user else None
 
+    @classmethod
+    def is_user_object(cls, data):
+        return type(data) in [User, SimpleLazyObject]
 
     @classmethod
     def audit(

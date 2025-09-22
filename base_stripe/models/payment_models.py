@@ -53,6 +53,7 @@ class Customer(models.Model):
         Update data from Stripe API
         """
         try:
+            log.info(f"Sync {self} ({self.stripe_id})")
             config_service.set_stripe_api_key()
             customer = stripe.Customer.retrieve(self.stripe_id, expand=["invoice_settings.default_payment_method"])
             if customer:
@@ -67,8 +68,26 @@ class Customer(models.Model):
 
                 inv_settings = customer.get("invoice_settings") or {}
                 dpm = inv_settings.get("default_payment_method") or {}
-                self.default_payment_method = dpm.get("type")
                 self.default_source = customer.get("default_source")
+                self.default_payment_method = dpm.get("type")
+
+                # Expand upon payment method when possible
+                if self.default_payment_method:
+                    try:
+                        pm_id = dpm.get("id")
+                        pm = stripe.Customer.retrieve_payment_method(self.stripe_id, pm_id)
+                        payment_type = self.default_payment_method
+                        if payment_type == "card":
+                            card = pm.get("card")
+                            exp = f'exp. {card.get("exp_month")}/{card.get("exp_year")}'
+                            self.default_payment_method = f'{card.get("brand")} ****{card.get("last4")} {exp}'
+                        elif payment_type == "us_bank_account":
+                            acct = pm.get("us_bank_account")
+                            self.default_payment_method = f'{acct.get("bank_name")} ****{acct.get("last4")}'
+                        elif payment_type == "link":
+                            self.default_payment_method = "Managed via Link.com"
+                    except Exception as ee:
+                        Error.record(ee)
 
                 self.save()
                 return True
@@ -100,6 +119,8 @@ class Customer(models.Model):
                 return cls.objects.get(pk=xx)
             elif type(xx) in [User, SimpleLazyObject]:
                 return cls.objects.get(user=xx)
+            elif type(xx) is cls:
+                return xx
             elif "@" in str(xx):
                 return cls.objects.get(email__iexact=xx)
             else:
@@ -139,25 +160,31 @@ class Customer(models.Model):
                     return existing
 
                 log.info(f"Creating new Customer model: {stripe_id}")
-                config_service.set_stripe_api_key()
-                customer = stripe.Customer.retrieve(stripe_id, expand=["invoice_settings.default_payment_method"])
+                cus = Customer()
+                cus.stripe_id = stripe_id
+                cus.sync()
+                return cus
 
-                inv_settings = customer.get("invoice_settings") or {}
-                dpm = inv_settings.get("default_payment_method") or {}
-
-
-                return cls.objects.create(
-                    stripe_id=stripe_id,
-                    full_name=customer.name,
-                    email=customer.email,
-                    balance_cents=customer.balance,
-                    delinquent=customer.delinquent,
-                    invoice_prefix=customer.invoice_prefix,
-                    metadata=customer.metadata,
-                    user=Auth.lookup_user(customer.email) if not user else user,
-                    default_payment_method=dpm.get("type"),
-                    default_source=customer.get("default_source"),
-                )
+                #
+                # config_service.set_stripe_api_key()
+                # customer = stripe.Customer.retrieve(stripe_id, expand=["invoice_settings.default_payment_method"])
+                #
+                # inv_settings = customer.get("invoice_settings") or {}
+                # dpm = inv_settings.get("default_payment_method") or {}
+                #
+                #
+                # return cls.objects.create(
+                #     stripe_id=stripe_id,
+                #     full_name=customer.name,
+                #     email=customer.email,
+                #     balance_cents=customer.balance,
+                #     delinquent=customer.delinquent,
+                #     invoice_prefix=customer.invoice_prefix,
+                #     metadata=customer.metadata,
+                #     user=Auth.lookup_user(customer.email) if not user else user,
+                #     default_payment_method=dpm.get("type"),
+                #     default_source=customer.get("default_source"),
+                # )
             except Exception as ee:
                 Error.record(ee, stripe_id)
 
@@ -244,6 +271,9 @@ class Invoice(models.Model):
     period_end = models.DateTimeField(null=True, blank=True)
     due_date = models.DateTimeField(null=True, blank=True)
 
+    hosted_invoice_url = models.CharField(max_length=500, null=True, blank=True)
+    invoice_pdf = models.CharField(max_length=500, null=True, blank=True)
+
     def sync(self):
         """
         Update data from Stripe API
@@ -252,6 +282,7 @@ class Invoice(models.Model):
             # Nothing to update
             return True
         try:
+            log.info(f"Sync {self} ({self.stripe_id})")
             config_service.set_stripe_api_key()
             invoice = stripe.Invoice.retrieve(self.stripe_id, expand=["lines"])
             self.customer = Customer.get(invoice.customer)
@@ -259,6 +290,8 @@ class Invoice(models.Model):
             self.amount_charged = utility_service.convert_to_decimal(invoice.total/100)
             self.amount_remaining = utility_service.convert_to_decimal(invoice.amount_remaining/100)
             self.metadata = invoice.metadata
+            self.hosted_invoice_url = invoice.hosted_invoice_url
+            self.invoice_pdf = invoice.invoice_pdf
 
             try:
                 for line in invoice.get("lines").get("data"):
@@ -267,7 +300,8 @@ class Invoice(models.Model):
                         self.period_end = date_service.string_to_date(line.get('period').get("end"))
                     if not self.subscription:
                         if "parent" in line:
-                            subscription_id = line.get('parent').get("subscription_item_details").get("subscription")
+                            sid = line.get('parent').get("subscription_item_details")
+                            subscription_id = sid.get("subscription") if sid else None
                             if subscription_id:
                                 self.subscription = Subscription.from_stripe_id(subscription_id)
             except Exception as ee:
@@ -326,6 +360,8 @@ class Invoice(models.Model):
         try:
             if str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
+            elif type(xx) is cls:
+                return xx
             else:
                 return cls.objects.get(stripe_id=xx)
         except cls.DoesNotExist:
@@ -346,50 +382,56 @@ class Invoice(models.Model):
             pass
 
         try:
-            config_service.set_stripe_api_key()
-            invoice = stripe.Invoice.retrieve(stripe_id)
-            customer = Customer.get_or_create(stripe_id=invoice.get("customer"))
-            due_date = invoice.get("due_date")
+            # Create a new model representation for this invoice
+            inv = Invoice()
+            inv.stripe_id = stripe_id
+            inv.sync()
+            return inv
 
-            subscription_id = invoice.get("subscription")
-            if not subscription_id:
-                # Sometimes the subscription ID is on the line item instead (so says ChatGPT)
-                try:
-                    first_line = invoice["lines"]["data"][0] if invoice["lines"]["data"] else None
-                    if first_line and "subscription" in first_line:
-                        subscription_id = first_line["subscription"]
-                except:
-                    pass
-
-            # If a model ID was stored in the invoice metadata, retrieve the model that way
-            metadata = invoice.get("metadata")
-            if metadata and metadata.get("model_id"):
-                existing_id = metadata.get("model_id")
-                if existing_id:
-                    existing = cls.get(existing_id)
-                    if existing:
-                        existing.stripe_id = stripe_id
-                        existing.save()
-                        return existing
-                    else:
-                        Error.record("Invoice metadata points to non-existing invoice model", metadata.get("model_id"))
-                        # Allow to create a new model (?)
-
-            # If tied to a subscription...
-            if subscription_id:
-                log.info(f"Invoice {stripe_id} generated by subscription {subscription_id}")
-                subscription = Subscription.from_stripe_id(subscription_id)
-            else:
-                subscription = None
-
-            inv = cls.objects.create(
-                customer=customer,
-                subscription=subscription,
-                stripe_id=stripe_id,
-                status=invoice.get("status"),
-                due_date=date_service.string_to_date(due_date) if due_date else None,
-                metadata=metadata,
-            )
+            # config_service.set_stripe_api_key()
+            # invoice = stripe.Invoice.retrieve(stripe_id)
+            # customer = Customer.get_or_create(stripe_id=invoice.get("customer"))
+            # due_date = invoice.get("due_date")
+            #
+            # subscription_id = invoice.get("subscription")
+            # if not subscription_id:
+            #     # Sometimes the subscription ID is on the line item instead (so says ChatGPT)
+            #     try:
+            #         first_line = invoice["lines"]["data"][0] if invoice["lines"]["data"] else None
+            #         if first_line and "subscription" in first_line:
+            #             subscription_id = first_line["subscription"]
+            #     except:
+            #         pass
+            #
+            # # If a model ID was stored in the invoice metadata, retrieve the model that way
+            # metadata = invoice.get("metadata")
+            # if metadata and metadata.get("model_id"):
+            #     existing_id = metadata.get("model_id")
+            #     if existing_id:
+            #         existing = cls.get(existing_id)
+            #         if existing:
+            #             existing.stripe_id = stripe_id
+            #             existing.save()
+            #             return existing
+            #         else:
+            #             Error.record("Invoice metadata points to non-existing invoice model", metadata.get("model_id"))
+            #             # Allow to create a new model (?)
+            #
+            # # If tied to a subscription...
+            # if subscription_id:
+            #     log.info(f"Invoice {stripe_id} generated by subscription {subscription_id}")
+            #     subscription = Subscription.from_stripe_id(subscription_id)
+            # else:
+            #     subscription = None
+            #
+            # inv = cls.objects.create(
+            #     customer=customer,
+            #     subscription=subscription,
+            #     stripe_id=stripe_id,
+            #     status=invoice.get("status"),
+            #     due_date=date_service.string_to_date(due_date) if due_date else None,
+            #     metadata=metadata,
+            # )
 
         except Exception as ee:
             Error.record(ee, stripe_id)
@@ -465,6 +507,7 @@ class Subscription(models.Model):
         Update data from Stripe API
         """
         try:
+            log.info(f"Sync {self} ({self.stripe_id})")
             subscription = self.api_data()
             if subscription:
                 self.status = subscription.status
@@ -530,6 +573,8 @@ class Subscription(models.Model):
         try:
             if str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
+            elif type(xx) is cls:
+                return xx
             else:
                 return cls.objects.get(stripe_id=xx)
         except cls.DoesNotExist:
@@ -551,25 +596,30 @@ class Subscription(models.Model):
             pass
 
         try:
-            config_service.set_stripe_api_key()
-            subscription = stripe.Subscription.retrieve(stripe_id)
-            sub = cls.objects.create(
-                customer=Customer.from_stripe_id(subscription.get("customer")),
-                stripe_id=stripe_id,
-                status=subscription.get("status"),
-                metadata=subscription.get("metadata"),
-                ended_at=date_service.string_to_date(subscription.ended_at),
-                cancel_at=date_service.string_to_date(subscription.cancel_at),
-                cancel_at_period_end=subscription.cancel_at_period_end,
-                trial_end_date=date_service.string_to_date(subscription.trial_end),
-                canceled_at=date_service.string_to_date(subscription.canceled_at),
-                cancellation_reason=subscription.cancellation_details.reason,
-            )
-            sub._populate_recurring_charge(subscription)
-            sub._populate_current_period(subscription)
-            sub._populate_first_paid_date()
-            sub.save()
+            sub = Subscription()
+            sub.stripe_id = stripe_id
+            sub.sync()
             return sub
+            #
+            # config_service.set_stripe_api_key()
+            # subscription = stripe.Subscription.retrieve(stripe_id)
+            # sub = cls.objects.create(
+            #     customer=Customer.from_stripe_id(subscription.get("customer")),
+            #     stripe_id=stripe_id,
+            #     status=subscription.get("status"),
+            #     metadata=subscription.get("metadata"),
+            #     ended_at=date_service.string_to_date(subscription.ended_at),
+            #     cancel_at=date_service.string_to_date(subscription.cancel_at),
+            #     cancel_at_period_end=subscription.cancel_at_period_end,
+            #     trial_end_date=date_service.string_to_date(subscription.trial_end),
+            #     canceled_at=date_service.string_to_date(subscription.canceled_at),
+            #     cancellation_reason=subscription.cancellation_details.reason,
+            # )
+            # sub._populate_recurring_charge(subscription)
+            # sub._populate_current_period(subscription)
+            # sub._populate_first_paid_date()
+            # sub.save()
+            # return sub
         except Exception as ee:
             Error.record(ee, stripe_id)
             return None

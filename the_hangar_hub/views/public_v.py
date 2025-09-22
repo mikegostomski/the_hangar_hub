@@ -5,11 +5,12 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 from base.classes.breadcrumb import Breadcrumb
 from base.classes.util.env_helper import Log, EnvHelper
+from base.classes.auth.session import Auth
 from base.services import auth_service, message_service
 from the_hangar_hub.decorators import require_airport
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.invitation import Invitation
-from the_hangar_hub.services import airport_service, tenant_service, application_service
+from the_hangar_hub.services import airport_service, tenant_s, application_service
 from base.decorators import report_errors
 
 log = Log()
@@ -44,7 +45,7 @@ def home(request):
             return redirect("airport:welcome", airport.identifier)
 
         # If a current tenant at an airport, go there (first one if multiple)
-        rentals = tenant_service.get_tenant_rentals()
+        rentals = tenant_s.get_rental_agreements(Auth.current_user())
         if rentals:
             airport = rentals[0].hangar.building.airport
             airport_service.save_airport_selection(airport)

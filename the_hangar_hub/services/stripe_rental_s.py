@@ -30,18 +30,21 @@ def sync_rental_agreement_invoices(rental_agreement):
         # If no customer record, tenant has nothing in Stripe to sync with
         return
 
+    # For all known rental invoices, refresh the data
     for rental_invoice in rental_agreement.relevant_invoice_models():
         if rental_invoice.status_code in ("P", "W", "X"):
             # Invoices that have been paid, waived, or cancelled do not change
             continue
         rental_invoice.sync()
 
-    # Look for new invoices created in Stripe
-    customer = rental_agreement.tenant.customer
+    # Stripe webhooks catch new invoices, but as a backup, check for missed invoices once per session
+    if not env.get_session_variable(f"found_invoices_for_{rental_agreement.id}"):
+        invoice_service.find_invoices(customer, 5)
+        env.set_session_variable(f"found_invoices_for_{rental_agreement.id}", True)
 
+    # Look for new StripeInvoices and create RentalInvoices from them
     for invoice in StripeInvoice.objects.filter(
         customer=customer,
-        subscription__isnull=False,
         related_id__isnull=True,
     ):
         existing = RentalInvoice.get(invoice.stripe_id)
@@ -52,8 +55,6 @@ def sync_rental_agreement_invoices(rental_agreement):
             existing.save()
         else:
             log.info(f"Linking StripeInvoice to new RentalInvoice")
-            invoice.sync()  # ToDo: Remove after incomplete data has been updated
-
             # Period start and end are required to track invoice in HangarHub model
             if invoice.period_start and invoice.period_end:
                 # Create a RentalInvoice
@@ -67,6 +68,8 @@ def sync_rental_agreement_invoices(rental_agreement):
                     status_code="I", # sync() will map to the correct status code
                 )
                 ri.sync()
+            else:
+                log.error(f"Cannot create RentalInvoice without period start and end dates [{invoice.stripe_id}]")
 
 
 def sync_rental_agreement_subscriptions(rental_agreement):

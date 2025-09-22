@@ -1,5 +1,6 @@
 from base.classes.util.app_data import Log, EnvHelper, AppData
-from the_hangar_hub.services import airport_service, tenant_service, application_service
+from base.classes.auth.session import Auth
+from the_hangar_hub.services import airport_service, tenant_s, application_service
 from the_hangar_hub.services import stripe_s
 from base_stripe.services import webhook_service
 
@@ -19,7 +20,7 @@ def airport_data(request):
         webhook_service.react_to_events()
 
     managed_airports = airport_service.managed_airports()
-    rentals = tenant_service.get_tenant_rentals()
+    rentals = tenant_s.get_rental_agreements(Auth.current_user())
     open_applications = application_service.get_active_applications()
     selected_application = application_service.get_selected_application()
     airport = request.airport if hasattr(request, "airport") else None

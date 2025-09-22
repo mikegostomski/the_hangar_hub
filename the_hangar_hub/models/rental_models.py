@@ -2,7 +2,8 @@ from calendar import month
 
 from django.db import models
 from django.contrib.auth.models import User
-from base.classes.util.log import Log
+from base.models.utility.error import Error,Log
+from base.classes.auth.session import Auth
 from datetime import datetime, timezone, timedelta
 from django.db.models import Q
 from the_hangar_hub.services import stripe_service
@@ -14,6 +15,9 @@ from base.classes.util.date_helper import DateHelper
 log = Log()
 
 
+"""
+TENANT
+"""
 class Tenant(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -39,14 +43,59 @@ class Tenant(models.Model):
         return self.contact.email
 
     @classmethod
-    def get(cls, data):
+    def get(cls, tenant_data):
         try:
-            return cls.objects.get(pk=data)
-        except cls.DoesNotExist:
-            return None
+            user = None
+
+            if not tenant_data:
+                return None
+
+            # If given a Tenant object, just return it
+            if type(tenant_data) is Tenant:
+                return tenant_data
+
+            # If given a RentalAgreement object
+            if type(tenant_data) is RentalAgreement:
+                return tenant_data.tenant
+
+            # If given a User object
+            if Auth.is_user_object(tenant_data):
+                try:
+                    # Return tenant record tied to user
+                    return Tenant.objects.get(user=tenant_data)
+                except Tenant.DoesNotExist:
+                    # User may have joined after Tenant record was created
+                    user = tenant_data
+                    tenant_data = user.email
+
+            # If given an email address (or user not associated with a Tenant in previous condition)
+            if "@" in str(tenant_data):
+                try:
+                    tenant = Tenant.objects.get(contact__email__iexact=tenant_data)
+                    if user and not tenant.user:
+                        tenant.user = user
+                        tenant.save()
+                    else:
+                        Error.record(f"Potential duplicate account for tenant: {tenant} - {tenant.user}/{user}")
+                    return tenant
+                except Tenant.DoesNotExist:
+                    return None
+
+            # If given a Stripe customer ID
+            if str(tenant_data).startswith("cus_"):
+                try:
+                    return Tenant.objects.get(customer__stripe_id=tenant_data)
+                except Tenant.DoesNotExist:
+                    return None
+
+            # Not sure what other type of data could point to a tenant
+            else:
+                log.error(f"Cannot lookup Tenant given unknown data: {tenant_data}")
+
         except Exception as ee:
-            log.error(f"Could not get {cls}: {ee}")
+            Error.record(ee, tenant_data)
             return None
+
 
 class RentalAgreement(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
@@ -110,11 +159,35 @@ class RentalAgreement(models.Model):
     def open_invoice_models(self):
         return self.invoices.filter(status_code="O")
 
+
+    _pay_stats = None
+    _last_payment_date = None
+    _paid_through_date = None
     def relevant_invoice_models(self):
         recent = datetime.now(timezone.utc) - timedelta(hours=1)
-        return self.invoices.filter(Q(status_code__in=["O", "P", "W"]) | Q(last_updated__gt=recent))
+        rims = self.invoices.filter(Q(status_code__in=["O", "P", "W"]) | Q(last_updated__gt=recent)).order_by("-period_start_date", "-date_created")
+        if rims:
+            payment_dates = []
+            paid_periods = []
+            for inv in rims:
+                if inv.date_paid:
+                    payment_dates.append(inv.date_paid)
+                if inv.status_code in ["P", "W"]:
+                    paid_periods.append(inv.period_end_date)
+            self._last_payment_date = max(payment_dates) if payment_dates else None
+            self._paid_through_date = max(paid_periods) if paid_periods else None
+        self._pay_stats = True
+        return rims
 
+    def last_payment_date(self):
+        if not self._pay_stats:
+            self.relevant_invoice_models()
+        return self._last_payment_date
 
+    def paid_through_date(self):
+        if not self._pay_stats:
+            self.relevant_invoice_models()
+        return self._paid_through_date
 
     # Past/Present/Future Rental Agreement?
     def is_present(self):
@@ -252,6 +325,8 @@ class RentalInvoice(models.Model):
 
     def sync(self):
         if self.stripe_invoice:
+            log.info(f"Sync {self}")
+            self.stripe_invoice.sync()
             if self.status_code == "W" and self.stripe_status_code == "P":
                 # Stripe marks waived invoices as Paid. Do not update Waived to Paid in local model
                 pass

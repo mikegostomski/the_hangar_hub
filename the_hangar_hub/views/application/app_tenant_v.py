@@ -9,7 +9,7 @@ from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from base.services import message_service, utility_service, email_service, contact_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service, tenant_service
+from the_hangar_hub.services import airport_service, tenant_s
 from base.classes.breadcrumb import Breadcrumb
 from the_hangar_hub.decorators import require_airport, require_airport_manager
 from the_hangar_hub.models.application import HangarApplication

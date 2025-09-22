@@ -32,7 +32,9 @@ def react_to_events():
 
     # Some objects are currently not being tracked locally
     ignore = [
-        "payment_intent",
+        "payment_intent", "invoiceitem", "credit_note",
+        "setup_intent", "charge", "payment_method",
+        "checkout.session",
     ]
 
     for event in webhook_events:

@@ -1,0 +1,49 @@
+{% load base_taglib %}
+
+{## Parameter: invoice ##}
+
+<tr data-invoice_id="{{invoice.id}}">
+    <td>{%humanized_date invoice.date_created%}</td>
+    <td>
+        {{invoice.period_start_date|date:preferred_date_format}} - {{invoice.period_end_date|date:preferred_date_format}}
+    </td>
+    <td>
+        {%if not invoice.stripe_invoice%}
+            Manual Collection
+        {%elif not invoice.stripe_subscription%}
+            Stripe (One-Time)
+        {%else%}
+            Stripe (Monthly)
+        {%endif%}
+    </td>
+    <td>{%format_currency invoice.amount_charged%}</td>
+    <td>
+        {%format_currency invoice.amount_paid%}<br />
+        {%if invoice.payment_method_code%}
+            <em class="text-sm text-muted">{{invoice.payment_method}}</em>
+        {%endif%}
+    </td>
+    <td>
+        {{invoice.status}}
+        {%if invoice.is_stripe_invoice%}
+            <br />
+            {{invoice.stripe_status}}
+            {%if invoice.stripe_status == "Draft"%}
+                {%icon bi-floppy text-success title="Finalize Invoice" onclick="finalize_invoice($(this));"%}
+            {%endif%}
+        {%endif%}
+    </td>
+    <td>
+        {%if invoice.is_stripe_invoice%}
+            {%if invoice.stripe_invoice.hosted_invoice_url and invoice.status_code == "O"%}
+                <a href="{{invoice.stripe_invoice.hosted_invoice_url}}" target="_blank">Pay Now</a>
+            {%elif invoice.stripe_invoice.hosted_invoice_url and invoice.status_code == "P"%}
+                <a href="{{invoice.stripe_invoice.hosted_invoice_url}}" target="_blank">View Receipt</a>
+            {%elif invoice.stripe_invoice.hosted_invoice_url%}
+                <a href="{{invoice.stripe_invoice.hosted_invoice_url}}" target="_blank">View</a>
+            {%endif%}
+        {%endif%}
+
+
+    </td>
+</tr>

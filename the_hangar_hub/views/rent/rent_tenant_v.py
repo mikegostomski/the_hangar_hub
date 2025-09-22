@@ -24,6 +24,8 @@ from the_hangar_hub.services import stripe_service
 from base_stripe.services import invoice_service
 from django.contrib.auth.models import User
 from base.services import utility_service
+from the_hangar_hub.services import tenant_s
+
 
 log = Log()
 env = EnvHelper()
@@ -65,18 +67,21 @@ def payment_dashboard(request):
     """
     Tenant Payment Center
     """
-    stripe_customer = Customer.get(Auth.current_user()).api_wrapper()
-    open_invoices = invoice_service.get_customer_invoices(stripe_customer.id, "open")
-    recent_invoices = invoice_service.get_customer_invoices(stripe_customer.id, "paid", since_days=180)
-    customer_model = Customer.get(stripe_customer.id)
+    current_user = Auth.current_user()
+    rental_agreements = tenant_s.get_rental_agreements(current_user)
+    stripe_customer = Customer.get(current_user)
+
+    stripe_customer.sync()
+
+    # open_invoices = invoice_service.get_customer_invoices(stripe_customer.id, "open")
+    # recent_invoices = invoice_service.get_customer_invoices(stripe_customer.id, "paid", since_days=180)
+    # customer_model = Customer.get(stripe_customer.id)
 
     return render(
         request, "the_hangar_hub/airport/rent/tenant/payment/dashboard/dashboard.html",
         {
+            "rental_agreements": rental_agreements,
             "stripe_customer": stripe_customer,
-            "open_invoices": open_invoices,
-            "recent_invoices": recent_invoices,
-            "customer_model": customer_model,
         }
     )
 

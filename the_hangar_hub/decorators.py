@@ -1,12 +1,13 @@
 from base.services import message_service, utility_service
 from base.classes.util.env_helper import Log, EnvHelper
+from base.classes.auth.session import Auth
 from functools import wraps
 from urllib.parse import urlparse
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url
 from base.services import auth_service
 from base.decorators import decorator_sso_redirect, decorator_redirect
-from the_hangar_hub.services import airport_service, tenant_service
+from the_hangar_hub.services import airport_service, tenant_s
 from the_hangar_hub.models.airport import Airport
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
@@ -56,7 +57,7 @@ def require_airport(after_selection_url=None):
                     request.airport = Airport.get(selected_airport)
                 else:
                     aids = list(set(
-                        [x.hangar.building.airport.identifier for x in tenant_service.get_tenant_rentals()]
+                        [x.hangar.building.airport.identifier for x in tenant_s.get_rental_agreements(Auth.current_user())]
                     ))
                     if len(aids) == 1:
                         selected_airport = aids[0]
@@ -126,7 +127,7 @@ def require_airport_tenant():
                 return decorator_sso_redirect(request)
 
             # Get tenant rentals
-            rentals = tenant_service.get_tenant_rentals()
+            rentals = tenant_s.get_rental_agreements(Auth.current_user())
             if not rentals:
                 return render(
                     request, "the_hangar_hub/error_pages/tenants_only.html",

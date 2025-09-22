@@ -1,0 +1,49 @@
+{% load base_taglib %}
+
+{## Parameter: rental_agreement ##}
+
+<div class="payment_summary_row">
+    {%if not hide_rental_agreement%}
+        <div class="card float-left">
+            <div class="card-body">
+                <strong class="card-title">Rental Agreement</strong>
+                <p class="card-text">
+                    {%include "the_hangar_hub/airport/rent/summaries/_rental_agreement.html"%}
+                </p>
+            </div>
+        </div>
+    {%endif%}
+    {%if not hide_customer%}
+        <div class="card float-left">
+            <div class="card-body">
+                <strong class="card-title">Stripe Customer</strong>
+                <p class="card-text">
+                    {%include "the_hangar_hub/airport/rent/summaries/_customer.html"%}
+                </p>
+            </div>
+        </div>
+    {%endif%}
+    {%if not hide_subscription%}
+        <div class="card float-left">
+            <div class="card-body">
+                <strong class="card-title">Rent Subscription</strong>
+                <p class="card-text">
+                    {%include "the_hangar_hub/airport/rent/summaries/_subscription.html"%}
+                </p>
+            </div>
+        </div>
+    {%endif%}
+</div>
+<br style="clear:both;" />
+
+<style>
+    .payment_summary_row{
+        height: 200px;
+        margin-bottom: 50px;
+    }
+    .payment_summary_row .card{
+        height:100%;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+</style>

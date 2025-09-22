@@ -17,7 +17,7 @@ from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service, utility_service, email_service, date_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service, tenant_service, application_service, stripe_service
+from the_hangar_hub.services import airport_service, tenant_s, application_service, stripe_service
 from decimal import Decimal
 from base.classes.breadcrumb import Breadcrumb
 from django.contrib.auth.models import User

@@ -7,26 +7,17 @@
 <h1>Payment Dashboard</h1>
 <br />
 
+<section>
+
+</section>
+
+
 <h2>Payment Information</h2>
 <section>
     <table class="table" style="max-width: 800px;">
         <tr>
             <th scope="row">Email</th>
             <td>{{stripe_customer.email}}</td>
-        </tr>
-        <tr>
-            <th scope="row">Phone</th>
-            <td>{%format_phone stripe_customer.phone%}</td>
-        </tr>
-        <tr>
-            <th scope="row">Address</th>
-            <td>
-                {%for line in stripe_customer.address_lines%}
-                    {{line}}<br />
-                {%empty%}
-                    <em class="text-muted">No Address Info</em>
-                {%endfor%}
-            </td>
         </tr>
         <tr>
             <th scope="row">Account Status</th>
@@ -41,48 +32,10 @@
         <tr>
             <th scope="row">Default Payment Method</th>
             <td>
-                {%if stripe_customer.default_payment_method%}
-                    {{stripe_customer.default_payment_method_display}}
+                {%if stripe_customer.default_payment%}
+                    {{stripe_customer.default_payment}}
                 {%else%}
                     <div class="alert alert-danger text-center alert-sm">No Payment Method</div>
-                {%endif%}
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">Auto-Pay</th>
-            <td>
-                {%if stripe_customer.default_payment_method%}
-                    {%with use_auto_pay=customer_model.use_auto_pay%}
-                        <div id="autopay-on" class="autopay-ind {%if not use_auto_pay%}hidden{%endif%}">
-                            {%icon bi-toggle-on text-xl onclick="update_auto_pay($(this));" title="Disable auto-pay"%}
-                            &nbsp;
-                            <span class="badge text-bg-success">Auto-Pay Enabled</span>
-                        </div>
-                        <div id="autopay-off" class="autopay-ind {%if use_auto_pay%}hidden{%endif%}">
-                            {%icon bi-toggle-off text-xl onclick="update_auto_pay($(this));" title="Enable auto-pay"%}
-                            &nbsp;
-                            <span class="badge text-bg-warning">Auto-Pay Disabled</span>
-                        </div>
-                        {%if open_invoices%}
-                        <em class="text-muted text-sm">
-                            This setting affects <b>future</b> invoices.
-                            {%if open_invoices|length == 1 and open_invoices.0.auto_pay != use_auto_pay%}
-                                {%if open_invoices|length == 1 and open_invoices.0.auto_pay%}
-                                    Your existing invoice will still be auto-paid.
-                                    You may be able to change this in the
-                                    <a href="{{'STRIPE_PORTAL_LINK'|get_setting}}" target="_blank">Stripe Customer Portal</a>.
-                                {%elif open_invoices|length == 1 and not open_invoices.0.auto_pay%}
-                                    You must manually pay your existing invoice below.
-                                {%else%}
-                                    Invoices listed below will not be affected.
-                                {%endif%}
-                            {%endif%}
-                        </em><br />
-                        {%endif%}
-
-                    {%endwith%}
-                {%else%}
-                    You must save your payment information in Stripe before you can enroll in auto-pay.
                 {%endif%}
             </td>
         </tr>
@@ -105,21 +58,37 @@
     </table>
 </section>
 
-<section>
-    <h2>Open Invoices</h2>
-    <br />
-    <div id="open-invoice-container">
-        {%include "the_hangar_hub/airport/rent/tenant/payment/dashboard/_invoice_table.html" with stripe_invoices=open_invoices%}
-    </div>
-</section>
+{%for rental_agreement in rental_agreements%}
+    <h2>Hangar {{rental_agreement.hangar.code}} at {{rental_agreement.airport.identifier}}</h2>
+    {%include "the_hangar_hub/airport/rent/summaries/_cards.html"%}
 
-<section>
-    <h2>Recent Invoices</h2>
-    <br />
-    <div id="recent-invoice-container">
-        {%include "the_hangar_hub/airport/rent/tenant/payment/dashboard/_invoice_table.html" with stripe_invoices=recent_invoices%}
-    </div>
-</section>
+    <section>
+    {%if rental_agreement.relevant_invoice_models%}
+        <h2>Invoices</h2>
+        <table class="table" id="invoice_table">
+            <tr>
+                <th scope="col">Created</th>
+                <th scope="col">Period</th>
+                <th scope="col">Collection Method</th>
+                <th scope="col">Charged</th>
+                <th scope="col">Paid</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
+            </tr>
+            {%for invoice in rental_agreement.relevant_invoice_models%}
+                {%include "the_hangar_hub/airport/rent/tenant/payment/dashboard/_invoice_tr.html"%}
+            {%endfor%}
+        </table>
+
+        {%include "the_hangar_hub/airport/rent/management/invoices/_form_record_payment.html"%}
+    {%endif%}
+    </section>
+
+{%endfor%}
+
+
+
+
 
 <script type="text/javascript">
     {%include "the_hangar_hub/airport/rent/tenant/payment/dashboard/script.js"%}
