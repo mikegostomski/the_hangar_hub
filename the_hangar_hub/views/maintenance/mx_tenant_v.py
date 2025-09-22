@@ -55,7 +55,7 @@ def tenant_request(request, airport_identifier, hangar_id):
             break
     if not this_rental:
         message_service.post_error(f"Could not find a current rental agreement for hangar {hangar_id}")
-        return redirect("mx:mx_dashboard")
+        return redirect("mx:tenant_dashboard")
 
     return render(
         request, "the_hangar_hub/airport/maintenance/tenant_request/form.html",
@@ -76,7 +76,7 @@ def tenant_request_submit(request, airport_identifier, hangar_id):
             break
     if not this_rental:
         message_service.post_error(f"Could not find a current rental agreement for hangar {hangar_id}")
-        return redirect("mx:mx_dashboard")
+        return redirect("mx:tenant_dashboard")
 
     params = {
         "summary": request.POST.get("summary"),
@@ -93,7 +93,7 @@ def tenant_request_submit(request, airport_identifier, hangar_id):
         has_issues = True
     if has_issues:
         env.set_flash_scope("prefill", params)
-        return redirect("mx:mx_request_form", request.airport.identifier, hangar_id)
+        return redirect("mx:request_form", request.airport.identifier, hangar_id)
 
     try:
         mx = MaintenanceRequest()
@@ -107,14 +107,14 @@ def tenant_request_submit(request, airport_identifier, hangar_id):
         mx.save()
 
         message_service.post_success("Your maintenance request has been submitted")
-        return redirect("mx:mx_dashboard")
+        return redirect("mx:tenant_dashboard")
 
     except Exception as ee:
         Error.unexpected(
             "Unable to save your maintenance request.", ee, params
         )
         env.set_flash_scope("prefill", params)
-        return redirect("mx:mx_request_form", request.airport.identifier, hangar_id)
+        return redirect("mx:request_form", request.airport.identifier, hangar_id)
 
 
 @report_errors()
@@ -123,7 +123,7 @@ def tenant_request_view(request, airport_identifier, request_id):
     this_request = MaintenanceRequest.get(request_id)
     if not this_request:
         message_service.post_error("Could not find the specified request")
-        return redirect("mx:mx_dashboard")
+        return redirect("mx:tenant_dashboard")
 
     rentals = request.rentals
     this_rental = None
@@ -133,7 +133,7 @@ def tenant_request_view(request, airport_identifier, request_id):
             break
     if not this_rental:
         message_service.post_error(f"Could not find a current rental agreement for hangar {this_request.hangar.code}")
-        return redirect("mx:mx_dashboard")
+        return redirect("mx:tenant_dashboard")
 
     return render(
         request, "the_hangar_hub/airport/maintenance/tenant_request/view.html",

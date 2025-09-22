@@ -3,7 +3,7 @@ function post_comment(btn_el){
     let btn_container = btn_el.parent();
     $.ajax({
         type:   "POST",
-        url:    "{%url 'mx:post_mx_comment' request.airport.identifier mx_request.id%}",
+        url:    "{%url 'mx:post_comment' request.airport.identifier mx_request.id%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             comment: $("#new_comment").val(),

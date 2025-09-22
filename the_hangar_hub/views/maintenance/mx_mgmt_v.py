@@ -53,7 +53,7 @@ def manager_request_view(request, airport_identifier, request_id):
     this_request = MaintenanceRequest.get(request_id)
     if not this_request:
         message_service.post_error("Could not find the specified request")
-        return redirect("mx:mx_dashboard")
+        return redirect("mx:mgmt_dashboard")
 
     return render(
         request, "the_hangar_hub/airport/maintenance/manager/view.html",

@@ -4,7 +4,7 @@ function update_priority(input_el){
     let input_container = input_el.parent();
     $.ajax({
         type:   "POST",
-        url:    "{%url 'mx:update_mx_priority' request.airport.identifier mx_request.id%}",
+        url:    "{%url 'mx:update_priority' request.airport.identifier mx_request.id%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             priority_code: $("#priority_code").val()
@@ -30,7 +30,7 @@ function update_status(input_el){
     let input_container = input_el.parent();
     $.ajax({
         type:   "POST",
-        url:    "{%url 'mx:update_mx_status' request.airport.identifier mx_request.id%}",
+        url:    "{%url 'mx:update_status' request.airport.identifier mx_request.id%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             status_code: $("#status_code").val()
@@ -67,7 +67,7 @@ function _update_visibility(comment_id, btn_el, visibility_code){
     let btn_container = btn_el.parent();
     $.ajax({
         type:   "POST",
-        url:    "{%url 'mx:mx_comment_visibility' request.airport.identifier%}",
+        url:    "{%url 'mx:comment_visibility' request.airport.identifier%}",
         data:   {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             comment_id: comment_id,
