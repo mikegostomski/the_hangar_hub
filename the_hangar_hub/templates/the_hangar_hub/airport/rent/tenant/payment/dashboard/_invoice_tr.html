@@ -24,13 +24,20 @@
         {%endif%}
     </td>
     <td>
-        {{invoice.status}}
-        {%if invoice.is_stripe_invoice%}
-            <br />
-            {{invoice.stripe_status}}
-            {%if invoice.stripe_status == "Draft"%}
-                {%icon bi-floppy text-success title="Finalize Invoice" onclick="finalize_invoice($(this));"%}
-            {%endif%}
+        {%if invoice.status_code == "P"%}
+            {%icon bi-clipboard-check text-success title=invoice.status%}
+        {%elif invoice.status_code == "W"%}
+            {%icon bi-gift text-success title=invoice.status%}
+        {%elif invoice.status_code == "X"%}
+            {%icon bi-slash-circle text-muted title=invoice.status%}
+        {%elif invoice.status_code == "U"%}
+            {%icon bi-clipboard-x text-danger title=invoice.status%}
+        {%elif invoice.status_code == "I"%}
+            {%icon bi-pencil-square text-muted title=invoice.status%}
+        {%elif invoice.period_start_date < now%}
+            {%icon bi-clipboard-minus text-danger title=invoice.status%}
+        {%else%}
+            {%icon bi-clipboard-minus title=invoice.status%}
         {%endif%}
     </td>
     <td>

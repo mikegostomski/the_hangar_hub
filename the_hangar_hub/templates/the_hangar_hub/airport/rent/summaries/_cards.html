@@ -14,14 +14,22 @@
         </div>
     {%endif%}
     {%if not hide_customer%}
+    {%with customer=rental_agreement.tenant.customer%}
         <div class="card float-left">
             <div class="card-body">
-                <strong class="card-title">Stripe Customer</strong>
+                <strong class="card-title">
+                    {%if customer and customer.user and customer.user == current_user.user%}
+                        Payment Method
+                    {%else%}
+                        Stripe Customer
+                    {%endif%}
+                </strong>
                 <p class="card-text">
                     {%include "the_hangar_hub/airport/rent/summaries/_customer.html"%}
                 </p>
             </div>
         </div>
+    {%endwith%}
     {%endif%}
     {%if not hide_subscription%}
         <div class="card float-left">

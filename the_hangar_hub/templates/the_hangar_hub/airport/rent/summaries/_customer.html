@@ -5,27 +5,43 @@
 
 {%with customer=rental_agreement.tenant.customer%}
     {%if customer%}
-        {%if customer.delinquent%}
-            {%icon bi-heart-pulse text-danger%}
-            Delinquent<br />
-            {%icon bi-cash-coin text-danger title="Balance"%}
-            {%format_currency customer.balance_cents%}<br />
+
+        {%if customer.user and customer.user == current_user.user%}
+            <p class="text-sm">
+                We use Stripe to securely handle all billing and payments.<br />
+                You can manage your payment information in the Stripe Customer Portal.<br />
+                Be sure to use <b>{{stripe_customer.email}}</b> as your email address.<br />
+            </p>
+            <div class="">
+                <a href="{{'STRIPE_PORTAL_LINK'|get_setting}}" class="btn btn-primary btn-sm" target="_blank">
+                    <span class="visually-hidden">manage your payment information in the</span>
+                    Stripe Customer Portal
+                </a>
+            </div>
         {%else%}
-            {%icon bi-heart-pulse%}
-            Active<br />
-        {%endif%}
 
-        {%icon bi-credit-card title="Payment Method"%}
-        {{customer.default_payment|default:"No Saved Payment Method"}}<br />
+            {%if customer.delinquent%}
+                {%icon bi-heart-pulse text-danger%}
+                Delinquent<br />
+                {%icon bi-cash-coin text-danger title="Balance"%}
+                {%format_currency customer.balance_cents%}<br />
+            {%else%}
+                {%icon bi-heart-pulse%}
+                Active<br />
+            {%endif%}
 
-        {%icon bi-envelope-at title="Billing Email"%}
-        {{customer.email}}<br />
+            {%icon bi-credit-card title="Payment Method"%}
+            {{customer.default_payment|default:"No Saved Payment Method"}}<br />
 
-        <img src="{% static 'images/hobbs-transparent-icon.png' %}" style="max-width:25px;" aria-hidden="true" />
-        {%if customer.user%}
-            Has HangarHub Account<br />
-        {%else%}
-            No HangarHub Account<br />
+            {%icon bi-envelope-at title="Billing Email"%}
+            {{customer.email}}<br />
+
+            <img src="{% static 'images/hobbs-transparent-icon.png' %}" style="max-width:25px;" aria-hidden="true" />
+            {%if customer.user%}
+                Has HangarHub Account<br />
+            {%else%}
+                No HangarHub Account<br />
+            {%endif%}
         {%endif%}
 
     {%else%}
