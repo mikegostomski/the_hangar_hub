@@ -100,7 +100,7 @@ def require_airport_manager(redirect_url='/'):
                 return decorator_sso_redirect(request)
 
             # If user is manager for the current airport, render the view
-            elif request.airport and airport_service.is_airport_manager(request.user, request.airport):
+            elif airport_service.manages_this_airport():
                 return view_func(request, *args, **kwargs)
 
             # Otherwise, send somewhere else

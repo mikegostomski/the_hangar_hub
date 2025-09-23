@@ -143,8 +143,8 @@ def humanize(*args):
 
 
 @register.inclusion_tag('base/components/humanized_date.html')
-def humanized_date(*args):
-    return {"dt": args[0]}
+def humanized_date(*args, **kwargs):
+    return {"dt": args[0], **kwargs}
 
 
 @register.simple_tag

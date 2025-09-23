@@ -100,6 +100,7 @@ def tenant_request_submit(request, airport_identifier, hangar_id):
         mx.user = Auth.current_user()
         mx.tenant = this_rental.tenant
         mx.hangar = this_rental.hangar
+        mx.airport = request.airport
         mx.summary = params["summary"]
         mx.notes = params["notes"]
         mx.priority_code = params["priority_code"]

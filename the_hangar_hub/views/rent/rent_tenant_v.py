@@ -6,7 +6,7 @@ from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from base_stripe.models.payment_models import Customer, Subscription
 from the_hangar_hub.models.rental_models import Tenant, RentalAgreement, RentalInvoice
-from the_hangar_hub.models.airport_manager import AirportManager
+from the_hangar_hub.models.maintenance import MaintenanceRequest, ScheduledMaintenance
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
@@ -35,21 +35,22 @@ env = EnvHelper()
 @require_authentication()
 @require_airport()
 def my_hangar(request, airport_identifier, hangar_id):
-    if str(hangar_id).isnumeric():
-        try:
-            hangar = Hangar.get(hangar_id)
-            hangar_id = hangar.code
-        except:
-            message_service.post_error("Specified hangar ID could not be found")
-            return redirect("public:home")
+    hangar = Hangar.get(hangar_id)
+    if not hangar:
+        message_service.post_error("Specified hangar ID could not be found")
+        return redirect("public:home")
 
     # Get the rental agreement(s) for this user at this airport in this hangar
     rentals = RentalAgreement.objects.filter(
-        hangar__building__airport=request.airport, tenant__user=Auth.current_user(), hangar__code=hangar_id
+        airport=request.airport, tenant__user=Auth.current_user(), hangar=hangar
     ).order_by("-start_date")
     if not rentals:
         message_service.post_error("Could not find a rental agreement for you and this hangar.")
         return redirect("public:home")
+
+    # Look for maintenance requests
+    mx_requests = MaintenanceRequest.objects.filter(airport=request.airport, hangar=hangar)
+
 
     Breadcrumb.clear()
     return render(
@@ -57,7 +58,8 @@ def my_hangar(request, airport_identifier, hangar_id):
         {
             "airport": request.airport,
             "rentals": rentals,
-            "hangar": rentals[0].hangar,
+            "hangar": hangar,
+            "mx_requests": mx_requests
         }
     )
 

@@ -11,6 +11,24 @@ from base.models.utility.error import Error
 log = Log()
 env = EnvHelper()
 
+def manages_this_airport():
+    """
+    Does the current user manage the currently selected airport
+
+    Can only be true when there is a selected airport in the request
+    """
+    result = env.recall()
+    if result is None:
+        airport = env.request.airport
+        user = Auth.current_user()
+        if not airport:
+            result = False
+        elif not user.is_authenticated:
+            result = False
+        else:
+            result = is_airport_manager(user, airport)
+        env.store(result)
+    return result
 
 def is_airport_manager(user=None, airport=None):
     use_recall = user is None and airport is None
@@ -20,6 +38,7 @@ def is_airport_manager(user=None, airport=None):
         if result is not None:
             return result
 
+    log.trace([user, airport])
     user = Auth().lookup_user(user_data=user) if user else Auth.current_user()
     if can_query_user(user):
         manages = AirportManager.objects.filter(user=user, status_code="A").select_related("user")

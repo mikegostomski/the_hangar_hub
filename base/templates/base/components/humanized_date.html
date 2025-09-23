@@ -1,5 +1,5 @@
 {% load base_taglib %}
 {%if dt is not None%}
     {{dt|date:"F d, Y"}}<br />
-    <em class="text-muted sm">{%humanize dt%}</em>
+    <em class="sm {%if humanized_class%}{{humanized_class}}{%else%}text-muted{%endif%}">{%humanize dt%}</em>
 {%endif%}

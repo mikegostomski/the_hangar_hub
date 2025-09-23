@@ -163,6 +163,9 @@ class Airport(models.Model):
         except Hangar.DoesNotExist:
             return None
 
+    def get_new_mx_requests(self):
+        return self.maintenance_requests.exclude(status_code="R")
+
     def get_unreviewed_applications(self):
         return self.applications.filter(status_code="S")
 

@@ -24,7 +24,7 @@ def get_rental_agreements(tenant_data, airport=None):
     tenant = get_tenant(tenant_data)
     if tenant:
         if airport:
-            return RentalAgreement.relevant_rental_agreements().filter(tenant=tenant, hangar__building__airport=airport)
+            return RentalAgreement.relevant_rental_agreements().filter(tenant=tenant, airport=airport)
         else:
             return RentalAgreement.relevant_rental_agreements().filter(tenant=tenant)
     return None

@@ -1,49 +1,72 @@
 {% load base_taglib %}
-<div class="card mb-3 {%if mx_comment.is_them%}text-bg-success float-right{%else%}text-bg-info float-left{%endif%}" style="width:95%;">
-    <div class="row g-0">
-        <div class="col-md-3" style="padding:10px;">
-            {%if mx_comment%}
-                {%icon bi-person-badge%} {{mx_comment.user.username}}<br />
-                {%humanized_date mx_comment.date_created%}<br />
-                {%if is_airport_manager%}
-                    {%if mx_comment.visibility_code == "I"%}
-                        <span class="badge text-bg-danger" style="cursor:pointer;" onclick="make_public({{mx_comment.id}}, $(this));">{%icon bi-eye-slash%} Internal</span>
-                    {%else%}
-                        <div class="badge text-bg-primary" style="cursor:pointer;" onclick="make_private({{mx_comment.id}}, $(this));">{%icon bi-eye%} Public</div>
+
+{%if mx_comment and not mx_comment.can_view%}
+    {## DO NOT SHOW COMMENT ##}
+{%else%}
+
+    <div class="card mb-3 {%if mx_comment.posted_by_them%}text-bg-success float-right{%else%}text-bg-info float-left{%endif%}" style="width:95%;">
+        <div class="row g-0">
+            <div class="col-md-3" style="padding:10px;">
+                {%if not mx_comment%}
+                    {%icon bi-person-badge%} {{current_user.display_name}}<br />
+                    {%icon bi-calendar%} {{now|date:preferred_date_format}}<br />
+                {%else%}
+
+                        {%icon bi-person-badge%}
+                        {%if mx_comment.posted_by_tenant%}
+                            Tenant
+                        {%elif mx_comment.posted_by_manager%}
+                            Manager
+                        {%else%}
+                            Admin
+                        {%endif%}<br />
+                        {{mx_comment.user.contact.display_name}}<br />
+
+                    {%humanized_date mx_comment.date_created humanized_class="text"%}<br />
+                    {%if is_airport_manager%}
+                        {%if mx_comment.visibility_code == "I"%}
+                            <span class="badge text-bg-danger" style="cursor:pointer;" onclick="make_public({{mx_comment.id}}, $(this));">{%icon bi-eye-slash%} Internal</span>
+                        {%else%}
+                            <div class="badge text-bg-primary" style="cursor:pointer;" onclick="make_private({{mx_comment.id}}, $(this));">{%icon bi-eye%} Public</div>
+                        {%endif%}
                     {%endif%}
                 {%endif%}
-            {%else%}
-                {%icon bi-person-badge%} {{current_user.username}}<br />
-                {%icon bi-calendar%} {{now|date:preferred_date_format}}<br />
-            {%endif%}
-        </div>
-        <div class="col-md-9">
-            <div class="card-body">
+            </div>
+            <div class="col-md-9">
+                <div class="card-body">
 
-                {%if mx_comment%}
-                    <p class="card-text">{{mx_comment.comment}}</p>
-                {%else%}
-                    <textarea name="comment" id="new_comment" class="form-control" rows="5"></textarea>
-                    <fieldset>
-                        <legend class="visually-hidden">Comment Visibility</legend>
-                        <label>
-                            <input type="radio" name="visibility_code" value="I" checked />
-                            Internal Comment
-                        </label>
-                        &nbsp; &nbsp;
-                        <label>
-                            <input type="radio" name="visibility_code" value="P" />
-                            Public Comment
-                        </label>
+                    {%if not mx_comment%}
+                        <textarea name="comment" id="new_comment" class="form-control" rows="5"></textarea>
 
-                    </fieldset>
-                    <div style="text-align:right;margin-top:7px;">
-                        <button type="button" class="btn btn-info" onclick="post_comment($(this));">
-                            {%icon bi-floppy%} Save Comment
-                        </button>
-                    </div>
-                {%endif%}
+                        {%if is_airport_manager%}
+                            <fieldset>
+                                <legend class="visually-hidden">Comment Visibility</legend>
+                                <label>
+                                    <input type="radio" name="visibility_code" value="I" checked />
+                                    Internal Comment
+                                </label>
+                                &nbsp; &nbsp;
+                                <label>
+                                    <input type="radio" name="visibility_code" value="P" />
+                                    Public Comment
+                                </label>
+
+                            </fieldset>
+                        {%else%}
+                            <input type="hidden" name="visibility_code" value="I" />
+                        {%endif%}
+
+                        <div style="text-align:right;margin-top:7px;">
+                            <button type="button" class="btn btn-info" onclick="post_comment($(this));">
+                                {%icon bi-floppy%} Save Comment
+                            </button>
+                        </div>
+
+                    {%else%}
+                        <p class="card-text">{{mx_comment.comment}}</p>
+                    {%endif%}
+                </div>
             </div>
         </div>
-    </div>
-</div><br style="clear:both" />
+    </div><br style="clear:both" />
+{%endif%}

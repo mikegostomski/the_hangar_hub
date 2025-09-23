@@ -72,7 +72,7 @@
 
             <li>
                 <a href="{%url 'application:mgmt_dashboard' airport.identifier%}" class="dropdown-item">
-                    Application Dashboard
+                    Applications
                     {%with unreviewed_applications=airport.get_unreviewed_applications%}
                         {%if unreviewed_applications%}
                             <span class="badge text-bg-danger">{{unreviewed_applications|length}}</span>
@@ -82,22 +82,31 @@
                 </a>
             </li>
 
+            <li>
+                <a href="{%url 'mx:mgmt_dashboard' airport.identifier%}" class="dropdown-item">
+                    Maintenance
+                    {%with new_mx_requests=airport.get_new_mx_requests%}
+                        {%if new_mx_requests%}
+                            <span class="badge text-bg-danger">{{new_mx_requests|length}}</span>
 
-            <li>
-                <a href="{%url 'airport:airport' airport.identifier%}" class="dropdown-item">Manage Airport</a>
+                        {%endif%}
+                    {%endwith%}
+                </a>
             </li>
-            <li>
-                <a href="{%url 'infrastructure:buildings' airport.identifier%}" class="dropdown-item">Manage Hangars</a>
-            </li>
+
             <li>
                 <a href="{%url 'rent:rent_collection_dashboard' airport.identifier%}" class="dropdown-item">Rent Collection</a>
             </li>
-            <li>
-                <a href="{%url 'application:preferences' airport.identifier%}" class="dropdown-item">Application Preferences</a>
-            </li>
 
             <li>
-                <span class="dropdown-item">Waitlist</span>
+                <a href="{%url 'infrastructure:buildings' airport.identifier%}" class="dropdown-item">Hangars</a>
+            </li>
+
+
+
+
+            <li>
+                <a href="{%url 'airport:airport' airport.identifier%}" class="dropdown-item">Manage Airport</a>
             </li>
         {%endfor%}
     {%endif%}

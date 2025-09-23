@@ -1,11 +1,5 @@
 {% load base_taglib %}
-{%if is_airport_manager%}
-    {%for comment in mx_request.all_comments%}
-        {%include "the_hangar_hub/airport/maintenance/comments/_comment_card.html" with mx_comment=comment%}
-    {%endfor%}
-{%else%}
-    {%for comment in mx_request.public_comments%}
-        {%include "the_hangar_hub/airport/maintenance/comments/_comment_card.html" with mx_comment=comment%}
-    {%endfor%}
-{%endif%}
+{%for comment in mx_request.all_comments%}
+    {%include "the_hangar_hub/airport/maintenance/comments/_comment_card.html" with mx_comment=comment%}
+{%endfor%}
 {%include "the_hangar_hub/airport/maintenance/comments/_comment_card.html"%}

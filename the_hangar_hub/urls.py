@@ -108,18 +108,18 @@ infrastructure_paths = [
 
 mx_paths = [
     # MAINTENANCE
-    path(f'{airport}/maintenance/request/comment/{request}', mx_shared_v.post_comment, name='post_comment'),
+    path(f'{airport}/request/comment/{request}', mx_shared_v.post_comment, name='post_comment'),
 
     path(f'maintenance', mx_tenant_v.tenant_dashboard, name='tenant_dashboard'),
-    path(f'{airport}/maintenance/request/{hangar}', mx_tenant_v.tenant_request, name='request_form'),
-    path(f'{airport}/maintenance/request/{hangar}/post', mx_tenant_v.tenant_request_submit, name='submit_request'),
-    path(f'{airport}/maintenance/request/view/{request}', mx_tenant_v.tenant_request_view, name='view_request'),
+    path(f'{airport}/request/{hangar}', mx_tenant_v.tenant_request, name='request_form'),
+    path(f'{airport}/request/{hangar}/post', mx_tenant_v.tenant_request_submit, name='submit_request'),
+    path(f'{airport}/request/view/{request}', mx_tenant_v.tenant_request_view, name='tenant_view'),
 
     path(f'{airport}/maintenance', mx_mgmt_v.manager_dashboard,  name='mgmt_dashboard'),
-    path(f'{airport}/maintenance/request/view/{request}', mx_mgmt_v.manager_request_view,  name='view_request'),
-    path(f'{airport}/maintenance/request/priority/{request}', mx_mgmt_v.update_priority,  name='update_priority'),
-    path(f'{airport}/maintenance/request/status/{request}', mx_mgmt_v.update_status,  name='update_status'),
-    path(f'{airport}/maintenance/request/comment/visibility', mx_mgmt_v.update_visibility,  name='comment_visibility'),
+    path(f'{airport}/manage/view/{request}', mx_mgmt_v.manager_request_view,  name='mgmt_view'),
+    path(f'{airport}/request/priority/{request}', mx_mgmt_v.update_priority,  name='update_priority'),
+    path(f'{airport}/request/status/{request}', mx_mgmt_v.update_status,  name='update_status'),
+    path(f'{airport}/request/comment/visibility', mx_mgmt_v.update_visibility,  name='comment_visibility'),
 ]
 
 rent_paths = [

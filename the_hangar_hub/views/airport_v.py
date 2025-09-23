@@ -50,7 +50,7 @@ def welcome(request, airport_identifier):
     elif not airport.is_current():
         message_service.post_error("ToDo: When airport is not current???")
 
-    is_manager = airport_service.is_airport_manager(airport=airport)
+    is_manager = airport_service.manages_this_airport()
 
     rentals = tenant_s.get_rental_agreements(Auth.current_user())
     is_tenant = bool(rentals)

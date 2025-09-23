@@ -10,13 +10,6 @@
     {%if request.user.is_authenticated%}
         <strong>Welcome, {{current_user.first_name}}</strong><br />
     {%endif%}
-    <div class="alert alert-info hobbs-alert">
-        <strong>Debug Data:</strong>
-            "is_manager": {{is_manager}},
-            "is_tenant": {{is_tenant}},
-            "on_waitlist": {{on_waitlist}},
-            "active_applications": {{active_applications}},
-    </div>
 
     {%if is_manager%}
 

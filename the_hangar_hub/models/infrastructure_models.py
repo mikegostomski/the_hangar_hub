@@ -1,11 +1,11 @@
 from django.db import models
-from base.classes.util.log import Log
+from base.classes.util.env_helper import Log, EnvHelper
 from datetime import datetime, timezone
 
 from the_hangar_hub.models.rental_models import RentalAgreement
 
 log = Log()
-
+env = EnvHelper()
 
 class Building(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
@@ -72,7 +72,11 @@ class Hangar(models.Model):
     @classmethod
     def get(cls, data):
         try:
-            return cls.objects.get(pk=data)
+            if str(data).isnumeric():
+                return cls.objects.get(pk=data)
+            else:
+                return cls.objects.get(code=data, building__airport=env.request.airport)
+
         except cls.DoesNotExist:
             return None
         except Exception as ee:

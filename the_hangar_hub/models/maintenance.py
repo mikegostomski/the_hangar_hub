@@ -1,13 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import User
-from base.classes.util.log import Log
+from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from datetime import datetime, timezone
 from django.db.models import Q
 
 from the_hangar_hub.models import Hangar
+from the_hangar_hub.services import airport_service
 
 log = Log()
+env = EnvHelper()
 
 
 class MaintenanceRequest(models.Model):
@@ -18,6 +20,7 @@ class MaintenanceRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="maintenance_requests", null=True, blank=True, db_index=True) # ToDo: Not nullable
     tenant = models.ForeignKey("the_hangar_hub.Tenant", on_delete=models.CASCADE, related_name="maintenance_requests")
     hangar = models.ForeignKey('the_hangar_hub.Hangar', on_delete=models.CASCADE, related_name="maintenance_requests")
+    airport = models.ForeignKey('the_hangar_hub.Airport', on_delete=models.CASCADE, related_name="maintenance_requests", db_index=True, null=True, blank=True)  # ToDo: Not nullable
 
     summary = models.CharField(max_length=120)
     notes = models.TextField(null=True, blank=True)
@@ -82,11 +85,29 @@ class MaintenanceComment(models.Model):
     comment = models.TextField()
     visibility_code = models.CharField(max_length=1, default="I")
 
-    def is_them(self):
+    def posted_by_them(self):
         return self.user.id != Auth.current_user().id
 
-    def is_me(self):
-        return not self.is_them()
+    def posted_by_me(self):
+        return not self.posted_by_them()
+
+    def posted_by_tenant(self):
+        return self.user.id == Auth.current_user().id
+
+    def posted_by_manager(self):
+        log.trace([self])
+        user = self.user
+        airport = self.mx_request.airport
+        key = f"mx-c-mgmt-{user}-{airport}"
+        answer = env.get_session_variable(key)
+        if True or answer is None:
+            answer = airport_service.is_airport_manager(user, airport)
+            log.debug(f"MANAGER: {answer}")
+        return env.set_session_variable(key, answer)
+
+    def can_view(self):
+        # Public comment, or posted by me, or is manager
+        return self.visibility_code == "P" or self.posted_by_me() or airport_service.manages_this_airport()
 
     @staticmethod
     def visibility_options():

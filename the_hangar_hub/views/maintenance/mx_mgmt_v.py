@@ -32,7 +32,7 @@ env = EnvHelper()
 @report_errors()
 @require_airport_manager()
 def manager_dashboard(request, airport_identifier):
-    requests = MaintenanceRequest.objects.filter(hangar__building__airport__identifier=airport_identifier).exclude(
+    requests = MaintenanceRequest.objects.filter(airport__identifier=airport_identifier).exclude(
         status_code__in=["X", "C", "D"]
     )
     new_requests = [x for x in requests if x.status_code == "R"]

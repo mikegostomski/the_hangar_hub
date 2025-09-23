@@ -37,7 +37,7 @@ def rent_collection_dashboard(request, airport_identifier):
     Airport Manager view to see who is current/late on rent payments
     """
     airport = request.airport
-    rentals = RentalAgreement.relevant_rental_agreements().filter(hangar__building__airport=airport)
+    rentals = RentalAgreement.relevant_rental_agreements().filter(airport=airport)
 
     return render(
         request, "the_hangar_hub/airport/rent/management/collection/dashboard.html",

@@ -67,8 +67,7 @@ def claim_airport(request, airport_identifier):
 @require_authentication()
 @require_airport()
 def subscriptions(request, airport_identifier):
-    airport = request.airport
-    is_manager = airport_service.is_airport_manager(airport=airport)
+    is_manager = airport_service.manages_this_airport()
     prices = stripe_service.get_subscription_prices()
 
     return render(

@@ -32,13 +32,23 @@
     <h2>Maintenance Requests</h2>
     <table class="table">
         <tr>
-            <th scope="col">Request Date</th>
             <th scope="col">Summary</th>
+            <th scope="col">Request Date</th>
             <th scope="col">Status</th>
         </tr>
+    {%for mxr in mx_requests%}
+        <tr>
+            <td>
+                <a href="{%url 'mx:tenant_view' airport.identifier mxr.id%}">{{mxr.summary}}</a>
+            </td>
+            <td>{{mxr.date_created}}</td>
+            <td>{{mxr.status}}</td>
+        </tr>
+    {%empty%}
         <tr>
             <td colspan="3"><em class="text-muted">No Maintenance History</em></td>
         </tr>
+    {%endfor%}
     </table>
 
     <a href="{%url 'mx:request_form' airport.identifier hangar.code%}" class="btn btn-primary">Report a Maintenance Issue</a>

@@ -33,7 +33,7 @@ def rental_router(request, airport_identifier=None, rental_agreement_id=None):
     """
     Return to appropriate dashboard for tenant or manager
     """
-    if airport_service.is_airport_manager(airport=request.airport):
+    if airport_service.manages_this_airport():
         if rental_agreement_id:
             return redirect("rent:rental_invoices", request.airport.identifier, rental_agreement_id)
         else:
