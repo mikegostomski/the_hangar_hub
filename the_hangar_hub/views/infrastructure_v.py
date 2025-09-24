@@ -70,7 +70,7 @@ def add_building(request, airport_identifier):
     # Bulk Processing
     # If building code contains a number in [brackets], add that many buildings with incrementing ID in the code
     if "[" in building_code:
-        bits = re.split('[\[\]]', building_code)
+        bits = re.split(r'[\[\]]', building_code)
         if len(bits) != 3:
             message_service.post_error("Invalid building code")
         else:
@@ -152,7 +152,7 @@ def add_hangar(request, airport_identifier, building_id):
     # Bulk Processing
     # If hangar code contains a number in [brackets], add that many hangars with incrementing ID in the code
     if "[" in hangar_code:
-        bits = re.split('[\[\]]', hangar_code)
+        bits = re.split(r'[\[\]]', hangar_code)
         if len(bits) != 3:
             message_service.post_error("Invalid hangar code")
         else:

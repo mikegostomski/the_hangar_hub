@@ -56,8 +56,9 @@ def require_airport(after_selection_url=None):
                     selected_airport = mgr[0]
                     request.airport = Airport.get(selected_airport)
                 else:
+                    rental_agreements = tenant_s.get_rental_agreements(Auth.current_user())
                     aids = list(set(
-                        [x.hangar.building.airport.identifier for x in tenant_s.get_rental_agreements(Auth.current_user())]
+                        [x.airport.identifier for x in rental_agreements or []]
                     ))
                     if len(aids) == 1:
                         selected_airport = aids[0]
