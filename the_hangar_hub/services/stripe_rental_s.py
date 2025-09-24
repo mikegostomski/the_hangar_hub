@@ -167,9 +167,9 @@ def stripe_invoice_from_rental_invoice(rental_invoice):
                 "agreement": rental_agreement.id, "hangar": hangar.code
             },
             "application_fee_amount": tx_fee,
-            "issuer": {"type": "account", "account": airport.stripe_account_id},
-            "on_behalf_of": airport.stripe_account_id,
-            "transfer_data": {"destination": airport.stripe_account_id},
+            "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
+            "on_behalf_of": airport.stripe_account.stripe_id,
+            "transfer_data": {"destination": airport.stripe_account.stripe_id},
             "due_date": rental_invoice.stripe_due_date(),
         }
         set_stripe_api_key()
@@ -290,15 +290,15 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
                     "hangar": rental_agreement.hangar.code,
                 },
                 "invoice_settings": {
-                    "issuer": {"type": "account", "account": airport.stripe_account_id},
+                    "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
                     # "metadata": {
                     #     "airport": airport.identifier,
                     #     "rental_agreement": rental_agreement.id,
                     #     "hangar": rental_agreement.hangar.code,
                     # }
                 },
-                "on_behalf_of": airport.stripe_account_id,
-                "transfer_data": {"destination": airport.stripe_account_id},
+                "on_behalf_of": airport.stripe_account.stripe_id,
+                "transfer_data": {"destination": airport.stripe_account.stripe_id},
                 "application_fee_percent": application_fee_percent,
             },
             success_url=f"{env.absolute_root_url}{return_url}",
@@ -460,11 +460,11 @@ def stripe_subscription_from_rental_invoice(rental_invoice):
             set_stripe_api_key()
             subscription = stripe.Subscription.create(
                 customer=stripe_customer.stripe_id,
-                on_behalf_of=airport.stripe_account_id,
-                transfer_data={"destination": airport.stripe_account_id},
+                on_behalf_of=airport.stripe_account.stripe_id,
+                transfer_data={"destination": airport.stripe_account.stripe_id},
                 application_fee_percent=application_fee_percent,
                 invoice_settings={
-                    "issuer": {"type": "account", "account": airport.stripe_account_id},
+                    "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
                     "metadata": {
                         "airport": airport.identifier,
                         "rental_agreement": rental_agreement.id,

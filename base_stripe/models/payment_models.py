@@ -139,7 +139,7 @@ class Customer(models.Model):
         return cls.get_or_create(stripe_id=stripe_id)
 
     @classmethod
-    def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None):
+    def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None, phone=None, address_dict=None):
         """
         Create (if DNE) a Customer record in Stripe, and a local record that ties the Stripe ID to a User/email
 
@@ -153,41 +153,24 @@ class Customer(models.Model):
         """
         log.trace([full_name, email, user, stripe_id])
 
+        # If given a Stripe Customer ID
         if stripe_id and str(stripe_id).startswith("cus_"):
             try:
+                # Look for existing model
                 existing = cls.get(stripe_id)
                 if existing:
                     return existing
 
+                # Create model from Stripe data
                 log.info(f"Creating new Customer model: {stripe_id}")
                 cus = Customer()
                 cus.stripe_id = stripe_id
                 cus.sync()
                 return cus
-
-                #
-                # config_service.set_stripe_api_key()
-                # customer = stripe.Customer.retrieve(stripe_id, expand=["invoice_settings.default_payment_method"])
-                #
-                # inv_settings = customer.get("invoice_settings") or {}
-                # dpm = inv_settings.get("default_payment_method") or {}
-                #
-                #
-                # return cls.objects.create(
-                #     stripe_id=stripe_id,
-                #     full_name=customer.name,
-                #     email=customer.email,
-                #     balance_cents=customer.balance,
-                #     delinquent=customer.delinquent,
-                #     invoice_prefix=customer.invoice_prefix,
-                #     metadata=customer.metadata,
-                #     user=Auth.lookup_user(customer.email) if not user else user,
-                #     default_payment_method=dpm.get("type"),
-                #     default_source=customer.get("default_source"),
-                # )
             except Exception as ee:
                 Error.record(ee, stripe_id)
 
+        # Find or create customer from given user data
         else:
             user_profile = Auth.lookup_user_profile(user) if user else None
             if user_profile is None and not (full_name and email):
@@ -207,23 +190,41 @@ class Customer(models.Model):
                 if user_profile.is_user:
                     user = user_profile.user
 
-            # Look for existing customer record
+            # Gather all known (verified) email addresses
+            verified_emails = [email]
+            user_profile = Auth.lookup_user_profile(user) if user else None
+            if user_profile:
+                verified_emails.extend(user_profile.emails)
+            verified_emails = list(set(verified_emails))
+
+            # Look for existing customer model based on all known (verified) email addresses
             existing = None
-            if user:
-                # Look for ANY verified email address for this user
-                user_profile = Auth.lookup_user_profile(user)
-                if user_profile:
-                    for email_address in user_profile.emails:
-                        existing = Customer.get(email_address)
-                        if existing:
-                            break
-            if not existing:
-                existing = Customer.get(email)
+            for email_address in verified_emails:
+                existing = Customer.get(email_address)
+                if existing:
+                    break
 
             if existing:
-                # ToDo: Sync data with Stripe data?
                 log.info(f"Found existing customer: {existing.stripe_id}")
+                existing.sync()
                 return existing
+
+            # Look for existing customer record in Stripe based on all known (verified) email addresses
+            existing_id = None
+            for email_address in verified_emails:
+                try:
+                    config_service.set_stripe_api_key()
+                    result = stripe.Customer.list(email=email_address)
+                    if result.data:
+                        existing_id = result.data[0].get("id")
+                        break
+                except Exception as ee:
+                    Error.record(ee, email_address)
+            if existing_id:
+                existing = Customer.from_stripe_id(existing_id)
+                if existing:
+                    log.info(f"Found existing customer: {existing.stripe_id}")
+                    return existing
 
             # Create a new Stripe Customer
             try:

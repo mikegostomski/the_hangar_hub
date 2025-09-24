@@ -12,6 +12,7 @@ from base_stripe.models.events import WebhookEvent
 from base.models.utility.error import Error
 from base.decorators import require_authority, require_authentication, report_errors
 from base_stripe.models.payment_models import Invoice, Customer, Subscription
+from base_stripe.models.connected_account import ConnectedAccount
 
 
 log = Log()
@@ -34,7 +35,7 @@ def react_to_events():
     ignore = [
         "payment_intent", "invoiceitem", "credit_note",
         "setup_intent", "charge", "payment_method",
-        "checkout.session",
+        "checkout.session", "capability",
     ]
 
     for event in webhook_events:
@@ -146,6 +147,15 @@ def react_to_events():
                     processed_events.append(event)
                 continue
 
+        """
+        CONNECTED_ACCOUNTS
+        """
+        if object_type == "account":
+            ca = ConnectedAccount.from_stripe_id(event.object_id)
+            if ca and ca.sync():
+                processed_object_ids.append(event.object_id)
+                processed_events.append(event)
+            continue
 
     # Mark Webhook Events as "refreshed"
     try:

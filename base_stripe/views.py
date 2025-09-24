@@ -12,7 +12,7 @@ from base_stripe.models.events import WebhookEvent
 from base.models.utility.error import Error
 from base.decorators import require_authority, require_authentication, report_errors
 from base_stripe.models.payment_models import Invoice, Customer, Subscription
-from base_stripe.services import webhook_service
+from base_stripe.services import webhook_service, config_service
 
 
 log = Log()
@@ -63,6 +63,27 @@ def react_to_events(request):
     (customers, subscriptions, and invoices)
     """
     return JsonResponse(webhook_service.react_to_events())
+
+def reset_sandbox(request):
+    """
+    Delete test customers and subscriptions from sandbox
+    """
+    if env.is_prod:
+        log.error("Cannot delete test data in production")
+        return HttpResponseForbidden()
+
+    config_service.set_stripe_api_key()
+
+    # 1. Cancel all active subscriptions
+    for sub in stripe.Subscription.list(status='active', limit=100).auto_paging_iter():
+        stripe.Subscription.delete(sub.id)
+
+    # 2. Delete all customers
+    for cust in stripe.Customer.list(limit=100).auto_paging_iter():
+        stripe.Customer.delete(cust.id)
+
+    return HttpResponse("Completed")
+
 
 
 def show_prices(request):

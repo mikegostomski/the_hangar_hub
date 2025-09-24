@@ -6,6 +6,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("webhook", views.webhook, name="webhook"),
     path("webhook/react", views.react_to_events, name="webhook_reaction"),
+    path("sandbox/reset", views.reset_sandbox, name="reset_sandbox"),
 
 
     path("prices", views.show_prices, name="list_prices"),

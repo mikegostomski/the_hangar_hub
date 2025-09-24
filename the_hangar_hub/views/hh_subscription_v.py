@@ -108,7 +108,7 @@ def subscribe(request, airport_identifier):
             )
 
     # Create Stripe customer if needed
-    if not airport.stripe_customer_id:
+    if not airport.stripe_customer:
         if not stripe_service.create_customer_from_airport(airport):
             message_service.post_error("Could not continue with subscription.")
             return redirect("airport:subscriptions", airport.identifier)
@@ -141,7 +141,7 @@ def subscription_success(request, airport_identifier):
         airport.status_code = "A"
         airport.save()
         airport_service.set_airport_manager(airport, Auth.current_user())
-        return redirect("airport:airport", airport.identifier)
+        return redirect("airport:manage", airport.identifier)
     else:
         message_service.post_error("Stripe payment session indicates an incomplete or unsuccessful payment.")
         return redirect("airport:subscription_failure", airport_identifier)

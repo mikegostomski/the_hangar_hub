@@ -54,7 +54,7 @@ airport_paths = [
     path(f'{airport}/subscribe/fail',  hh_subscription_v.subscription_failure, name='subscription_failure'),
     path(f'{airport}/subscribe/success',  hh_subscription_v.subscription_success, name='subscription_success'),
 
-    path(f'{airport}', airport_v.my_airport, name='airport'),
+    path(f'{airport}/manage', airport_v.my_airport, name='manage'),
     path(f'{airport}/stripe', airport_v.my_subscription, name='subscription'),
     path(f'{airport}/update', airport_v.update_airport, name='update_airport'),
     path(f'{airport}/upload/logo', airport_v.upload_logo, name='upload_logo'),

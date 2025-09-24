@@ -80,6 +80,11 @@ class WebhookValidation:
                 payload, sig_header, webhook_secret
             )
             log.info(f"Successfully validated Stripe webhook event")
+
+            if not response.object_id:
+                log.info(f"No object ID in webhook response:\n{payload_text}")
+                return response
+
             log.info(f"Webhook Object: <{response.object_type}: {response.object_id}>")
 
             response.valid_request = True

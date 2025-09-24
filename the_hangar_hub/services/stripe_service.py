@@ -24,29 +24,28 @@ def get_subscription_prices():
 def create_customer_from_airport(airport):
     log.trace([airport])
 
-    if airport.stripe_customer_id:
-        return True  # Already has customer ID, so consider a success
+    if airport.stripe_customer:
+        return True  # Already has customer, so consider a success
+
+    customer = Customer.get_or_create(
+        full_name=airport.display_name,
+        email=airport.billing_email,
+        phone=airport.billing_phone,
+        address_dict=get_stripe_address_dict(
+            airport.billing_street_1,
+            airport.billing_street_2,
+            airport.billing_city,
+            airport.billing_state,
+            airport.billing_zip,
+            airport.country
+        ),
+    )
 
     try:
-        set_stripe_api_key()
-        customer = stripe.Customer.create(
-            name=airport.display_name,
-            email=airport.billing_email,
-            phone=airport.billing_phone,
-            address=get_stripe_address_dict(
-                airport.billing_street_1,
-                airport.billing_street_2,
-                airport.billing_city,
-                airport.billing_state,
-                airport.billing_zip,
-                airport.country
-            ),
-        )
-
-        if customer and hasattr(customer, "id"):
-            airport.stripe_customer_id = customer.id
+        if customer:
+            airport.stripe_customer = customer
             airport.save()
-            log.info(f"{airport} is now Stripe customer: {airport.stripe_customer_id}")
+            log.info(f"{airport} is now Stripe customer: {customer.stripe_id}")
             return True
         else:
             message_service.post_error("Unable to create customer record in payment portal.")
@@ -60,31 +59,21 @@ def create_customer_from_airport(airport):
 def get_customer_from_airport(airport):
     log.trace()
 
-    if not airport.stripe_customer_id:
+    if not airport.stripe_customer:
         return None
-
-    try:
-        set_stripe_api_key()
-        customer = stripe.Customer.retrieve(airport.stripe_customer_id)
-
-        if customer:
-            return customer
-        else:
-            log.error("Unable to retrieve customer record from payment portal.")
-    except Exception as ee:
-        Error.record(ee, airport)
-    return False
+    # ToDo: Just use the Customer model(?)
+    return airport.stripe_customer.api_data()
 
 def modify_customer_from_airport(airport):
     log.trace()
 
-    if not airport.stripe_customer_id:
+    if not airport.stripe_customer:
         return None
 
     try:
         set_stripe_api_key()
         customer = stripe.Customer.modify(
-            airport.stripe_customer_id,
+            airport.stripe_customer.stripe_id,
             name=airport.display_name,
             email=airport.billing_email,
             phone=airport.billing_phone,
@@ -97,11 +86,8 @@ def modify_customer_from_airport(airport):
                 airport.country
             ),
         )
+        return customer
 
-        if customer:
-            return customer
-        else:
-            log.error("Unable to retrieve customer record from payment portal.")
     except Exception as ee:
         Error.record(ee, airport)
     return False
@@ -114,7 +100,7 @@ def get_checkout_session_hh_subscription(airport, price_id):
     try:
         set_stripe_api_key()
         checkout_session = stripe.checkout.Session.create(
-            customer=airport.stripe_customer_id,
+            customer=airport.stripe_customer.stripe_id,
             line_items=[
                 {
                     'price': price_id,
@@ -141,15 +127,15 @@ def get_checkout_session_hh_subscription(airport, price_id):
 def create_connected_account(airport):
     log.trace([airport])
 
-    if airport.stripe_account_id:
+    if airport.stripe_account:
         # Already exists... return it
-        return ConnectedAccount.get(airport.stripe_account_id)
+        return airport.stripe_account
 
     try:
 
         # Stripe uses two-digit country codes. Airport list was populated with three.
         if len(airport.country) == 3:
-            # This works for USA and CAN. Future airports should import the 2-digit code
+            # This works for the USA and CAN. Future airports should import the 2-digit code
             airport.country = airport.country[:2]
             airport.save()
 
@@ -189,7 +175,7 @@ def create_connected_account(airport):
         }
         connected_account = accounts_service.create_account(params_dict)
         if connected_account:
-            airport.stripe_account_id = connected_account.stripe_id
+            airport.stripe_account = connected_account
             airport.save()
 
     except Exception as ee:
@@ -199,13 +185,13 @@ def create_connected_account(airport):
 
 def get_onboarding_link(airport):
     return accounts_service.create_account_onboarding_url(
-        airport.stripe_account_id, reverse("airport:airport", args=[airport.identifier])
+        airport.stripe_account.stripe_id, reverse("airport:manage", args=[airport.identifier])
     )
 
 def get_account_login_link(airport):
     return None
 #     link = accounts_service.create_account_login_link(
-#         airport.stripe_account_id, reverse("airport:airport", args=[airport.identifier])
+#         airport.stripe_account.stripe_id, reverse("airport:manage", args=[airport.identifier])
 #     )
 #     if link:
 #         return link.url
@@ -213,7 +199,7 @@ def get_account_login_link(airport):
 #         return None
 
 def sync_account_data(airport):
-    stripe_data, local_data = accounts_service.get_connected_account(airport.stripe_account_id)
+    stripe_data, local_data = accounts_service.get_connected_account(airport.stripe_account.stripe_id)
 
 
 def create_rent_subscription(airport, rental, **kwargs):
@@ -337,11 +323,11 @@ def create_rent_subscription(airport, rental, **kwargs):
         set_stripe_api_key()
         subscription = stripe.Subscription.create(
             customer=customer_rec.stripe_id,
-            on_behalf_of=airport.stripe_account_id,
-            transfer_data={"destination": airport.stripe_account_id},
+            on_behalf_of=airport.stripe_account.stripe_id,
+            transfer_data={"destination": airport.stripe_account.stripe_id},
             application_fee_percent=1.0,  # ToDo: Make this a per-airport setting
             invoice_settings={
-                "issuer": {"type": "account", "account": airport.stripe_account_id}
+                "issuer": {"type": "account", "account": airport.stripe_account.stripe_id}
             },
 
             description=f"Hangar {rental.hangar.code} at {airport.display_name}",
@@ -449,10 +435,10 @@ def create_rent_invoice(airport, rental, charge_automatically=False):
             collection_method="charge_automatically" if charge_automatically else "send_invoice",
             issuer={
                 "type": "account",
-                "account": airport.stripe_account_id
+                "account": airport.stripe_account.stripe_id
             },
-            on_behalf_of=airport.stripe_account_id,
-            transfer_data={"destination": airport.stripe_account_id}
+            on_behalf_of=airport.stripe_account.stripe_id,
+            transfer_data={"destination": airport.stripe_account.stripe_id}
         )
 
         if invoice and invoice.get("object") == "invoice":
@@ -525,7 +511,7 @@ def get_checkout_session_application_fee(application):
             ],
             success_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
             cancel_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
-            stripe_account= airport.stripe_account_id,
+            stripe_account= airport.stripe_account.stripe_id,
             # application_fee_amount=airport.application_fee_stripe * .01,  # 1% fee for HangarHub
         )
         co_session_id = checkout_session.id
@@ -549,11 +535,11 @@ def get_session_details(session_id):
         return None
 
 def get_airport_subscriptions(airport):
-    if airport and airport.stripe_customer_id:
+    if airport and airport.stripe_customer:
         try:
             set_stripe_api_key()
             return stripe.Subscription.list(
-                customer=airport.stripe_customer_id,
+                customer=airport.stripe_customer.stripe_id,
                 expand=['data.latest_invoice.subscription_details']
             )
         except Exception as ee:
@@ -564,12 +550,12 @@ def get_airport_subscriptions(airport):
 
 
 def get_customer_portal_session(airport):
-    if airport and airport.stripe_customer_id:
+    if airport and airport.stripe_customer:
         try:
             set_stripe_api_key()
             session = stripe.billing_portal.Session.create(
-                customer=airport.stripe_customer_id,
-                return_url=f"{env.absolute_root_url}{reverse('airport:airport', args=[airport.identifier])}",
+                customer=airport.stripe_customer.stripe_id,
+                return_url=f"{env.absolute_root_url}{reverse('airport:manage', args=[airport.identifier])}",
             )
             if session and hasattr(session, "url"):
                 return session.url

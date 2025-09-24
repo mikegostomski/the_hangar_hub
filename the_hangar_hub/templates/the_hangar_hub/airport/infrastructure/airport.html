@@ -60,6 +60,12 @@
                 <div class="card-body">
                     <table>
                         <tr>
+                            <th scope="row">Stripe Account ID:</th>
+                            <td>
+                                {{airport.stripe_account.stripe_id}}
+                            </td>
+                        </tr>
+                        <tr>
                             <th scope="row">Charges Enabled:</th>
                             <td>
                                 {%if acct_data.charges_enabled%}

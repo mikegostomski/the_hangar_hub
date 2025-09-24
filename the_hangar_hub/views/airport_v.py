@@ -45,17 +45,25 @@ def welcome(request, airport_identifier):
     """
     airport = request.airport
 
+    # Airport Status
+    # ==============
     if not airport.is_active():
         return render(request, "the_hangar_hub/error_pages/airport_inactive.html")
-    elif not airport.is_current():
+    if not airport.is_current():
         message_service.post_error("ToDo: When airport is not current???")
+    has_hangars = Hangar.objects.filter(building__airport=airport).count()
+    has_billing_data = airport.has_billing_data()
 
+    # User Status
+    # ===========
     is_manager = airport_service.manages_this_airport()
-
     rentals = tenant_s.get_rental_agreements(Auth.current_user())
     is_tenant = bool(rentals)
     on_waitlist = airport.get_waitlist().current_user_position()
     active_applications = application_service.get_active_applications(airport=airport)
+
+    if is_manager and not has_hangars:
+        return redirect("airport:manage", airport_identifier)
 
     return render(
         request, "the_hangar_hub/airport/welcome.html",
@@ -75,16 +83,15 @@ def my_airport(request, airport_identifier):
     airport = request.airport
 
     # If no connected account, create it now
-    if not airport.stripe_account_id:
+    if not airport.stripe_account:
         stripe_service.create_connected_account(airport)
 
     # If there is a stripe account, refresh with data from Stripe
     stripe_service.sync_account_data(airport)
 
     # Check connected account
-    connected_account = airport.connected_account()
     onboarding_link = None
-    if connected_account:
+    if airport.stripe_account:
         # Onboarding link can be used to manage account after onboarding
         onboarding_link = stripe_service.get_onboarding_link(airport)
 
@@ -110,7 +117,7 @@ def my_subscription(request, airport_identifier):
         return redirect(url)
 
     message_service.post_error("Unable to create a payment portal session")
-    return redirect("airport:airport", airport_identifier)
+    return redirect("airport:manage", airport_identifier)
 
 
 @report_errors()

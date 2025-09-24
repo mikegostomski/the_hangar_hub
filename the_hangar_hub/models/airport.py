@@ -45,9 +45,10 @@ class Airport(models.Model):
             return 0
 
     # Stripe Customer Data
-    stripe_customer_id = models.CharField(max_length=60, blank=True, null=True)
-    stripe_account_id = models.CharField(max_length=60, blank=True, null=True)
-    subscription_id = models.CharField(max_length=60, blank=True, null=True)
+    stripe_customer = models.ForeignKey("base_stripe.Customer", on_delete=models.CASCADE, related_name="subscribers", null=True, blank=True)
+    stripe_account = models.ForeignKey("base_stripe.ConnectedAccount", on_delete=models.CASCADE, related_name="airports", null=True, blank=True)
+    stripe_subscription = models.ForeignKey("base_stripe.Subscription", on_delete=models.CASCADE, related_name="airports", null=True, blank=True)
+
     stripe_tx_fee = models.DecimalField(decimal_places=4, max_digits=5, null=False, blank=False, default=0.01)
     billing_email = models.CharField(max_length=150, blank=True, null=True)
     billing_phone = models.CharField(max_length=10, blank=True, null=True)
@@ -63,9 +64,6 @@ class Airport(models.Model):
 
     def has_billing_data(self):
         return self.billing_email and self.billing_city and self.billing_state and self.billing_zip
-
-    def connected_account(self):
-        return ConnectedAccount.get(self.stripe_account_id)
 
     def is_active(self):
         """

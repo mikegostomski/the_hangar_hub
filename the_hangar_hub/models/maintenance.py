@@ -17,10 +17,10 @@ class MaintenanceRequest(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     date_resolved = models.DateTimeField(null=True, blank=True)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="maintenance_requests", null=True, blank=True, db_index=True) # ToDo: Not nullable
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="maintenance_requests", db_index=True)
     tenant = models.ForeignKey("the_hangar_hub.Tenant", on_delete=models.CASCADE, related_name="maintenance_requests")
     hangar = models.ForeignKey('the_hangar_hub.Hangar', on_delete=models.CASCADE, related_name="maintenance_requests")
-    airport = models.ForeignKey('the_hangar_hub.Airport', on_delete=models.CASCADE, related_name="maintenance_requests", db_index=True, null=True, blank=True)  # ToDo: Not nullable
+    airport = models.ForeignKey('the_hangar_hub.Airport', on_delete=models.CASCADE, related_name="maintenance_requests", db_index=True)
 
     summary = models.CharField(max_length=120)
     notes = models.TextField(null=True, blank=True)
