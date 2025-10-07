@@ -23,7 +23,9 @@ from base.models.utility.error import Error
 from the_hangar_hub.services import stripe_service, stripe_s, stripe_rental_s, invoice_s
 from base_stripe.models.payment_models import Customer, Subscription, Invoice
 from base_stripe.services import config_service
+from base.services import email_service
 import stripe
+from the_hangar_hub.classes.checkout_session_model import CheckoutSessionHelper
 
 
 log = Log()
@@ -52,30 +54,78 @@ def rent_subscription_checkout(request, airport_identifier, rental_agreement_id)
         message_service.post_error("Rental agreement was not found.")
         return rental_router(request)
 
-    # Cancel any open invoices
-    invoice_s.cancel_open_invoices(rental_agreement)
-
-    # Start subscription after any paid periods (or on agreement start date)
-    collection_start_date = invoice_s.get_next_collection_start_date(rental_agreement)
-
-    co_session = stripe_rental_s.get_subscription_checkout_session(rental_agreement, collection_start_date)
+    co_session = CheckoutSessionHelper.initiate_checkout_session(rental_agreement)
     if co_session:
-        stripe_s.webhook_reaction_needed(True)
         return redirect(co_session.url, code=303)
     else:
         return rental_router(request, airport_identifier, rental_agreement_id)
 
 
 
-def rent_subscription_create(request):
-    pass
+def rent_subscription_email(request, airport_identifier, rental_agreement_id):
+    rental_agreement = RentalAgreement.get(rental_agreement_id)
+    if not rental_agreement:
+        message_service.post_error("Rental agreement was not found.")
+        return rental_router(request)
+
+    # Expiration date is required
+    expiration_date = None
+    expiration_date_str = request.POST.get("expiration_date")
+    if expiration_date_str:
+        expiration_date = date_service.string_to_date(
+            expiration_date_str, source_timezone=rental_agreement.airport.timezone
+        )
+        if expiration_date:
+            exp_local = expiration_date.astimezone(rental_agreement.airport.tz)
+            if exp_local.hour == 0 and exp_local.minute == 0:
+                # Expire at end-of-day
+                expiration_date = expiration_date + timedelta(days=1)
+            log.debug(f"EXPIRATION DATE::: {expiration_date_str}  ==> {expiration_date}")
+        else:
+            message_service.post_error(f"Invalid expiration date: {expiration_date_str}")
+    if not expiration_date:
+        message_service.post_error(f"Expiration date is required")
+        return rental_router(request)
+
+    # Create checkout session
+    co_helper = CheckoutSessionHelper.initiate_checkout_session(rental_agreement, expiration_date)
+
+    # Generate email to tenant
+    airport = rental_agreement.airport
+    hangar = rental_agreement.hangar
+    tenant = rental_agreement.tenant
+
+    airport_email = request.POST.get("airport_email") or airport.info_email
 
 
+    if co_helper and co_helper.url:
+        subject = f"Setup Auto-Pay for Hangar {hangar.code} at {airport.display_name}"
+        email_service.send(
+            subject=subject,
+            content=None,
+            sender=airport_email,
+            to=tenant.email,
+            cc=None,
+            bcc=None,
+            email_template="the_hangar_hub/airport/rent/management/emails/initiate_auto_pay.html",
+            context={
+                "url": co_helper.url,
+                "airport": airport,
+                "rental_agreement": rental_agreement,
+                "tenant": tenant,
+                "expiration_date_display": co_helper.expiration_display,
+            },
+            max_recipients=10,  # We rarely email more than 10 people. Exceptions should have to specify how many
+            suppress_success_message=False,  # Do not notify user on successful send (but notify if send failed)
+            suppress_status_messages=False,  # Do not notify user upon successful or failed send
+            include_context=True,  # Include context included on all pages (current user, environment, etc)
+            sender_display_name=None,  # Shortcut for: "Display Name <someone@gmail.com>",
+            limit_per_second=1,
+            limit_per_minute=4,
+            limit_per_hour=10,
+        )
 
-
-
-
-
+    return redirect("rent:rental_invoices", airport_identifier, rental_agreement_id)
 
 
 

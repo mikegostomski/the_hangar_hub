@@ -17,6 +17,11 @@
 {%endif%}
 
 
+    <li>
+        <a href="{%url 'public:search'%}" class="dropdown-item">Airport Search</a>
+    </li>
+
+
 {% if user.is_authenticated and is_a_tenant%}
     <li class="dropdown-header">
         Tenant Services

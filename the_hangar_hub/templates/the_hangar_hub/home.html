@@ -1,0 +1,94 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+
+{%block title%}The Hangar Hub{%endblock%}
+
+{% block main_content %}
+<div class="content-1024 content-center">
+    {%if is_logged_in%}
+        <h1>Welcome, {{current_user.first_name}}</h1>
+    {%else%}
+        <h1>Welcome</h1>
+    {%endif%}
+    <br />
+
+        <div class="card">
+            <img src="{% static 'images/bs-cards/map.png' %}" alt="Cartoon airplane looking through binoculars" class="card-img-top" />
+            <div class="card-body">
+                <h5 class="card-title">Find Your Airport</h5>
+                <div class="card-text">
+                    Search for your local airport.<br />
+                    <br />
+                    Are you an airport manager? Sign up for a free trial and start configuring your airport.<br />
+                    <br />
+                </div>
+                <div class="card-action text-center">
+                    <a href="{%url 'public:search'%}" class="btn btn-primary">Find My Airport</a>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <img src="{% static 'images/bs-cards/apply.png' %}" alt="Cartoon airplane applying for a hangar" class="card-img-top" />
+            <div class="card-body">
+                <h5 class="card-title">Hangar Applications</h5>
+                <div class="card-text">
+                    <ul>
+                        <li>Apply for a hangar</li>
+                        <li>Review and modify previous submissions</li>
+                    </ul>
+                </div>
+                <div class="card-action text-center">
+                    {%if incomplete_application%}
+                        <a href="{%url 'application:resume' incomplete_application.id%}" class="btn btn-primary">Resume Application</a>
+                    {%else%}
+                        <a href="{%url 'application:form'%}" class="btn btn-primary">Apply Now</a>
+                    {%endif%}
+                </div>
+            </div>
+        </div>
+        {%if current_user.is_authenticated%}
+            <div class="card">
+                <img src="{% static 'images/bs-cards/enhance.png' %}" alt="Image of an airplane having work done on it" class="card-img-top" />
+                <div class="card-body">
+                    <h5 class="card-title">Enhancement Requests</h5>
+                    <div class="card-text">
+                        Spotted a bug? Dreaming of a new feature? We want to hear from you!
+                        <ul>
+                            <li>Request a new feature</li>
+                            <li>Submit a bug report</li>
+                            <li>Vote for other users' ideas</li>
+                        </ul>
+                    </div>
+
+                    <div class="card-action text-center">
+                        <a href="{%url 'base:enhancement_requests'%}" class="btn btn-primary">Contribute</a>
+                    </div>
+
+                </div>
+            </div>
+
+
+        {%endif%}
+
+
+</div>
+<style>
+    .card{
+        float: left;
+        max-width: 300px;
+        height: 475px;
+        margin-bottom: 20px;
+        margin-right: 20px;
+    }
+
+    div.card-text{
+        height: 160px;
+    }
+
+    div.card-action{
+
+    }
+
+</style>
+{%endblock%}

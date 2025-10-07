@@ -42,10 +42,41 @@
                 {%icon bi-credit-card%} Start Auto-Pay<br />
                 <em style="font-size:.9em;">Must have a credit card on-hand</em>
             </a>
-            <a href="" class="list-group-item">
+            <div class="list-group-item" style="cursor:pointer;" onclick="$(this).parent().find('.popup').removeClass('hidden');">
                 {%icon bi-credit-card%} Configure Auto-Pay<br />
                 <em style="font-size:.9em;">Tenant must complete later</em>
-            </a>
+                <div class="popup hidden" style="max-width:400px;max-height:500px;cursor:default;">
+                    <form method="post" action="{%url 'rent:subscription_email' airport.identifier rental_agreement.id%}">
+                        {%csrf_token%}
+                        <b>{%icon bi-credit-card%} Configure Auto-Pay</b><br />
+                        <em>Email the tenant with a link to set up auto-pay.</em><br />
+                        <br />
+                        <div class="input-group mb-1">
+                            <label class="input-group-text" for="tenant_email">To</label>
+                            <input type="email" value="{{rental_agreement.tenant.email}}" id="tenant_email" class="form-control" readonly />
+                        </div>
+                        <div class="input-group mb-1">
+                            <label class="input-group-text" for="airport_email">From</label>
+                            <input type="email" value="{{airport.info_email}}" id="airport_email" name="airport_email" class="form-control" />
+                        </div>
+
+
+                        <br />
+                        <br />
+                        The link will expire at the end of the day specified:<br />
+
+                        <div class="input-group mb-1">
+                            <label class="input-group-text" for="expiration_date">Expiration Date</label>
+                            <input type="date" id="expiration_date" name="expiration_date" class="form-control" />
+                        </div>
+                        <br />
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">{%icon bi-envelope%} Send</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
 

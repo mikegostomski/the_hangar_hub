@@ -1,3 +1,5 @@
+from csv import excel
+
 from base.models.utility.error import EnvHelper, Log, Error
 import stripe
 
@@ -7,6 +9,42 @@ env = EnvHelper()
 
 def set_stripe_api_key():
     stripe.api_key = env.get_setting("STRIPE_KEY")
+
+def create_customer_portal_configs():
+    """
+    ToDo: Think about how to handle HH cancellations.
+        - immediately cancel all rental subscriptions?
+        - end-of-period cancellation w/ option to terminate all rentals?
+        - handle cancellations via API rather than portal?
+    """
+    return False
+    try:
+        set_stripe_api_key()
+        configuration = stripe.billing_portal.Configuration.create(
+            features={
+                "customer_update": {"allowed_updates": ["address", "email", "name", "phone" "tax_id"], "enabled": True},
+                "invoice_history": {"enabled": True},
+                "payment_method_update": {"enabled": True},
+                "subscription_cancel": {
+                    "enabled": True,
+                    "cancellation_reason": [
+                        "customer_service", "low_quality",
+                        "missing_features", "too_complex",
+                        "too_expensive", "unused", "other"
+                    ],
+                    "mode": "immediately",
+                    "proration_behavior": "create_prorations",
+                },
+                "subscription_update": {
+                    "enabled": True,
+                    "default_allowed_updates": ["price"],
+                    "proration_behavior": "create_prorations",
+                },
+            },
+        )
+    except Exception as ee:
+        Error.unexpected("Unable to create customer portal configurations")
+
 
 
 def get_stripe_address_dict(

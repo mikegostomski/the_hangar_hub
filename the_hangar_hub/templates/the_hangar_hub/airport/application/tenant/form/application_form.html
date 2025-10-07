@@ -99,9 +99,10 @@
                 </div>
             {%endif%}
         {%endif%}
-
-        If you need to update your personal information, you may do so in your profile.
-        <a href="{%url 'base:profile'%}" class="btn btn-secondary float-right" onclick="save_changes();">Edit Profile Information</a>
+        <div class="text-center" style="font-style:italic;">
+            If you need to update previously-entered personal information, you may do so in your
+            <a href="{%url 'base:profile'%}" onclick="save_changes();">profile</a>.<br />
+        </div>
         <br style="clear:both;" />
 
     </div>

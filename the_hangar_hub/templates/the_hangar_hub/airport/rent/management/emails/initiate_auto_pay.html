@@ -1,0 +1,48 @@
+{% load base_taglib %}
+{% load upload_taglib %}
+{% load static %}
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>{{subject|default:"Message from Hangar Hub"}}</title>
+    </head>
+    <body>
+
+        <div style="background-color: White;padding: 10px;color: Black;">
+            <div style="float:left;">
+                <img src="{%absolute_url 'airport:logo' airport.identifier%}" alt="The Hangar Hub Logo" style="max-width:100px;max-height:100px;">
+            </div>
+            <div style="float:right;font-size:16pt;font-weight:bold;font-variant:small-caps;color: #1f242e;padding-top:5px;">
+                {{airport.identifier}}
+            </div>
+            <hr style="clear:both;" />
+            <div style="padding: 20px;">
+                <p>
+                    Hello {{tenant.display_name}},<br />
+                    <br />
+
+                    {{airport.display_name}} has set up your monthly hangar rent auto-pay plan through our secure
+                    billing system (powered by Stripe).
+
+                    To confirm your hangar reservation and activate automatic payments, please complete your first payment
+                    by {{expiration_date_display}} using the secure link below:<br />
+                    <br />
+                    <a href="{{url}}">Complete Payment and First Payment</a><br />
+                    <br />
+                    After you complete this step:<br />
+                    <ul>
+                        <li>Your hangar space will be officially reserved</li>
+                        <li>Future rent payments will be charged automatically on the due date each month</li>
+                        <li>You’ll receive email receipts and can update your payment method at any time</li>
+                    </ul>
+                    <br />
+                    <br />
+                    If you have any questions or need assistance, please reply to this email or contact the airport office.
+                </p>
+                <br />
+                <br style="clear:both;" />
+            </div>
+            <br />
+        </div>
+    </body>
+</html>

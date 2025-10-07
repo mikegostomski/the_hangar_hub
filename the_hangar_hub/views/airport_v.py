@@ -6,7 +6,7 @@ from base.fixtures.timezones import timezones
 
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, FileResponse
 from django.db.models import Q
 import the_hangar_hub.models
 from base.classes.util.env_helper import Log, EnvHelper
@@ -31,6 +31,7 @@ from base_stripe.services import checkout_service
 from the_hangar_hub.models.airport_manager import AirportManager
 from base_upload.services import retrieval_service
 from base_upload.services import upload_service
+from io import BytesIO
 
 log = Log()
 env = EnvHelper()
@@ -74,6 +75,21 @@ def welcome(request, airport_identifier):
             "active_applications": active_applications,
         }
     )
+
+def logo(request, airport_identifier):
+    # Make sure the airport model has been queried
+    airport = request.airport
+    if not airport:
+        airport = Airport.get(airport_identifier)
+    if airport:
+        logo_file = airport.get_logo()
+        if logo_file:
+            return retrieval_service.render_as_image(logo_file)
+
+    # If airport was not found, or does not have a logo, display HangarHub logo
+    response = FileResponse(open("the_hangar_hub/static/images/logo/hh-logo.png", "rb"))
+    response["Content-Disposition"] = f'inline; filename="HangarHub-logo.png"'
+    return response
 
 
 @report_errors()

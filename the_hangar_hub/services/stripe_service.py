@@ -12,6 +12,7 @@ from base_stripe.models.connected_account import ConnectedAccount
 from base_stripe.models.payment_models import Subscription
 from base_stripe.models.payment_models import Customer
 from datetime import datetime, timezone, timedelta
+from base.models import Variable
 
 log = Log()
 env = EnvHelper()
@@ -95,7 +96,7 @@ def modify_customer_from_airport(airport):
 
 
 def get_checkout_session_hh_subscription(airport, price_id):
-    trial_days = 30
+    trial_days = Variable.get_value("hh_trial_days", 30)
     # trial_end_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=trial_days)
     try:
         set_stripe_api_key()

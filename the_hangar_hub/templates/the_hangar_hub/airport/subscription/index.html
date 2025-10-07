@@ -15,7 +15,7 @@
                 <p class="card-text">
                     <div class="xxl">{%format_currency price.amount%}/{{price.recurring}}</div>
                     <br />
-                    <b>Billing begins after {{price.trial_days|default:'0'}} day free trial</b><br />
+                    <b>Billing begins after {{"hh_trial_days"|variable:30}} day free trial</b><br />
                     <br />
                 </p>
                 <div class="text-center">

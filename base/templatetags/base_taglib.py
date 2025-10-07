@@ -4,11 +4,10 @@
 #
 
 from django import template
-from base.models import Feature
+from base.models import Feature, Variable
 from base.services import utility_service, auth_service, date_service, validation_service
 from base.templatetags.tag_processing import html_generating, static_content
 from django.urls import reverse
-from decimal import Decimal
 from django.utils.html import mark_safe
 from django.template import TemplateSyntaxError
 import time
@@ -191,6 +190,16 @@ def feature(feature_code, true_false):
         return True
     else:
         return False
+
+
+@register.filter
+def variable(variable_code, default_value):
+    """
+    Get value of variable
+
+    'my_var'|variable:'unknown'
+    """
+    return Variable.get_value(variable_code, default_value)
 
 
 # # # # # # # # # # # # # # # # # # #

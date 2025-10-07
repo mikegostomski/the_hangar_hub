@@ -32,7 +32,7 @@ env = EnvHelper()
 def my_buildings(request, airport_identifier):
     airport = request.airport
 
-    buildings = airport.buildings.all()
+    buildings = airport.buildings.all().order_by("code")
     Breadcrumb.add(
         "Buildings", ("infrastructure:buildings", airport_identifier), reset=True
     )
@@ -99,6 +99,24 @@ def add_building(request, airport_identifier):
 
             Building.objects.create(airport=airport, code=building_code, default_rent=default_rent)
     return redirect("infrastructure:buildings", airport_identifier)
+
+
+@report_errors()
+@require_airport_manager()
+def delete_building(request, airport_identifier):
+    airport = request.airport
+    building_id = request.POST.get("building_id")
+    building = airport_service.get_managed_building(airport, building_id)
+    if not building:
+        return HttpResponseForbidden()
+
+    hangars = building.hangars.all()
+    if not hangars:
+        building.delete()
+        return HttpResponse("ok")
+    else:
+        message_service.post_error("You cannot delete a building with defined hangars")
+        return HttpResponseForbidden()
 
 
 @report_errors()

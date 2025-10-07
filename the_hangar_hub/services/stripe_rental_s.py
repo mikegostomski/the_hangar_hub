@@ -1,4 +1,3 @@
-
 from base.models.utility.error import EnvHelper, Log, Error
 from base.classes.auth.session import Auth
 import stripe
@@ -10,6 +9,7 @@ from base_stripe.services import price_service, accounts_service, invoice_servic
 from base_stripe.models.connected_account import ConnectedAccount
 from base_stripe.models.payment_models import Subscription
 from base_stripe.models.payment_models import Customer
+from base_stripe.models.payment_models import CheckoutSession
 from base_stripe.models.payment_models import Invoice as StripeInvoice
 from datetime import datetime, timezone, timedelta
 from the_hangar_hub.models.rental_models import RentalAgreement, RentalInvoice
@@ -197,7 +197,7 @@ def stripe_invoice_from_rental_invoice(rental_invoice):
 
 
 
-def get_subscription_checkout_session(rental_agreement, collection_start_date):
+def get_subscription_checkout_session(rental_agreement, collection_start_date, expiration_date):
     try:
         # Gather data
         tenant = rental_agreement.tenant
@@ -262,10 +262,12 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
     try:
         amount_due = int(rental_agreement.rent * 100)  # In cents
         currency = "usd"
-        charge_automatically = True
-        days_until_due = 7
         application_fee_percent = utility_service.convert_to_decimal(airport.stripe_tx_fee * 100)
         return_url = reverse('rent:rental_agreement_router', args=[airport.identifier, rental_agreement.id])
+
+        # Expiration date may be specified by airport in local time
+        expiration_date = expiration_date.astimezone(timezone.utc)
+        expires_at = int(expiration_date.timestamp())
 
         set_stripe_api_key()
         checkout_session = stripe.checkout.Session.create(
@@ -301,12 +303,23 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
                 "transfer_data": {"destination": airport.stripe_account.stripe_id},
                 "application_fee_percent": application_fee_percent,
             },
+            metadata={
+                "rental_agreement": rental_agreement.id
+            },
+            expires_at=expires_at,
             success_url=f"{env.absolute_root_url}{return_url}",
             cancel_url=f"{env.absolute_root_url}{return_url}",
         )
         co_session_id = checkout_session.id
         log.debug(f"CHECKOUT SESSION ID: {co_session_id}")
-        return checkout_session
+
+        # Save model to track this CO Session
+        co_model = CheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
+        co_model.related_type = "RentalAgreement"
+        co_model.related_id = rental_agreement.id
+        co_model.save()
+
+        return co_model
     except Exception as ee:
         Error.unexpected("Unable to create rental subscription", ee, rental_agreement)
         return False

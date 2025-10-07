@@ -51,6 +51,12 @@ def home(request):
             airport_service.save_airport_selection(airport)
             return redirect("airport:welcome", airport.identifier)
 
+        # Otherwise, highlight some possible actions
+        return render(
+            request, "the_hangar_hub/home.html",
+            {}
+        )
+
     # Otherwise, present a public landing page
     return render(
         request, "the_hangar_hub/public/public_landing_page.html",

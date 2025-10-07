@@ -11,33 +11,31 @@
 
     <section>
         <h2>Subscription Data</h2>
-        {%with sub_data=airport.subscriptions%}
-            {%for subscription in sub_data%}
+        {%with subscription=airport.stripe_subscription%}
+        {%with invoice=airport.latest_invoice%}
                 <div class="card float-left" style="border-left: 10px solid #000;border-color:{%if subscription.amount_remaining <= 0 %}green{%elif not airport.is_current%}red{%else%}#777{%endif%};">
                     <div class="card-body">
                         <table>
                             <tr>
                                 <th scope="row">Billing Period:</th>
                                 <td style="padding-left:20px;">
-                                    {{subscription.current_period_start|date:preferred_date_format}} - {{subscription.current_period_end|date:preferred_date_format}}
+                                    {{invoice.period_start|date:preferred_date_format}} - {{invoice.period_end|date:preferred_date_format}}
                                 </td>
                             </tr>
                             <tr>
                                 <th scope="row">Charged:</th>
-                                <td align="right">{%format_currency subscription.amount_due%}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Paid:</th>
-                                <td align="right">{%format_currency subscription.amount_paid%}</td>
+                                <td align="right">{%format_currency invoice.amount_charged%}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Balance:</th>
-                                <td align="right">{%format_currency subscription.amount_remaining%}</td>
+                                <td align="right">{%format_currency invoice.amount_remaining%}</td>
                             </tr>
+                            {%if invoice.hosted_invoice_url%}
                             <tr>
                                 <th scope="row">Documents:</th>
-                                <td align="right"><a href="{{subscription.hosted_invoice_url}}" target="_blank">{%icon bi-file-earmark-pdf%} Invoice/Receipt</a></td>
+                                <td align="right"><a href="{{invoice.hosted_invoice_url}}" target="_blank">{%icon bi-file-earmark-pdf%} Invoice/Receipt</a></td>
                             </tr>
+                            {%endif%}
                             <tr>
                                 <th scope="row">Manage:</th>
                                 <td align="right"><a href="{%url 'airport:subscription' airport.identifier%}">{%icon bi-credit-card%} Payment Portal</a></td>
@@ -47,7 +45,7 @@
 
                     </div>
                 </div>
-            {%endfor%}
+        {%endwith%}
         {%endwith%}
         <br style="clear:both" />
     </section>
@@ -55,16 +53,10 @@
     <section>
         <h2>Stripe Account Data</h2>
         <em>This determines your ability to collect payments from airport tenants.</em>
-        {%with acct_data=airport.connected_account%}
+        {%with acct_data=airport.stripe_account%}
             <div class="card" style="border-left: 10px solid #000;border-color:{%if acct_data.onboarding_complete %}green{%elif not acct_data%}red{%else%}#777{%endif%};">
                 <div class="card-body">
                     <table>
-                        <tr>
-                            <th scope="row">Stripe Account ID:</th>
-                            <td>
-                                {{airport.stripe_account.stripe_id}}
-                            </td>
-                        </tr>
                         <tr>
                             <th scope="row">Charges Enabled:</th>
                             <td>

@@ -27,9 +27,8 @@ function react_to_stripe_webhooks(){
 }
 
 {%if is_developer or True%}
-    let stripe_btn = `{%icon bi-stripe title="Process Stripe Events" onclick="react_to_stripe_webhooks()"%}`
     $(document).ready(function(){
-        $(".header-icons").prepend(stripe_btn);
+        $(".header-icons").prepend(`{%icon bi-stripe title="Process Stripe Events" onclick="react_to_stripe_webhooks()"%}`);
     });
 
 {%endif%}

@@ -46,6 +46,7 @@ administration_paths = [
 # Airport-specific content
 airport_paths = [
     path(f'{airport}', airport_v.welcome,                                  name='welcome'),
+    path(f'{airport}/logo', airport_v.logo,                                  name='logo'),
 
     # HH SUBSCRIPTIONS
     path(f'{airport}/claim', hh_subscription_v.claim_airport,                       name='claim'),
@@ -100,6 +101,7 @@ infrastructure_paths = [
     # AIRPORT MANAGEMENT (building and hangar definitions/config)
     path(f'{airport}/buildings', infrastructure_v.my_buildings,                       name='buildings'),
     path(f'{airport}/buildings/add', infrastructure_v.add_building,                name='add_building'),
+    path(f'{airport}/buildings/delete', infrastructure_v.delete_building,            name='delete_building'),
     path(f'{airport}/buildings/<building_id>', infrastructure_v.my_hangars,           name='hangars'),
     path(f'{airport}/buildings/<building_id>/add', infrastructure_v.add_hangar,    name='add_hangar'),
     path(f'{airport}/hangar/delete', infrastructure_v.delete_hangar,    name='delete_hangar'),
@@ -133,7 +135,8 @@ rent_paths = [
     # Stripe Rent Subscription Management
     # path(f'{airport}/rentals/invoice/create', rent_subscription.create_invoice,     name='create_invoice'),
     path(f'{airport}/rentals/{rental}/subscribe/checkout', rent_subscription_v.rent_subscription_checkout,     name='subscription_checkout'),
-    
+    path(f'{airport}/rentals/{rental}/subscribe/email', rent_subscription_v.rent_subscription_email,     name='subscription_email'),
+
     
     path(f'{airport}/rentals/subscription/form', rent_subscription_v.get_subscription_form,     name='subscription_form'),
     path(f'{airport}/rentals/subscription/create', rent_subscription_v.create_subscription,     name='create_subscription'),

@@ -1,20 +1,19 @@
 from django.db import models
-from base.classes.util.log import Log
-from django.utils import timezone
+from django.utils import timezone as django_timezone
 from zoneinfo import ZoneInfo
+from django.urls import reverse
+from base_stripe.models import Subscription, Invoice
 from the_hangar_hub.models.infrastructure_models import Hangar
 from the_hangar_hub.models.application import HangarApplication
 from the_hangar_hub.classes.waitlist import Waitlist
 from base_upload.services import retrieval_service
 from the_hangar_hub.services import stripe_service
-from base.models.utility.error import Error
+from base.models.utility.error import Error, Log, EnvHelper
 from decimal import Decimal
-from base.classes.util.date_helper import DateHelper
 from base.services import date_service
-from base_stripe.models.connected_account import ConnectedAccount
 
 log = Log()
-
+env = EnvHelper()
 
 class Airport(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
@@ -99,11 +98,26 @@ class Airport(models.Model):
             log.error(f"Unable to determine delinquency: {self}")
             return True  # Assume API error?
 
+    def latest_invoice(self):
+        if self.stripe_subscription:
+            try:
+                return Invoice.objects.filter(subscription=self.stripe_subscription).latest('date_created')
+            except Invoice.DoesNotExist:
+                pass
+        return None
+
     def subscriptions(self):
         """HangarHub Subscriptions"""
         subs = stripe_service.get_airport_subscriptions(self)
         sub_datas = []
         for sub_data in subs.data:
+            # If not yet linked to a subscription, link to first active subscription
+            if sub_data.status in ["trialing", "active"] and not self.stripe_subscription:
+                sub_model = Subscription.from_stripe_id(sub_data.id)
+                if sub_model:
+                    self.stripe_subscription = sub_model
+                    self.save()
+
             latest_invoice = sub_data.latest_invoice
 
             item_list = sub_data["items"]["data"]
@@ -142,9 +156,13 @@ class Airport(models.Model):
 
     def activate_timezone(self):
         if self.timezone:
-            timezone.activate(ZoneInfo(self.timezone))
+            django_timezone.activate(ZoneInfo(self.timezone))
         else:
-            timezone.deactivate()
+            django_timezone.deactivate()
+
+    @property
+    def tz(self):
+        return ZoneInfo(self.timezone or "UTC")
 
     def get_building(self, building_identifier):
         if str(building_identifier).isnumeric():
@@ -182,6 +200,9 @@ class Airport(models.Model):
         except:
             return None
 
+    def logo_url(self):
+        return f"{env.absolute_root_url}{reverse('airport:logo', args=[self.identifier])}"
+
     @classmethod
     def get(cls, id_or_ident):
         log.trace([id_or_ident])
@@ -189,7 +210,7 @@ class Airport(models.Model):
             if str(id_or_ident).isnumeric():
                 return cls.objects.get(pk=id_or_ident)
             else:
-                return cls.objects.get(identifier=id_or_ident)
+                return cls.objects.get(identifier__iexact=id_or_ident)
         except cls.DoesNotExist:
             return None
         except Exception as ee:

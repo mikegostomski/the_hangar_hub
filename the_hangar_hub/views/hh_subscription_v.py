@@ -28,6 +28,8 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 import stripe
 from base.models.utility.error import Error
 from base_stripe.services import checkout_service
+from base_stripe.models.payment_models import Customer, Subscription
+from base_stripe.models.events import WebhookEvent
 
 log = Log()
 env = EnvHelper()
@@ -138,6 +140,23 @@ def subscription_success(request, airport_identifier):
     # If payment was completed, make this user an airport manager
     if success:
         message_service.post_success("You have successfully subscribed to The Hangar Hub!")
+
+        # Attempt to link with newly created subscription
+        stripe_subscriptions = Subscription.objects.filter(
+            customer=airport.stripe_customer, status__in=["trialing", "active"]
+        )
+        if stripe_subscriptions:
+            if len(stripe_subscriptions) == 1:
+                airport.stripe_subscription = stripe_subscriptions[0]
+            else:
+                for sub in stripe_subscriptions:
+                    sub.sync()
+                    if sub.status == "trialing":
+                        airport.stripe_subscription = sub
+                        break
+                    elif sub.status == "active":
+                        airport.stripe_subscription = sub
+
         airport.status_code = "A"
         airport.save()
         airport_service.set_airport_manager(airport, Auth.current_user())
