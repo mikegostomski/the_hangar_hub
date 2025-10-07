@@ -24,6 +24,7 @@ def process_stripe_event(self, webhook_record_id):
         Access at: http://localhost:5555
     """
     event = None
+    log.debug(f"\n{'='*80}\nwebhook_record_id: {webhook_record_id}\n{'='*80}")
     try:
         event = WebhookEvent.objects.select_for_update().get(id=webhook_record_id)
 
@@ -59,7 +60,7 @@ def process_stripe_event(self, webhook_record_id):
 
         # Mark as processed
         event.refreshed = True
-        event.processed = processed
+        event.processed = processed or False
         event.save()
         
         log.info(f"Successfully processed event {webhook_record_id}")
