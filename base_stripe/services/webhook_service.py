@@ -11,7 +11,7 @@ from base_stripe.classes.webhook_validation import WebhookValidation
 from base_stripe.models.events import WebhookEvent
 from base.models.utility.error import Error
 from base.decorators import require_authority, require_authentication, report_errors
-from base_stripe.models.payment_models import Invoice, Customer, Subscription
+from base_stripe.models.payment_models import Invoice, Customer, Subscription, CheckoutSession
 from base_stripe.models.connected_account import ConnectedAccount
 
 
@@ -21,6 +21,75 @@ env = EnvHelper()
 # ToDo: Error Handling/Messages
 
 
+def stripe_model_refresh(webhook_event_instance):
+    """
+    From a stripe object-type and ID, create or refresh the Django model representation of the object
+    """
+
+    # Route to appropriate handler
+    refreshed = False
+    try:
+        if webhook_event_instance.object_type == 'customer':
+            refreshed = _handle_customer_event(webhook_event_instance)
+        elif webhook_event_instance.object_type == 'invoice':
+            refreshed = _handle_invoice_event(webhook_event_instance)
+        elif webhook_event_instance.object_type == 'subscription':
+            refreshed = _handle_subscription_event(webhook_event_instance)
+        elif webhook_event_instance.object_type == 'checkout.session':
+            refreshed = _handle_checkout_session_event(webhook_event_instance)
+    except Exception as ee:
+        Error.record(ee, webhook_event_instance)
+    return refreshed
+
+
+def _handle_customer_event(event):
+    # If a customer was deleted
+    if event.event_type == "deleted":
+        cust = Customer.get(event.object_id)
+        if cust:
+            log.info(f"Deleting customer #{cust.id}: {event.object_id}")
+            cust.status = "deleted"
+            cust.save()
+        return True
+
+    # Refresh customer with latest data
+    else:
+        cust = Customer.get_or_create(stripe_id=event.object_id)
+        return cust.sync()
+
+
+def _handle_invoice_event(event):
+    if event.event_type == "deleted":
+        del_inv = Invoice.get(event.object_id)
+        if del_inv:
+            log.info(f"Invoice #{del_inv.id} was deleted in Stripe: {event.object_id}")
+            del_inv.status = "deleted"
+            del_inv.save()
+        return True
+
+    # Refresh invoice with latest data
+    else:
+        inv = Invoice.from_stripe_id(event.object_id)
+        return inv.sync()
+
+
+def _handle_subscription_event(event):
+    log.info(f"handle_subscription_event({event.object_id})")
+    sub = Subscription.from_stripe_id(event.object_id)
+    log.info(f"sub: {sub}")
+    return sub.sync()
+
+
+def _handle_checkout_session_event(event):
+    co = CheckoutSession.from_stripe_id(event.object_id)
+    return co.sync()
+
+
+
+
+
+
+# ToDo: Should not be needed anymore:
 def react_to_events():
     """
     Webhook events get recorded to the Django database.

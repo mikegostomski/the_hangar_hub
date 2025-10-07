@@ -3,6 +3,7 @@ from django.utils import timezone
 from base_stripe.models.events import WebhookEvent
 from base.models.utility.error import Error, Log, EnvHelper
 from base_stripe.models.payment_models import Customer, Invoice, Subscription, CheckoutSession
+from base_stripe.services import webhook_service
 
 log = Log()
 env = EnvHelper()
@@ -45,6 +46,8 @@ def process_stripe_event(self, webhook_record_id):
 
         log.info(f"Processing event {webhook_record_id} of type {event.event_type}")
 
+        refreshed = webhook_service.stripe_model_refresh(event)
+
         # Route to appropriate handler
         processed = False
         if event.object_type == 'customer':
@@ -59,7 +62,7 @@ def process_stripe_event(self, webhook_record_id):
         # Add more event types as needed
 
         # Mark as processed
-        event.refreshed = True
+        event.refreshed = refreshed or False
         event.processed = processed or False
         event.save()
         
@@ -78,44 +81,21 @@ def process_stripe_event(self, webhook_record_id):
 
 
 def handle_customer_event(event):
-    # If a customer was deleted
-    if event.event_type == "deleted":
-        cust = Customer.get(event.object_id)
-        if cust:
-            log.info(f"Deleting customer #{cust.id}: {event.object_id}")
-            cust.status = "deleted"
-            cust.save()
-        return True
-
-    # Refresh customer with latest data
-    else:
-        cust = Customer.get_or_create(stripe_id=event.object_id)
-        return cust.sync()
+    # Only the refresh is needed, right?
+    return True
 
 
 def handle_invoice_event(event):
-    if event.event_type == "deleted":
-        del_inv = Invoice.get(event.object_id)
-        if del_inv:
-            log.info(f"Invoice #{del_inv.id} was deleted in Stripe: {event.object_id}")
-            del_inv.status = "deleted"
-            del_inv.save()
-        return True
-
-    # Refresh invoice with latest data
-    else:
-        inv = Invoice.from_stripe_id(event.object_id)
-        return inv.sync()
+    # Probably need to do something...
+    return False
 
 
 def handle_subscription_event(event):
-    log.info(f"handle_subscription_event({event.object_id})")
-    sub = Subscription.from_stripe_id(event.object_id)
-    log.info(f"sub: {sub}")
-    return sub.sync()
+    # Probably need to do something...
+    return False
 
 
 def handle_checkout_session_event(event):
-    co = CheckoutSession.from_stripe_id(event.object_id)
-    return co.sync()
+    # Would result in a new subscription, so probably nothing needed???
+    return True
 
