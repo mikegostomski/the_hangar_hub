@@ -13,6 +13,7 @@ from base.models.utility.error import Error
 from base.decorators import require_authority, require_authentication, report_errors
 from base_stripe.models.payment_models import Invoice, Customer, Subscription
 from base_stripe.services import webhook_service, config_service
+from the_hangar_hub.tasks import process_stripe_event
 
 
 log = Log()
@@ -28,8 +29,8 @@ def webhook(request):
         return HttpResponse(status=result.status_code)
 
     try:
-
-        # Return success response
+        # Queue the task for async processing
+        process_stripe_event.delay(result.webhook_event_id)
         return HttpResponse(status=200)
 
     except Exception as ee:
