@@ -2,8 +2,17 @@ from celery import shared_task
 from django.utils import timezone
 from base_stripe.models.events import WebhookEvent
 from base.models.utility.error import Error, Log, EnvHelper
-from base_stripe.models.payment_models import Customer, Invoice, Subscription, CheckoutSession
+
+from base_stripe.models.payment_models import Customer as StripeCustomer
+from base_stripe.models.payment_models import Invoice as StripeInvoice
+from base_stripe.models.payment_models import Subscription as StripeSubscription
+from base_stripe.models.payment_models import CheckoutSession as StripeCheckoutSession
+
+from the_hangar_hub.models.rental_models import Tenant, RentalInvoice, RentalAgreement
+from the_hangar_hub.models.rental_models import Subscription as RentalSubscription
+
 from base_stripe.services import webhook_service
+from the_hangar_hub.models import Tenant
 
 log = Log()
 env = EnvHelper()
@@ -81,13 +90,57 @@ def process_stripe_event(self, webhook_record_id):
 
 
 def handle_customer_event(event):
-    # Only the refresh is needed, right?
-    return True
+    try:
+        if event.event_type == "customer.created":
+            customer = StripeCustomer.from_stripe_id(event.object_id)
+            if customer:
+                # Check for tenant that needs to be updated
+                for t in Tenant.objects.filter(customer__isnull=True, contact__email__iexact=customer.email):
+                    t.customer = customer
+                    t.save()
+
+        return True
+    except Exception as ee:
+        Error.record(ee, event)
+        return False
 
 
 def handle_invoice_event(event):
-    # Probably need to do something...
-    return False
+    try:
+        invoice = StripeInvoice.from_stripe_id(event.object_id)
+        if invoice:
+            # Is invoice tied to a RentalAgreement?
+            if invoice.related_type == "RentalAgreement":
+                rental_agreement_id = invoice.related_id
+            elif invoice.subscription and invoice.subscription.related_type == "RentalAgreement":
+                rental_agreement_id = invoice.subscription.related_id
+            elif "RentalAgreement" in invoice.metadata:
+                rental_agreement_id = invoice.metadata.get("RentalAgreement")
+            elif invoice.subscription and invoice.subscription.metadata and "RentalAgreement" in invoice.subscription.metadata:
+                rental_agreement_id = invoice.subscription.metadata.get("RentalAgreement")
+            else:
+                rental_agreement_id = None
+
+            if rental_agreement_id:
+                rental_agreement = RentalAgreement.get(rental_agreement_id)
+                # ToDo: Make sure invoice exists for rental_agreement
+
+            else:
+                # ToDo: Maybe a HangarHub subscription?
+                pass
+
+
+            if event.event_type == "invoice.created":
+                # ToDo: Send an email?
+                pass
+
+            return True
+
+        else:  # No invoice record
+            return False
+    except Exception as ee:
+        Error.record(ee, event)
+        return False
 
 
 def handle_subscription_event(event):

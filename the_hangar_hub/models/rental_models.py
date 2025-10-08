@@ -11,6 +11,7 @@ from base_stripe.classes.customer_subscription import CustomerSubscription
 from base_stripe.models.payment_models import Subscription
 from django.db.models import Q
 from base.classes.util.date_helper import DateHelper
+from base.services import utility_service
 
 log = Log()
 
@@ -29,6 +30,9 @@ class Tenant(models.Model):
     # There may not be a user at time of creation (or potentially ever)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
     customer = models.ForeignKey("base_stripe.Customer", on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
+
+    def get_rental_agreement_series_list(self):
+        return list(set([rr.series for rr in self.rentals.all()]))
 
     @property
     def stripe_customer_id(self):
@@ -49,6 +53,9 @@ class Tenant(models.Model):
 
             if not tenant_data:
                 return None
+
+            if str(tenant_data).isnumeric():
+                return cls.objects.get(pk=tenant_data)
 
             # If given a Tenant object, just return it
             if type(tenant_data) is Tenant:
@@ -106,7 +113,8 @@ class RentalAgreement(models.Model):
     hangar = models.ForeignKey('the_hangar_hub.Hangar', on_delete=models.CASCADE, related_name="rentals")
     airport = models.ForeignKey('the_hangar_hub.Airport', on_delete=models.CASCADE, related_name="rentals")
 
-    # For changes to rental agreement, new agreements will be created
+    # For changes to rental agreement, new agreements will be created and grouped into a series
+    series = models.CharField(max_length=6, db_index=True)
     prior_agreement = models.ForeignKey('the_hangar_hub.RentalAgreement', on_delete=models.CASCADE, null=True, blank=True)
     _next_agreement = None
     def next_agreement(self):
@@ -151,6 +159,15 @@ class RentalAgreement(models.Model):
     @property
     def active_subscription(self):
         return self.stripe_subscription.is_active if self.stripe_subscription else None
+
+    def set_new_series(self):
+        new = utility_service.generate_verification_code(length=6)
+        used = self.tenant.get_rental_agreement_series_list() or []
+        tries = 1
+        while tries < 10 and new in used:
+            new = utility_service.generate_verification_code(length=6)
+            tries += 1
+        self.series = new
 
     # Related invoice models
     def invoice_models(self):

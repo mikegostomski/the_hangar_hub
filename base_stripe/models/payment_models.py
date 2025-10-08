@@ -36,7 +36,7 @@ class Customer(models.Model):
     delinquent = models.BooleanField(default=False)
     invoice_prefix = models.CharField(max_length=10, null=True, blank=True)
     status = models.CharField(max_length=10, null=True, blank=True)
-    metadata = models.CharField(max_length=500, null=True, blank=True)
+    metadata = models.JSONField(default=dict, null=True, blank=True)
 
     default_payment_method = models.CharField(max_length=50, null=True, blank=True)
     default_source = models.CharField(max_length=50, null=True, blank=True)
@@ -95,6 +95,28 @@ class Customer(models.Model):
             Error.record(ee, self.stripe_id)
         return False
 
+    def add_metadata(self, data_dict):
+        try:
+            config_service.set_stripe_api_key()
+            customer = stripe.Customer.retrieve(self.stripe_id)
+            metadata = customer.get("metadata")
+            if not metadata:
+                metadata = {}
+            # Add the given data
+            metadata.update(data_dict)
+            # Make sure the model ID is always included
+            metadata.update({"model_id": self.id})
+
+            stripe.Customer.modify(
+                self.id,
+                metadata=metadata
+            )
+
+            self.metadata = metadata
+            self.save()
+        except Exception as ee:
+            Error.record(ee, self.stripe_id)
+
     def api_data(self):
         """
         Get data from Stripe API
@@ -139,7 +161,7 @@ class Customer(models.Model):
         return cls.get_or_create(stripe_id=stripe_id)
 
     @classmethod
-    def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None, phone=None, address_dict=None):
+    def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None, phone=None, address_dict=None, metadata=None):
         """
         Create (if DNE) a Customer record in Stripe, and a local record that ties the Stripe ID to a User/email
 
@@ -233,6 +255,7 @@ class Customer(models.Model):
                 stripe_customer = stripe.Customer.create(
                     name=full_name,
                     email=email,
+                    metadata=metadata or {}
                 )
                 # API either succeeds or raises an exception
                 stripe_id = stripe_customer.get("id")
@@ -240,7 +263,7 @@ class Customer(models.Model):
 
                 # Create and return customer_model
                 return Customer.objects.create(
-                    full_name=full_name, email=email, stripe_id=stripe_id, user=user
+                    full_name=full_name, email=email, stripe_id=stripe_id, user=user, metadata=metadata or {}
                 )
 
             except Exception as ee:
@@ -263,7 +286,7 @@ class Invoice(models.Model):
     status = models.CharField(max_length=20, db_index=True)
     amount_charged = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
     amount_remaining = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
-    metadata = models.CharField(max_length=500, null=True, blank=True)
+    metadata = models.JSONField(default=dict, null=True, blank=True)
 
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)
@@ -410,7 +433,7 @@ class Subscription(models.Model):
 
     # incomplete, incomplete_expired, trialing, active, past_due, canceled, unpaid, or paused.
     status = models.CharField(max_length=20, db_index=True)
-    metadata = models.CharField(max_length=500, null=True, blank=True)
+    metadata = models.JSONField(default=dict, null=True, blank=True)
 
     amount = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     start_date = models.DateTimeField(null=True, blank=True)
@@ -487,6 +510,29 @@ class Subscription(models.Model):
                 self._populate_first_paid_date()
 
                 self.save()
+        except Exception as ee:
+            Error.record(ee, self.stripe_id)
+
+
+    def add_metadata(self, data_dict):
+        try:
+            config_service.set_stripe_api_key()
+            subscription = stripe.Subscription.retrieve(self.stripe_id)
+            metadata = subscription.get("metadata")
+            if not metadata:
+                metadata = {}
+            # Add the given data
+            metadata.update(data_dict)
+            # Make sure the model ID is always included
+            metadata.update({"model_id": self.id})
+
+            stripe.Subscription.modify(
+                self.id,
+                metadata=metadata
+            )
+
+            self.metadata = metadata
+            self.save()
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -576,9 +622,8 @@ class CheckoutSession(models.Model):
     # open, complete, or expired
     status = models.CharField(max_length=20, db_index=True)
     url = models.CharField(max_length=500)
-    metadata = models.CharField(max_length=500, null=True, blank=True)
+    metadata = models.JSONField(default=dict, null=True, blank=True)
     expiration_date = models.DateTimeField(null=True, blank=True)
-
 
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)

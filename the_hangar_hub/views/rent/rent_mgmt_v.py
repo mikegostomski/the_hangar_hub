@@ -328,16 +328,24 @@ def add_tenant(request, airport_identifier, hangar_id):
             tenant = Tenant()
             tenant.contact = contact
             tenant.user = user
+
+            # Create (or locate) Stripe customer for this Tenant
+            tenant.customer = Customer.get_or_create(
+                full_name=tenant.display_name, email=tenant.email, user=tenant.user
+            )
+
             tenant.save()
         except Exception as ee:
             log.error(f"Error creating tenant: {ee}")
             issues.append("Unable to create tenant record.")
+
     if issues:
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
         return redirect("infrastructure:hangar", airport.identifier, hangar_id)
 
     # Create the rental record
+    rental = None
     try:
         rental = RentalAgreement()
         rental.airport = airport
@@ -348,6 +356,7 @@ def add_tenant(request, airport_identifier, hangar_id):
         rental.rent = rent
         rental.deposit = deposit
         rental.notes = notes
+        rental.set_new_series()
         rental.save()
 
         message_service.post_success("New tenant has been added")
@@ -366,7 +375,10 @@ def add_tenant(request, airport_identifier, hangar_id):
         Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
 
     # Create a Stripe customer record (for sending invoices and collecting rent)
-    Customer.get_or_create(full_name=f"{first_name} {last_name}", email=email, user=user)
+    metadata = {"rental_agreement"}
 
-    return redirect("infrastructure:hangar",airport_identifier, hangar.code)
+    if rental is None or issues:
+        return redirect("infrastructure:hangar",airport_identifier, hangar.code)
+    else:
+        return redirect("rent:rental_invoices",airport_identifier, rental.id)
 
