@@ -43,7 +43,7 @@
 {%endif%}
 
 
-{%if 'administrator'|has_authority:True%}
+{%if is_developer%}
 
     <li class="dropdown-divider"></li>
 
@@ -51,8 +51,12 @@
         Administration
     </li>
 
+
     <li>
-        <a href="{%url 'administration:invitation_dashboard'%}" class="dropdown-item">Invitation Dashboard</a>
+        <a href="{%url 'dev:subscriptions'%}" class="dropdown-item">Subscriptions</a>
+    </li>
+    <li>
+        <a href="{%url 'dev:invitation_dashboard'%}" class="dropdown-item">Invitation Dashboard</a>
     </li>
 
 {%endif%}

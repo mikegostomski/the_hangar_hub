@@ -15,7 +15,7 @@ from datetime import datetime, timezone, timedelta
 from base.services import date_service, utility_service
 from the_hangar_hub.models.rental_models import RentalInvoice
 from base_stripe.models.payment_models import StripeInvoice as StripeInvoice
-from the_hangar_hub.services import stripe_rental_s
+from the_hangar_hub.services.stripe import stripe_creation_svc
 
 log = Log()
 env = EnvHelper()
@@ -108,11 +108,6 @@ def create_rental_invoice(
             log.warning("Invoice left in manual collection state")
         return rental_invoice
 
-    elif collection == "stripe_subscription":
-        # Create a recurring Stripe invoice
-        if not start_subscription(rental_invoice):
-            log.warning("Invoice left in manual collection state")
-        return rental_invoice
 
     else:
         # Airport will collect manually
@@ -273,8 +268,6 @@ def cancel_open_invoices(rental_agreement):
 
 
 def convert_to_stripe(invoice):
-    return stripe_rental_s.stripe_invoice_from_rental_invoice(get_rental_invoice(invoice))
+    return stripe_creation_svc.stripe_invoice_from_rental_invoice(get_rental_invoice(invoice))
 
-def start_subscription(invoice):
-    return stripe_rental_s.stripe_subscription_from_rental_invoice(get_rental_invoice(invoice))
 

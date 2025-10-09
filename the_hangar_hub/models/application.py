@@ -61,6 +61,10 @@ class HangarApplication(models.Model):
     wl_index = models.IntegerField(blank=True, null=True)
 
     @property
+    def email(self):
+        return self.preferred_email or self.user.email
+
+    @property
     def wl_sort_string(self):
         sub_date = DateHelper(self.submission_date).timestamp()
         return f"{self.wl_group_code}-{self.wl_index or 'z'}-{sub_date}"

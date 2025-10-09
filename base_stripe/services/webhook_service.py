@@ -1,17 +1,8 @@
-from django.http import HttpResponse, Http404, HttpResponseForbidden, JsonResponse
-from django.shortcuts import render
 from base.classes.util.env_helper import Log, EnvHelper
-from base.classes.auth.session import Auth
-from base_stripe.services import price_service, accounts_service
-from base.services import message_service
-from django.views.decorators.csrf import csrf_exempt
-import json
-import stripe
-from base_stripe.classes.webhook_validation import WebhookValidation
 from base_stripe.models.events import StripeWebhookEvent
 from base.models.utility.error import Error
-from base.decorators import require_authority, require_authentication, report_errors
 from base_stripe.models.payment_models import StripeInvoice, StripeCustomer, StripeSubscription, StripeCheckoutSession
+from base_stripe.models.product_models import StripeProduct, StripePrice
 from base_stripe.models.connected_account import StripeConnectedAccount
 
 
@@ -25,6 +16,14 @@ def stripe_model_refresh(webhook_event_instance):
     """
     From a stripe object-type and ID, create or refresh the Django model representation of the object
     """
+    # Some objects are currently not being tracked locally
+    ignore = [
+        "payment_intent", "invoiceitem", "credit_note",
+        "setup_intent", "charge", "payment_method",
+        "capability"
+    ]
+    if webhook_event_instance.object_type in ignore:
+        return True  # Mark as refreshed so they can be ignored/deleted from the table
 
     # Route to appropriate handler
     refreshed = False
@@ -37,6 +36,11 @@ def stripe_model_refresh(webhook_event_instance):
             refreshed = _handle_subscription_event(webhook_event_instance)
         elif webhook_event_instance.object_type == 'checkout.session':
             refreshed = _handle_checkout_session_event(webhook_event_instance)
+        elif webhook_event_instance.object_type == 'product':
+            refreshed = _handle_product_event(webhook_event_instance)
+        elif webhook_event_instance.object_type == 'price':
+            refreshed = _handle_price_event(webhook_event_instance)
+
     except Exception as ee:
         Error.record(ee, webhook_event_instance)
     return refreshed
@@ -82,6 +86,14 @@ def _handle_subscription_event(event):
 
 def _handle_checkout_session_event(event):
     co = StripeCheckoutSession.from_stripe_id(event.object_id)
+    return co.sync()
+
+def _handle_product_event(event):
+    co = StripeProduct.from_stripe_id(event.object_id)
+    return co.sync()
+
+def _handle_price_event(event):
+    co = StripePrice.from_stripe_id(event.object_id)
     return co.sync()
 
 

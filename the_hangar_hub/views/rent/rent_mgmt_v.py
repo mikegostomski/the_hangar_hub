@@ -187,11 +187,7 @@ def update_rental_invoice(request, airport_identifier, rental_agreement_id):
         else:
             return HttpResponseForbidden()
 
-    elif action == "subscribe":
-        if invoice_s.start_subscription(invoice):
-            return render(request, tr_html, {"invoice": invoice})
-        else:
-            return HttpResponseForbidden()
+
 
     else:
         message_service.post_warning("Invalid action was requested. Returning to invoice list.")

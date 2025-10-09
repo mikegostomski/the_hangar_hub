@@ -2,8 +2,6 @@ from base.models.utility.error import EnvHelper, Log, Error
 import stripe
 from base_stripe.models import StripeCustomer, StripeInvoice
 from base_stripe.services.config_service import set_stripe_api_key
-from base_stripe.classes.api.invoice import InvoiceAPI as InvoiceAPI
-from datetime import datetime, timezone, timedelta
 
 log = Log()
 env = EnvHelper()
@@ -38,25 +36,6 @@ def find_invoices(customer, limit=10):
 
 
 
-
-# ToDo: Eventually use only the Invoice model
-def get_customer_invoices(customer_id, status="open", since_days=None):
-    if since_days:
-        since_date = datetime.now(timezone.utc) - timedelta(days=since_days)
-        since = int(since_date.timestamp())
-    else:
-        since = None
-
-    try:
-        set_stripe_api_key()
-        invoices = stripe.Invoice.list(
-            customer=customer_id,
-            status=status,
-            created={"gte": since} if since else None,
-        )
-        return [InvoiceAPI(ii) for ii in invoices]
-    except Exception as ee:
-        Error.unexpected("Could not retrieve customer invoices", ee, customer_id)
 
 
 

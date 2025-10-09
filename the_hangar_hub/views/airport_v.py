@@ -31,8 +31,7 @@ from base_stripe.services import checkout_service
 from the_hangar_hub.models.airport_manager import AirportManager
 from base_upload.services import retrieval_service
 from base_upload.services import upload_service
-from io import BytesIO
-
+from the_hangar_hub.services.stripe import stripe_creation_svc
 log = Log()
 env = EnvHelper()
 
@@ -100,10 +99,8 @@ def my_airport(request, airport_identifier):
 
     # If no connected account, create it now
     if not airport.stripe_account:
-        stripe_service.create_connected_account(airport)
+        stripe_creation_svc.create_connected_account(airport)
 
-    # If there is a stripe account, refresh with data from Stripe
-    stripe_service.sync_account_data(airport)
 
     # Check connected account
     onboarding_link = None

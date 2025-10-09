@@ -866,10 +866,20 @@ strong {
 
 .hobbs-alert strong::before, .hobbs-tip strong::before{
     content: url("../images/hobbs-transparent-sm.png");
-    margin-right: 5px;
+            padding-top:10px;
+            font-size: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            float:left;
+            margin-right: 10px;
 }
 .hobbs-alert strong{
-    display:block;
 }
 .hobbs-tip{
     background-color: inherit;

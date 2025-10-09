@@ -228,7 +228,8 @@ class HangarApplicationPreferences(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="application_prefs", db_index=True, unique=True)
+    # airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="application_prefs", db_index=True, unique=True)
+    airport = models.OneToOneField("the_hangar_hub.Airport", models.CASCADE, related_name="application_prefs", db_index=True, unique=True)
 
     required_fields_csv = models.TextField(blank=True, null=True)
     ignored_fields_csv = models.TextField(blank=True, null=True)

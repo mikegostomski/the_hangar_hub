@@ -1,13 +1,8 @@
-from calendar import month
-
 from django.db import models
 from django.contrib.auth.models import User
 from base.models.utility.error import Error,Log
 from base.classes.auth.session import Auth
 from datetime import datetime, timezone, timedelta
-from django.db.models import Q
-from the_hangar_hub.services import stripe_service
-from base_stripe.classes.customer_subscription import CustomerSubscription
 from base_stripe.models.payment_models import StripeSubscription
 from django.db.models import Q
 from base.classes.util.date_helper import DateHelper
@@ -227,12 +222,6 @@ class RentalAgreement(models.Model):
       would need to make other payment arrangements with the airport (for example,
       cash or check payments)
     """
-    subscription_data = None
-    def get_subscription_data(self):
-        if self.subscription_data is None:
-            self.subscription_data = CustomerSubscription(self.stripe_subscription_id)
-        return self.subscription_data
-
     def has_subscription(self):
         return self.stripe_subscription_id
 

@@ -4,11 +4,9 @@ from base.classes.util.env_helper import EnvHelper, Log
 from base.models.utility.error import Error
 from base_stripe.services import config_service
 from base.services import message_service, utility_service
-from base_stripe.classes.api.invoice import InvoiceAPI as InvoiceAPI
 from base.classes.auth.session import Auth
 from django.contrib.auth.models import User
 from django.utils.functional import SimpleLazyObject
-from base_stripe.classes.api.customer import Customer as StripeCustomerAPI
 import stripe
 from base_stripe.services.config_service import set_stripe_api_key
 from base.services import date_service, message_service
@@ -127,12 +125,6 @@ class StripeCustomer(models.Model):
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
-    def api_wrapper(self):
-        """
-        Get data from Stripe API and put in custom class
-        """
-        data = self.api_data()
-        return StripeCustomerAPI(data) if data else None
 
     @classmethod
     def get(cls, xx):
@@ -222,7 +214,7 @@ class StripeCustomer(models.Model):
             # Look for existing customer model based on all known (verified) email addresses
             existing = None
             for email_address in verified_emails:
-                existing = StripeStripeCustomer.get(email_address)
+                existing = StripeCustomer.get(email_address)
                 if existing:
                     break
 
@@ -370,13 +362,6 @@ class StripeInvoice(models.Model):
             return stripe.Invoice.retrieve(self.stripe_id)
         except Exception as ee:
             Error.record(ee, self.stripe_id)
-
-    def api_wrapper(self):
-        """
-        Get data from Stripe API and put in custom class
-        """
-        data = self.api_data()
-        return InvoiceAPI(data) if data else None
 
 
     @classmethod

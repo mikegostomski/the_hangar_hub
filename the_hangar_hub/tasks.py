@@ -42,40 +42,47 @@ def process_stripe_event(self, webhook_record_id):
             log.info(f"Event {webhook_record_id} already processed, skipping")
             return f"Event {webhook_record_id} already processed"
 
-        # Some objects are currently not being tracked locally
+        # Sync local model with Stripe data
+        refreshed = webhook_service.stripe_model_refresh(event)
+
+        # Some objects do not require any additional processing
         ignore = [
             "payment_intent", "invoiceitem", "credit_note",
             "setup_intent", "charge", "payment_method",
             "checkout.session", "capability",
         ]
         if event.object_type in ignore:
-            log.info(f"Event {webhook_record_id} can be ignored ({event.object_type})")
-            return f"Event {webhook_record_id} can be ignored ({event.object_type})"
+            processed = True  # Mark as processed so it can be ignored/deleted from the table
 
-        log.info(f"Processing event {webhook_record_id} of type {event.event_type}")
+        elif not refreshed:
+            # Likely not a known object type yet.
+            # If is known type, cannot process with old data.
+            log.info(f"Not processing un-refreshed object: {event.object_type}")
+            processed = False
 
-        refreshed = webhook_service.stripe_model_refresh(event)
+        else:
+            log.info(f"Processing event {webhook_record_id} of type {event.event_type}")
 
-        # Route to appropriate handler
-        processed = False
-        if event.object_type == 'customer':
-            processed = handle_customer_event(event)
-        elif event.object_type == 'invoice':
-            processed = handle_invoice_event(event)
-        elif event.object_type == 'subscription':
-            processed = handle_subscription_event(event)
-        elif event.object_type == 'checkout.session':
-            processed = handle_checkout_session_event(event)
+            # Route to appropriate handler
+            processed = False
+            if event.object_type == 'customer':
+                processed = handle_customer_event(event)
+            elif event.object_type == 'invoice':
+                processed = handle_invoice_event(event)
+            elif event.object_type == 'subscription':
+                processed = handle_subscription_event(event)
+            elif event.object_type == 'checkout.session':
+                processed = handle_checkout_session_event(event)
 
-        # Add more event types as needed
+            # Add more event types as needed
 
-        # Mark as processed
+        # Record refreshed/processed state
         event.refreshed = refreshed or False
         event.processed = processed or False
         event.save()
         
-        log.info(f"Successfully processed event {webhook_record_id}")
-        return f"Successfully processed event {webhook_record_id}"
+        log.info(f"Processed event {webhook_record_id}")
+        return f"Processed event {webhook_record_id}"
 
     except StripeWebhookEvent.DoesNotExist:
         log.error(f"Event {webhook_record_id} not found")

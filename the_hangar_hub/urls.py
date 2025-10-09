@@ -38,7 +38,12 @@ public_paths = [
 ]
 
 # Accessible to developers and site administrators
-administration_paths = [
+developer_paths = [
+
+
+
+
+    path(f'subscriptions', admin_v.subscriptions,                         name='subscriptions'),
     path(f'invitations', admin_v.invitation_dashboard,                         name='invitation_dashboard'),
     path(f'invitations/send', admin_v.send_invitation,                         name='send_invitation'),
 ]
@@ -139,12 +144,9 @@ rent_paths = [
 
     
     path(f'{airport}/rentals/subscription/form', rent_subscription_v.get_subscription_form,     name='subscription_form'),
-    path(f'{airport}/rentals/subscription/create', rent_subscription_v.create_subscription,     name='create_subscription'),
-    path(f'{airport}/rentals/invoice/delete_draft', rent_subscription_v.delete_draft_invoice,     name='delete_draft_invoice'),
 
     # TENANT PAYMENT DASHBOARD
     path(f'dashboard', rent_tenant_v.payment_dashboard,  name='tenant_dashboard'),
-    path(f'autopay/set', rent_tenant_v.set_auto_pay,  name='set_auto_pay'),
 
     # MANAGER PAYMENT ACTIONS
 
@@ -172,7 +174,7 @@ urlpatterns = [
     re_path(f'^stripe/', include(('base_stripe.urls', 'base_stripe'), namespace='stripe')),
 
     re_path(f'', include((public_paths, 'the_hangar_hub'), namespace='public')),
-    re_path(f'administration/', include((administration_paths, 'the_hangar_hub'), namespace='administration')),
+    re_path(f'dev/', include((developer_paths, 'the_hangar_hub'), namespace='dev')),
 
 
     re_path(f'airport/', include((airport_paths, 'the_hangar_hub'), namespace='airport')),

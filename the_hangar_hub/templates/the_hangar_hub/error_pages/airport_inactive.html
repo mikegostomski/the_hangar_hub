@@ -1,20 +1,50 @@
 {% extends 'base/template/standard/template.html' %}
 {% load base_taglib %}
+{% load static %}
 
-{%block title%}The Hangar public: Inactive Airport - {{airport.identifier}}{%endblock%}
+{%block title%}The Hangar Hub: Inactive Airport - {{airport.identifier}}{%endblock%}
 
 {% block main_content %}
 <div class="content-1024">
-    <h1>{{airport.display_name}}</h1>
-    <br />
-    <div class="alert alert-danger">
-        {%icon bi-moon-stars%} {{airport.display_name}} is not currently active on The Hangar Hub.
+    <div class="text-center">
+        <h1>{{airport.display_name}}</h1>
+
+        <img id="inactive-img" src="{% static 'images/inactive.png' %}" class="img-fluid" alt="A cartoon airplane sleeping on the ramp" /><br />
+        <div class="heading xl">
+            {%icon bi-moon-stars%} Currently Inactive<br />
+        </div>
+        <br />
+        <br />
+        <br />
+
+
+        <div class="alert alert-info hobbs-alert" style="text-align:left;">
+            <div class="float-left">
+                <strong>Airport Manager?</strong>
+                <div style="white-space:nowrap;">
+                    Start managing your airport on Hangar Hub today
+                </div>
+            </div>
+            <div class="float-right" style="padding-top:10px;">
+                <a href="{%url 'airport:claim' airport.identifier%}" class="btn btn-success">Claim This Airport</a>
+            </div>
+            <br style="clear:both;" />
+        </div>
+
+
     </div>
-    <br />
-    <strong>Are you an airport manager looking to start using the Hangar Hub?</strong><br />
-    <a href="{%url 'airport:claim' airport.identifier%}" class="btn btn-primary">Claim This Airport</a>
 </div>
 
 <br />
 <br />
+
+<style>
+    #inactive-img{
+        max-width:300px;
+        border-radius: 10px;
+    }
+    .tile{
+        max-width:400px;
+    }
+</style>
 {%endblock%}

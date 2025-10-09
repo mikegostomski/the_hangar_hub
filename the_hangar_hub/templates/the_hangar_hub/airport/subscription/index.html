@@ -6,7 +6,7 @@
 
 {% block main_content %}
 <div class="content-1024 content-center">
-    <h1>Subscriptions</h1>
+
 
         {%for lookup_key, price in prices.items%}
         <div class="card">
@@ -16,7 +16,7 @@
                     <div class="xxl">{%format_currency price.amount%}/{{price.recurring}}</div>
                     <br />
                     <b>Billing begins after {{"hh_trial_days"|variable:30}} day free trial</b><br />
-                    <br />
+                    <br />{{price.id}}
                 </p>
                 <div class="text-center">
                     <form action="{%url 'airport:subscribe' airport.identifier%}" method="POST">
@@ -30,17 +30,344 @@
         {%endfor%}
 
 
+    <div class="container">
+        <div class="header">
+            <h1>Choose Your Plan</h1>
+            <p>Manage your airport listings, connect with pilots, track hangar availability, and grow your aviation business</p>
+        </div>
+
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="plan-header">
+                    <h2 class="plan-name">Monthly Plan</h2>
+                    <div class="price">$15<span class="price-small">/month</span></div>
+                </div>
+                <div class="trial-info">Billing begins after 30 day free trial</div>
+                <ul class="features">
+                    <li>Unlimited hangar listings</li>
+                    <li>Real-time availability updates</li>
+                    <li>Pilot messaging system</li>
+                    <li>Basic analytics dashboard</li>
+                    <li>Email support</li>
+                    <li>Mobile app access</li>
+                </ul>
+                <button class="subscribe-btn">Start Free Trial</button>
+            </div>
+
+            <div class="pricing-card featured">
+                <span class="badge">Best Value</span>
+                <div class="plan-header">
+                    <h2 class="plan-name">Yearly Plan</h2>
+                    <div class="price">$150<span class="price-small">/year</span></div>
+                    <span class="savings">Save $30 per year</span>
+                </div>
+                <div class="trial-info">Billing begins after 30 day free trial</div>
+                <ul class="features">
+                    <li>Unlimited hangar listings</li>
+                    <li>Real-time availability updates</li>
+                    <li>Pilot messaging system</li>
+                    <li>Advanced analytics dashboard</li>
+                    <li>Priority email & phone support</li>
+                    <li>Mobile app access</li>
+                    <li>Custom branding options</li>
+                    <li>Featured airport placement</li>
+                </ul>
+                <button class="subscribe-btn">Start Free Trial</button>
+            </div>
+        </div>
+
+        <div class="testimonial">
+            <p class="testimonial-text">"Hangar Hub has transformed how we manage our airport. We've connected with more pilots in 3 months than we did all of last year. The platform is intuitive and the support team is fantastic."</p>
+            <p class="testimonial-author">— Sarah Mitchell, Airport Manager at Skyview Regional</p>
+        </div>
+
+        <div class="faq-section">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">What happens during the free trial?</div>
+                <div class="faq-answer">You get full access to all features for 30 days with no credit card required. After the trial, you can choose to continue with a paid subscription or your account will revert to view-only mode.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Can I switch between plans?</div>
+                <div class="faq-answer">Yes! You can upgrade or downgrade your plan at any time. If you switch from monthly to yearly, we'll prorate your current subscription and apply it to your new plan.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What payment methods do you accept?</div>
+                <div class="faq-answer">We accept all major credit cards (Visa, MasterCard, American Express, Discover) as well as ACH bank transfers for annual subscriptions.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Can I cancel anytime?</div>
+                <div class="faq-answer">Absolutely. You can cancel your subscription at any time from your account settings. You'll continue to have access until the end of your billing period.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Do you offer discounts for multiple airports?</div>
+                <div class="faq-answer">Yes! If you manage multiple airports, contact our sales team for volume pricing. We offer special rates for airport networks and management companies.</div>
+            </div>
+        </div>
+    </div>
+
+
+
 
 
 
 </div>
 <style>
-    .card{
-        float: left;
-        max-width: 300px;
-        height: 475px;
-        margin-bottom: 20px;
-        margin-right: 20px;
-    }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            transition: all 0.3s ease;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .pricing-card.featured {
+            border-color: #3b82f6;
+            transform: scale(1.02);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.02) translateY(-5px);
+        }
+
+        .badge {
+            position: absolute;
+            top: -12px;
+            right: 30px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .plan-header {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1e293b;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .price-small {
+            font-size: 1.2rem;
+            color: #64748b;
+        }
+
+        .savings {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .trial-info {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .features {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .features li {
+            padding: 12px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: #475569;
+        }
+
+        .features li::before {
+            content: "✓";
+            color: #3b82f6;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .subscribe-btn {
+            width: 100%;
+            padding: 16px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #64748b;
+            color: white;
+        }
+
+        .subscribe-btn:hover {
+            background: #475569;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .featured .subscribe-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .featured .subscribe-btn:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+
+        .testimonial {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            margin-bottom: 60px;
+            text-align: center;
+        }
+
+        .testimonial-text {
+            font-size: 1.2rem;
+            color: #475569;
+            font-style: italic;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .testimonial-author {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .faq-section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .faq-section h2 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #1e293b;
+        }
+
+        .faq-item {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .faq-question {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+
+        .faq-answer {
+            color: #64748b;
+            line-height: 1.7;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .pricing-card.featured:hover {
+                transform: translateY(-5px);
+            }
+
+            .price {
+                font-size: 2.5rem;
+            }
+        }
 </style>
 {%endblock%}

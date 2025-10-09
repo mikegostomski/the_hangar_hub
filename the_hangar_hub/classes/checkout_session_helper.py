@@ -1,6 +1,6 @@
 from base.classes.auth.session import Auth
 from base.services import message_service
-from the_hangar_hub.services import stripe_rental_s, invoice_s, stripe_s
+from the_hangar_hub.services import stripe_rental_s, invoice_s
 from base.models.utility.error import Error, Log, EnvHelper
 from base.classes.util.date_helper import DateHelper
 from datetime import datetime, timezone, timedelta

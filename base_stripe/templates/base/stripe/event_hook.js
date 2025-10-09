@@ -25,10 +25,3 @@ function react_to_stripe_webhooks(){
         }
     });
 }
-
-{%if is_developer or True%}
-    $(document).ready(function(){
-        $(".header-icons").prepend(`{%icon bi-stripe title="Process Stripe Events" onclick="react_to_stripe_webhooks()"%}`);
-    });
-
-{%endif%}

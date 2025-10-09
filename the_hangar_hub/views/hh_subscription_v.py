@@ -1,35 +1,15 @@
-from allauth.core.internal.ratelimit import clear
-
-from the_hangar_hub.models.airport import Airport
-
-from base.fixtures.timezones import timezones
-
 from django.shortcuts import render, redirect
-from django.urls import reverse
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from django.db.models import Q
-import the_hangar_hub.models
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from the_hangar_hub.models import Tenant
-from the_hangar_hub.models.airport import Airport
-from the_hangar_hub.models.infrastructure_models import Building, Hangar
-from the_hangar_hub.models.invitation import Invitation
-from base.services import message_service, utility_service, email_service, date_service
+from base.services import message_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service, tenant_s, application_service, stripe_service
-from decimal import Decimal
+from the_hangar_hub.services import airport_service, stripe_service
+from the_hangar_hub.services.stripe import stripe_creation_svc
 from base.classes.breadcrumb import Breadcrumb
-from django.contrib.auth.models import User
-import re
-from datetime import datetime, timezone
-from base.models.contact.contact import Contact
-from the_hangar_hub.decorators import require_airport, require_airport_manager
-import stripe
+from the_hangar_hub.decorators import require_airport
 from base.models.utility.error import Error
 from base_stripe.services import checkout_service
-from base_stripe.models.payment_models import StripeCustomer, StripeSubscription
-from base_stripe.models.events import StripeWebhookEvent
+from base_stripe.models.payment_models import StripeSubscription
 
 log = Log()
 env = EnvHelper()
@@ -111,14 +91,14 @@ def subscribe(request, airport_identifier):
 
     # Create Stripe customer if needed
     if not airport.stripe_customer:
-        if not stripe_service.create_customer_from_airport(airport):
+        if not stripe_creation_svc.create_customer_from_airport(airport):
             message_service.post_error("Could not continue with subscription.")
             return redirect("airport:subscriptions", airport.identifier)
 
     try:
-        checkout_session = stripe_service.get_checkout_session_hh_subscription(request.airport, subscription_id)
+        checkout_session = stripe_creation_svc.hh_checkout_session(request.airport, subscription_id)
         if checkout_session:
-            env.set_session_variable("stripe_checkout_session_id", checkout_session.id)
+            env.set_session_variable("stripe_checkout_session_id", checkout_session.stripe_id)
             return redirect(checkout_session.url, code=303)
     except Exception as ee:
         Error.unexpected(

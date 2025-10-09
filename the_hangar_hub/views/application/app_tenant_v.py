@@ -5,20 +5,16 @@ from django.http import HttpResponse, HttpResponseForbidden
 from base.models.utility.error import EnvHelper, Log, Error
 from base.classes.auth.session import Auth
 from base.services.message_service import post_error
-from the_hangar_hub.models.airport import Airport
-from the_hangar_hub.models.infrastructure_models import Building, Hangar
-from base.services import message_service, utility_service, email_service, contact_service
+from base.services import message_service, contact_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service, tenant_s
+from the_hangar_hub.services import airport_service
 from base.classes.breadcrumb import Breadcrumb
-from the_hangar_hub.decorators import require_airport, require_airport_manager
+from the_hangar_hub.decorators import require_airport
 from the_hangar_hub.models.application import HangarApplication
-from the_hangar_hub.services import application_service
 from base.models.contact.phone import Phone
 from base.models.contact.address import Address
-from decimal import Decimal
-from the_hangar_hub.services import stripe_service
 from base_stripe.services import checkout_service
+from the_hangar_hub.services.stripe import stripe_creation_svc
 
 log = Log()
 env = EnvHelper()
@@ -137,7 +133,7 @@ def submit(request, application_id):
 
     else:
         if application.status_code == "P":
-            co = stripe_service.get_checkout_session_application_fee(application)
+            co = stripe_creation_svc.get_checkout_session_application_fee(application)
             session_id = co.id
             env.set_session_variable(f"cs_applicationFee_{application_id}", session_id)
             log.info(f"Checkout Session ID: {session_id}")

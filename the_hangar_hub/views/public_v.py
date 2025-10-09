@@ -114,6 +114,7 @@ def invitation_landing(request, invitation_code):
 @report_errors()
 def search(request):
     log.trace()
+    Breadcrumb.add("Airport Search", "public:search", reset=True)
     try:
         identifier = request.GET.get("identifier")
         matches = None
