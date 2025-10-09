@@ -1,5 +1,5 @@
 from base.models.utility.error import EnvHelper, Log, Error
-from base_stripe.models.events import WebhookEvent
+from base_stripe.models.events import StripeWebhookEvent
 import json
 import stripe
 
@@ -97,7 +97,7 @@ class WebhookValidation:
                 # Therefore, just save the object ID in the database to be processed by the app later.
 
                 if response.event_type not in ignorable_events:
-                    whe = WebhookEvent.objects.create(
+                    whe = StripeWebhookEvent.objects.create(
                         event_type=response.event_type,
                         event_id=response.event_id,
                         object_type=response.object_type,
@@ -106,7 +106,7 @@ class WebhookValidation:
                     log.info(f"Webhook Event Logged: {whe}")
                     response.webhook_event_id = whe.id
             except Exception as ee:
-                Error.record(ee, "Creating WebhookEvent record")
+                Error.record(ee, "Creating StripeWebhookEvent record")
 
             return response
 

@@ -28,8 +28,8 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 import stripe
 from base.models.utility.error import Error
 from base_stripe.services import checkout_service
-from base_stripe.models.payment_models import Customer, Subscription
-from base_stripe.models.events import WebhookEvent
+from base_stripe.models.payment_models import StripeCustomer, StripeSubscription
+from base_stripe.models.events import StripeWebhookEvent
 
 log = Log()
 env = EnvHelper()
@@ -142,7 +142,7 @@ def subscription_success(request, airport_identifier):
         message_service.post_success("You have successfully subscribed to The Hangar Hub!")
 
         # Attempt to link with newly created subscription
-        stripe_subscriptions = Subscription.objects.filter(
+        stripe_subscriptions = StripeSubscription.objects.filter(
             customer=airport.stripe_customer, status__in=["trialing", "active"]
         )
         if stripe_subscriptions:

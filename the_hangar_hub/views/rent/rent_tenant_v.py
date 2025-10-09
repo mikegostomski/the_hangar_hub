@@ -4,7 +4,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from base_stripe.models.payment_models import Customer, Subscription
+from base_stripe.models.payment_models import StripeCustomer, StripeSubscription
 from the_hangar_hub.models.rental_models import Tenant, RentalAgreement, RentalInvoice
 from the_hangar_hub.models.maintenance import MaintenanceRequest, ScheduledMaintenance
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
@@ -71,7 +71,7 @@ def payment_dashboard(request):
     """
     current_user = Auth.current_user()
     rental_agreements = tenant_s.get_rental_agreements(current_user)
-    stripe_customer = Customer.get(current_user)
+    stripe_customer = StripeCustomer.get(current_user)
 
     stripe_customer.sync()
 
@@ -101,7 +101,7 @@ def set_auto_pay(request):
             use_auto_pay = use_auto_pay == "Y"
 
         # Save preference locally
-        customer_model = Customer.get(Auth.current_user())
+        customer_model = StripeCustomer.get(Auth.current_user())
         customer_model.use_auto_pay = use_auto_pay
         customer_model.save()
         message_service.post_success(f"Updated auto-pay preference.")

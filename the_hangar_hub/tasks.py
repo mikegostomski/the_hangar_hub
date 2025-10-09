@@ -1,15 +1,14 @@
 from celery import shared_task
 from django.utils import timezone
-from base_stripe.models.events import WebhookEvent
+from base_stripe.models.events import StripeWebhookEvent
 from base.models.utility.error import Error, Log, EnvHelper
 
-from base_stripe.models.payment_models import Customer as StripeCustomer
-from base_stripe.models.payment_models import Invoice as StripeInvoice
-from base_stripe.models.payment_models import Subscription as StripeSubscription
-from base_stripe.models.payment_models import CheckoutSession as StripeCheckoutSession
+from base_stripe.models.payment_models import StripeCustomer
+from base_stripe.models.payment_models import StripeInvoice
+from base_stripe.models.payment_models import StripeSubscription
+from base_stripe.models.payment_models import StripeCheckoutSession
 
 from the_hangar_hub.models.rental_models import Tenant, RentalInvoice, RentalAgreement
-from the_hangar_hub.models.rental_models import Subscription as RentalSubscription
 
 from base_stripe.services import webhook_service
 from the_hangar_hub.models import Tenant
@@ -36,7 +35,7 @@ def process_stripe_event(self, webhook_record_id):
     event = None
     log.debug(f"\n{'='*80}\nwebhook_record_id: {webhook_record_id}\n{'='*80}")
     try:
-        event = WebhookEvent.objects.select_for_update().get(id=webhook_record_id)
+        event = StripeWebhookEvent.objects.select_for_update().get(id=webhook_record_id)
 
         # Idempotency check
         if event.processed:
@@ -78,7 +77,7 @@ def process_stripe_event(self, webhook_record_id):
         log.info(f"Successfully processed event {webhook_record_id}")
         return f"Successfully processed event {webhook_record_id}"
 
-    except WebhookEvent.DoesNotExist:
+    except StripeWebhookEvent.DoesNotExist:
         log.error(f"Event {webhook_record_id} not found")
         return f"Event {webhook_record_id} not found"
 

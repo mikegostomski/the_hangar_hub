@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone as django_timezone
 from zoneinfo import ZoneInfo
 from django.urls import reverse
-from base_stripe.models import Subscription, Invoice
+from base_stripe.models import StripeSubscription, StripeInvoice
 from the_hangar_hub.models.infrastructure_models import Hangar
 from the_hangar_hub.models.application import HangarApplication
 from the_hangar_hub.classes.waitlist import Waitlist
@@ -44,9 +44,9 @@ class Airport(models.Model):
             return 0
 
     # Stripe Customer Data
-    stripe_customer = models.ForeignKey("base_stripe.Customer", on_delete=models.CASCADE, related_name="subscribers", null=True, blank=True)
-    stripe_account = models.ForeignKey("base_stripe.ConnectedAccount", on_delete=models.CASCADE, related_name="airports", null=True, blank=True)
-    stripe_subscription = models.ForeignKey("base_stripe.Subscription", on_delete=models.CASCADE, related_name="airports", null=True, blank=True)
+    stripe_customer = models.ForeignKey("base_stripe.StripeCustomer", on_delete=models.CASCADE, related_name="subscribers", null=True, blank=True)
+    stripe_account = models.ForeignKey("base_stripe.StripeConnectedAccount", on_delete=models.CASCADE, related_name="airports", null=True, blank=True)
+    stripe_subscription = models.ForeignKey("base_stripe.StripeSubscription", on_delete=models.CASCADE, related_name="airports", null=True, blank=True)
 
     stripe_tx_fee = models.DecimalField(decimal_places=4, max_digits=5, null=False, blank=False, default=0.01)
     billing_email = models.CharField(max_length=150, blank=True, null=True)
@@ -101,8 +101,8 @@ class Airport(models.Model):
     def latest_invoice(self):
         if self.stripe_subscription:
             try:
-                return Invoice.objects.filter(subscription=self.stripe_subscription).latest('date_created')
-            except Invoice.DoesNotExist:
+                return StripeInvoice.objects.filter(subscription=self.stripe_subscription).latest('date_created')
+            except StripeInvoice.DoesNotExist:
                 pass
         return None
 
@@ -113,7 +113,7 @@ class Airport(models.Model):
         for sub_data in subs.data:
             # If not yet linked to a subscription, link to first active subscription
             if sub_data.status in ["trialing", "active"] and not self.stripe_subscription:
-                sub_model = Subscription.from_stripe_id(sub_data.id)
+                sub_model = StripeSubscription.from_stripe_id(sub_data.id)
                 if sub_model:
                     self.stripe_subscription = sub_model
                     self.save()

@@ -8,11 +8,11 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import stripe
 from base_stripe.classes.webhook_validation import WebhookValidation
-from base_stripe.models.events import WebhookEvent
+from base_stripe.models.events import StripeWebhookEvent
 from base.models.utility.error import Error
 from base.decorators import require_authority, require_authentication, report_errors
-from base_stripe.models.payment_models import Invoice, Customer, Subscription, CheckoutSession
-from base_stripe.models.connected_account import ConnectedAccount
+from base_stripe.models.payment_models import StripeInvoice, StripeCustomer, StripeSubscription, StripeCheckoutSession
+from base_stripe.models.connected_account import StripeConnectedAccount
 
 
 log = Log()
@@ -45,7 +45,7 @@ def stripe_model_refresh(webhook_event_instance):
 def _handle_customer_event(event):
     # If a customer was deleted
     if event.event_type == "deleted":
-        cust = Customer.get(event.object_id)
+        cust = StripeCustomer.get(event.object_id)
         if cust:
             log.info(f"Deleting customer #{cust.id}: {event.object_id}")
             cust.status = "deleted"
@@ -54,13 +54,13 @@ def _handle_customer_event(event):
 
     # Refresh customer with latest data
     else:
-        cust = Customer.get_or_create(stripe_id=event.object_id)
+        cust = StripeCustomer.get_or_create(stripe_id=event.object_id)
         return cust.sync()
 
 
 def _handle_invoice_event(event):
     if event.event_type == "deleted":
-        del_inv = Invoice.get(event.object_id)
+        del_inv = StripeInvoice.get(event.object_id)
         if del_inv:
             log.info(f"Invoice #{del_inv.id} was deleted in Stripe: {event.object_id}")
             del_inv.status = "deleted"
@@ -69,19 +69,19 @@ def _handle_invoice_event(event):
 
     # Refresh invoice with latest data
     else:
-        inv = Invoice.from_stripe_id(event.object_id)
+        inv = StripeInvoice.from_stripe_id(event.object_id)
         return inv.sync()
 
 
 def _handle_subscription_event(event):
     log.info(f"handle_subscription_event({event.object_id})")
-    sub = Subscription.from_stripe_id(event.object_id)
+    sub = StripeSubscription.from_stripe_id(event.object_id)
     log.info(f"sub: {sub}")
     return sub.sync()
 
 
 def _handle_checkout_session_event(event):
-    co = CheckoutSession.from_stripe_id(event.object_id)
+    co = StripeCheckoutSession.from_stripe_id(event.object_id)
     return co.sync()
 
 
@@ -96,7 +96,7 @@ def react_to_events():
     This endpoint refreshes any models tied to the objects in those events
     (customers, subscriptions, and invoices)
     """
-    webhook_events = WebhookEvent.objects.filter(refreshed=False)
+    webhook_events = StripeWebhookEvent.objects.filter(refreshed=False)
     processed_object_ids = []
     processed_events = []
 
@@ -123,14 +123,14 @@ def react_to_events():
         if object_type == "invoice":
             # If a new invoice was created, insert a local record to track it
             if event_type == "created":
-                if Invoice.from_stripe_id(event.object_id):
+                if StripeInvoice.from_stripe_id(event.object_id):
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue
 
             # If a draft invoice was deleted
             elif event_type == "deleted":
-                del_inv = Invoice.get(event.object_id)
+                del_inv = StripeInvoice.get(event.object_id)
                 if del_inv:
                     log.info(f"Invoice #{del_inv.id} was deleted in Stripe: {event.object_id}")
                     del_inv.status = "deleted"
@@ -147,7 +147,7 @@ def react_to_events():
             # Refresh invoice with latest data
             else:
                 # The create function will return an existing record, or create if needed
-                inv = Invoice.from_stripe_id(event.object_id)
+                inv = StripeInvoice.from_stripe_id(event.object_id)
                 if inv.sync():
                     log.debug(f"UPDATING INVOICE {event.object_id}")
                     processed_object_ids.append(event.object_id)
@@ -161,14 +161,14 @@ def react_to_events():
         if object_type == "customer":
             # If a new customer was created, insert a local record to track it
             if event_type == "created":
-                if Customer.get_or_create(stripe_id=event.object_id):
+                if StripeCustomer.get_or_create(stripe_id=event.object_id):
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue
 
             # If a customer was deleted
             elif event_type == "deleted":
-                cust = Customer.get(event.object_id)
+                cust = StripeCustomer.get(event.object_id)
                 if cust:
                     log.info(f"Deleting customer #{cust.id}: {event.object_id}")
                     cust.status = "deleted"
@@ -184,7 +184,7 @@ def react_to_events():
 
             # Refresh customer with latest data
             else:
-                cust = Customer.get_or_create(stripe_id=event.object_id)
+                cust = StripeCustomer.get_or_create(stripe_id=event.object_id)
                 if cust.sync():
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
@@ -198,7 +198,7 @@ def react_to_events():
 
             # If a new subscription was created, insert a local record to track it
             if event_type == "created":
-                if Subscription.from_stripe_id(event.object_id):
+                if StripeSubscription.from_stripe_id(event.object_id):
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue
@@ -210,7 +210,7 @@ def react_to_events():
 
             # Refresh subscription with latest data
             else:
-                sub = Subscription.from_stripe_id(event.object_id)
+                sub = StripeSubscription.from_stripe_id(event.object_id)
                 if sub.sync():
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
@@ -220,7 +220,7 @@ def react_to_events():
         CONNECTED_ACCOUNTS
         """
         if object_type == "account":
-            ca = ConnectedAccount.from_stripe_id(event.object_id)
+            ca = StripeConnectedAccount.from_stripe_id(event.object_id)
             if ca and ca.sync():
                 processed_object_ids.append(event.object_id)
                 processed_events.append(event)
@@ -231,7 +231,7 @@ def react_to_events():
         if processed_events:
             for whe in processed_events:
                 whe.refreshed = True
-            WebhookEvent.objects.bulk_update(processed_events, ['refreshed'])
+            StripeWebhookEvent.objects.bulk_update(processed_events, ['refreshed'])
     except Exception as ee:
         Error.record(ee)
 

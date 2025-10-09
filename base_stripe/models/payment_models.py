@@ -4,11 +4,11 @@ from base.classes.util.env_helper import EnvHelper, Log
 from base.models.utility.error import Error
 from base_stripe.services import config_service
 from base.services import message_service, utility_service
-from base_stripe.classes.api.invoice import Invoice as InvoiceAPI
+from base_stripe.classes.api.invoice import InvoiceAPI as InvoiceAPI
 from base.classes.auth.session import Auth
 from django.contrib.auth.models import User
 from django.utils.functional import SimpleLazyObject
-from base_stripe.classes.api.customer import Customer as StripeCustomer
+from base_stripe.classes.api.customer import Customer as StripeCustomerAPI
 import stripe
 from base_stripe.services.config_service import set_stripe_api_key
 from base.services import date_service, message_service
@@ -22,7 +22,7 @@ env = EnvHelper()
     - Tracks the most important elements of a Stripe Customer
     - Auto-updates via Stripe Webhooks
 """
-class Customer(models.Model):
+class StripeCustomer(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -132,7 +132,7 @@ class Customer(models.Model):
         Get data from Stripe API and put in custom class
         """
         data = self.api_data()
-        return StripeCustomer(data) if data else None
+        return StripeCustomerAPI(data) if data else None
 
     @classmethod
     def get(cls, xx):
@@ -185,7 +185,7 @@ class Customer(models.Model):
 
                 # Create model from Stripe data
                 log.info(f"Creating new Customer model: {stripe_id}")
-                cus = Customer()
+                cus = StripeCustomer()
                 cus.stripe_id = stripe_id
                 cus.sync()
                 return cus
@@ -222,7 +222,7 @@ class Customer(models.Model):
             # Look for existing customer model based on all known (verified) email addresses
             existing = None
             for email_address in verified_emails:
-                existing = Customer.get(email_address)
+                existing = StripeStripeCustomer.get(email_address)
                 if existing:
                     break
 
@@ -243,7 +243,7 @@ class Customer(models.Model):
                 except Exception as ee:
                     Error.record(ee, email_address)
             if existing_id:
-                existing = Customer.from_stripe_id(existing_id)
+                existing = StripeCustomer.from_stripe_id(existing_id)
                 if existing:
                     log.info(f"Found existing customer: {existing.stripe_id}")
                     return existing
@@ -262,7 +262,7 @@ class Customer(models.Model):
                 log.info(f"Created new Stripe customer: {stripe_id}")
 
                 # Create and return customer_model
-                return Customer.objects.create(
+                return StripeCustomer.objects.create(
                     full_name=full_name, email=email, stripe_id=stripe_id, user=user, metadata=metadata or {}
                 )
 
@@ -276,13 +276,13 @@ class Customer(models.Model):
     - Tracks the most important elements of a Stripe Invoice
     - Auto-updates via Stripe Webhooks
 """
-class Invoice(models.Model):
+class StripeInvoice(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
-    customer = models.ForeignKey("base_stripe.Customer", models.CASCADE, related_name="customer_invoices", db_index=True)
-    subscription = models.ForeignKey("base_stripe.Subscription", models.CASCADE, related_name="subscription_invoices", null=True, blank=True, db_index=True)
+    customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="customer_invoices", db_index=True)
+    subscription = models.ForeignKey("base_stripe.StripeSubscription", models.CASCADE, related_name="subscription_invoices", null=True, blank=True, db_index=True)
     status = models.CharField(max_length=20, db_index=True)
     amount_charged = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
     amount_remaining = models.DecimalField(decimal_places=2, max_digits=8, default=0.00)
@@ -309,7 +309,7 @@ class Invoice(models.Model):
             log.info(f"Sync {self} ({self.stripe_id})")
             config_service.set_stripe_api_key()
             invoice = stripe.Invoice.retrieve(self.stripe_id, expand=["lines"])
-            self.customer = Customer.get(invoice.customer)
+            self.customer = StripeCustomer.get(invoice.customer)
             self.status = invoice.status
             self.amount_charged = utility_service.convert_to_decimal(invoice.total/100)
             self.amount_remaining = utility_service.convert_to_decimal(invoice.amount_remaining/100)
@@ -327,7 +327,7 @@ class Invoice(models.Model):
                             sid = line.get('parent').get("subscription_item_details")
                             subscription_id = sid.get("subscription") if sid else None
                             if subscription_id:
-                                self.subscription = Subscription.from_stripe_id(subscription_id)
+                                self.subscription = StripeSubscription.from_stripe_id(subscription_id)
             except Exception as ee:
                 log.error(f"Error in ChatGPT-created code: {ee}")
 
@@ -407,7 +407,7 @@ class Invoice(models.Model):
 
         try:
             # Create a new model representation for this invoice
-            inv = Invoice()
+            inv = StripeInvoice()
             inv.stripe_id = stripe_id
             inv.sync()
             return inv
@@ -424,11 +424,11 @@ class Invoice(models.Model):
     - Tracks the most important elements of a Stripe Subscription
     - Auto-updates via Stripe Webhooks
 """
-class Subscription(models.Model):
+class StripeSubscription(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    customer = models.ForeignKey("base_stripe.Customer", models.CASCADE, related_name="invoices", db_index=True)
+    customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="invoices", db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
 
     # incomplete, incomplete_expired, trialing, active, past_due, canceled, unpaid, or paused.
@@ -491,7 +491,7 @@ class Subscription(models.Model):
             if subscription:
                 self.status = subscription.status
                 self.metadata = subscription.metadata
-                self.customer = Customer.from_stripe_id(subscription.customer)
+                self.customer = StripeCustomer.from_stripe_id(subscription.customer)
 
                 self.trial_end_date = date_service.string_to_date(subscription.trial_end)
                 self.ended_at = date_service.string_to_date(subscription.ended_at)
@@ -598,7 +598,7 @@ class Subscription(models.Model):
             pass
 
         try:
-            sub = Subscription()
+            sub = StripeSubscription()
             sub.stripe_id = stripe_id
             sub.sync()
             return sub
@@ -612,11 +612,11 @@ class Subscription(models.Model):
     - Tracks the most important elements of a Stripe CheckoutSession
     - Auto-updates via Stripe Webhooks
 """
-class CheckoutSession(models.Model):
+class StripeCheckoutSession(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    customer = models.ForeignKey("base_stripe.Customer", models.CASCADE, related_name="checkout_sessions", db_index=True)
+    customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="checkout_sessions", db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
 
     # open, complete, or expired
@@ -664,7 +664,7 @@ class CheckoutSession(models.Model):
                 self.metadata = co.metadata
                 self.url = co.url
                 self.expiration_date = date_service.string_to_date(co.expires_at) if co.expires_at else None
-                self.customer = Customer.from_stripe_id(co.customer)
+                self.customer = StripeCustomer.from_stripe_id(co.customer)
 
                 self.save()
         except Exception as ee:
@@ -698,7 +698,7 @@ class CheckoutSession(models.Model):
             pass
 
         try:
-            co = CheckoutSession()
+            co = StripeCheckoutSession()
             co.stripe_id = stripe_id
             co.sync(stripe_data=stripe_data)
             return co

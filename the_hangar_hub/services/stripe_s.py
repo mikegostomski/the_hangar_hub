@@ -8,10 +8,10 @@ from django.urls import reverse
 from base.services import message_service, utility_service, date_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.services import price_service, accounts_service, invoice_service
-from base_stripe.models.connected_account import ConnectedAccount
-from base_stripe.models.payment_models import Subscription
-from base_stripe.models.payment_models import Customer
-from base_stripe.models.payment_models import Invoice as StripeInvoice
+from base_stripe.models.connected_account import StripeConnectedAccount
+from base_stripe.models.payment_models import StripeSubscription
+from base_stripe.models.payment_models import StripeCustomer
+from base_stripe.models.payment_models import StripeInvoice as StripeInvoice
 from datetime import datetime, timezone, timedelta
 from the_hangar_hub.models.rental_models import RentalAgreement
 from the_hangar_hub.services import airport_service
@@ -42,7 +42,7 @@ def get_stripe_customer_id(source):
 
 def get_stripe_customer(source):
     """
-    Return a base_stripe.Customer (model)
+    Return a base_stripe.StripeCustomer (model)
     
     Parameter: source may be any model, class, or string that can point to a Customer
     """
@@ -52,9 +52,9 @@ def get_stripe_customer(source):
         class_name = source.__class__.__name__
 
         if "base_stripe" in module:
-            if class_name == "Customer":
-                return source  # Was already a Customer model
-            elif class_name in ["Invoice", "Subscription"]:
+            if class_name == "StripeCustomer":
+                return source  # Was already a StripeCustomer model
+            elif class_name in ["StripeInvoice", "StripeSubscription"]:
                 return source.customer
             else:
                 log.error(f"Cannot obtain customer from {module}.{class_name}")
@@ -62,35 +62,35 @@ def get_stripe_customer(source):
 
         elif "hangar_hub" in module:
             if class_name == "Airport":
-                return Customer.get(source.stripe_customer_id) if source.stripe_customer_id else None
+                return StripeCustomer.get(source.stripe_customer_id) if source.stripe_customer_id else None
 
             elif class_name == "Application":
-                return Customer.get_or_create(user=source.user)
+                return StripeCustomer.get_or_create(user=source.user)
 
             elif class_name == "Tenant":
                 tenant = source
                 if not tenant.customer:
-                    tenant.customer = Customer.get_or_create(source.display_name, source.email, source.user)
+                    tenant.customer = StripeCustomer.get_or_create(source.display_name, source.email, source.user)
                     tenant.save()
                 return tenant.customer
 
             elif class_name == "RentalAgreement":
                 tenant = source.tenant
                 if not tenant.customer:
-                    tenant.customer = Customer.get_or_create(source.display_name, source.email, source.user)
+                    tenant.customer = StripeCustomer.get_or_create(source.display_name, source.email, source.user)
                     tenant.save()
                 return tenant.customer
 
             elif class_name == "RentalInvoice":
                 tenant = source.agreement.tenant
                 if not tenant.customer:
-                    tenant.customer = Customer.get_or_create(source.display_name, source.email, source.user)
+                    tenant.customer = StripeCustomer.get_or_create(source.display_name, source.email, source.user)
                     tenant.save()
                 return tenant.customer
 
         else:
             # Handles email, stripe_id, Customer ID, etc
-            return Customer.get(source)
+            return StripeCustomer.get(source)
 
     except Exception as ee:
         Error.unexpected("Unable to obtain Stripe customer record", ee)

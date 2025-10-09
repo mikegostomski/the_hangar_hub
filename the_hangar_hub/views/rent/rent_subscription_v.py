@@ -21,11 +21,11 @@ from the_hangar_hub.decorators import require_airport, require_airport_manager
 from base_upload.services import upload_service, retrieval_service
 from base.models.utility.error import Error
 from the_hangar_hub.services import stripe_service, stripe_s, stripe_rental_s, invoice_s
-from base_stripe.models.payment_models import Customer, Subscription, Invoice
+from base_stripe.models.payment_models import StripeCustomer, StripeSubscription, StripeInvoice
 from base_stripe.services import config_service
 from base.services import email_service
 import stripe
-from the_hangar_hub.classes.checkout_session_model import CheckoutSessionHelper
+from the_hangar_hub.classes.checkout_session_helper import StripeCheckoutSessionHelper
 
 
 log = Log()
@@ -54,7 +54,7 @@ def rent_subscription_checkout(request, airport_identifier, rental_agreement_id)
         message_service.post_error("Rental agreement was not found.")
         return rental_router(request)
 
-    co_session = CheckoutSessionHelper.initiate_checkout_session(rental_agreement)
+    co_session = StripeCheckoutSessionHelper.initiate_checkout_session(rental_agreement)
     if co_session:
         return redirect(co_session.url, code=303)
     else:
@@ -88,7 +88,7 @@ def rent_subscription_email(request, airport_identifier, rental_agreement_id):
         return rental_router(request)
 
     # Create checkout session
-    co_helper = CheckoutSessionHelper.initiate_checkout_session(rental_agreement, expiration_date)
+    co_helper = StripeCheckoutSessionHelper.initiate_checkout_session(rental_agreement, expiration_date)
 
     # Generate email to tenant
     airport = rental_agreement.airport

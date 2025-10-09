@@ -8,9 +8,9 @@ from django.urls import reverse
 from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.services import price_service, accounts_service
-from base_stripe.models.connected_account import ConnectedAccount
-from base_stripe.models.payment_models import Subscription
-from base_stripe.models.payment_models import Customer
+from base_stripe.models.connected_account import StripeConnectedAccount
+from base_stripe.models.payment_models import StripeSubscription
+from base_stripe.models.payment_models import StripeCustomer
 from datetime import datetime, timezone, timedelta
 from base.models import Variable
 
@@ -28,7 +28,7 @@ def create_customer_from_airport(airport):
     if airport.stripe_customer:
         return True  # Already has customer, so consider a success
 
-    customer = Customer.get_or_create(
+    customer = StripeCustomer.get_or_create(
         full_name=airport.display_name,
         email=airport.billing_email,
         phone=airport.billing_phone,
@@ -222,7 +222,7 @@ def create_rent_subscription(airport, rental, **kwargs):
 
     try:
         customer_email = rental.tenant.email
-        customer_rec = Customer.get_or_create(
+        customer_rec = StripeCustomer.get_or_create(
             rental.tenant.contact.display_name, customer_email, rental.tenant.user
         )
         if not customer_rec:
@@ -363,7 +363,7 @@ def create_rent_subscription(airport, rental, **kwargs):
             Error.record(ee, subscription_id)
 
         try:
-            sub_model = Subscription()
+            sub_model = StripeSubscription()
             sub_model.stripe_id = subscription_id
             sub_model.customer = customer_rec
             sub_model.status = subscription.get("status")
@@ -382,7 +382,7 @@ def create_rent_subscription(airport, rental, **kwargs):
 def create_rent_invoice(airport, rental, charge_automatically=False):
     try:
         customer_email = rental.tenant.email
-        customer_rec = Customer.get_or_create(
+        customer_rec = StripeCustomer.get_or_create(
             rental.tenant.contact.display_name, customer_email, rental.tenant.user
         )
         if not customer_rec:

@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 from django.db.models import Q
 from the_hangar_hub.services import stripe_service
 from base_stripe.classes.customer_subscription import CustomerSubscription
-from base_stripe.models.payment_models import Subscription
+from base_stripe.models.payment_models import StripeSubscription
 from django.db.models import Q
 from base.classes.util.date_helper import DateHelper
 from base.services import utility_service
@@ -29,7 +29,7 @@ class Tenant(models.Model):
 
     # There may not be a user at time of creation (or potentially ever)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
-    customer = models.ForeignKey("base_stripe.Customer", on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
+    customer = models.ForeignKey("base_stripe.StripeCustomer", on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
 
     def get_rental_agreement_series_list(self):
         return list(set([rr.series for rr in self.rentals.all()]))
@@ -134,10 +134,10 @@ class RentalAgreement(models.Model):
 
     # Most-recent active Stripe subscription
     stripe_subscription = models.ForeignKey(
-        "base_stripe.Subscription", on_delete=models.CASCADE, related_name="rental_agreements", null=True, blank=True
+        "base_stripe.StripeSubscription", on_delete=models.CASCADE, related_name="rental_agreements", null=True, blank=True
     )
     future_stripe_subscription = models.ForeignKey(
-        "base_stripe.Subscription", on_delete=models.CASCADE, related_name="future_rental_agreements", null=True, blank=True
+        "base_stripe.StripeSubscription", on_delete=models.CASCADE, related_name="future_rental_agreements", null=True, blank=True
     )
 
     @property
@@ -268,7 +268,7 @@ class RentalAgreement(models.Model):
         Get local representation of stripe subscription
         """
         if self.stripe_subscription_id:
-            return Subscription.get(self.stripe_subscription_id)
+            return StripeSubscription.get(self.stripe_subscription_id)
         return None
 
 
@@ -319,8 +319,8 @@ class RentalInvoice(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
     agreement = models.ForeignKey("the_hangar_hub.RentalAgreement", on_delete=models.CASCADE, related_name="invoices")
-    stripe_invoice = models.ForeignKey("base_stripe.Invoice", on_delete=models.CASCADE, related_name="rental_invoices", null=True, blank=True)
-    stripe_subscription = models.ForeignKey("base_stripe.Subscription", on_delete=models.CASCADE, related_name="rental_invoices", null=True, blank=True)
+    stripe_invoice = models.ForeignKey("base_stripe.StripeInvoice", on_delete=models.CASCADE, related_name="rental_invoices", null=True, blank=True)
+    stripe_subscription = models.ForeignKey("base_stripe.StripeSubscription", on_delete=models.CASCADE, related_name="rental_invoices", null=True, blank=True)
 
     period_start_date = models.DateTimeField()
     period_end_date = models.DateTimeField()
@@ -403,7 +403,7 @@ class RentalInvoice(models.Model):
 
     @property
     def stripe_status_code(self):
-        # Codes come from base_stripe.Invoice
+        # Codes come from base_stripe.StripeInvoice
         if self.stripe_invoice:
             return {
                 "draft": "I",

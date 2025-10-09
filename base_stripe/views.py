@@ -8,10 +8,10 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import stripe
 from base_stripe.classes.webhook_validation import WebhookValidation
-from base_stripe.models.events import WebhookEvent
+from base_stripe.models.events import StripeWebhookEvent
 from base.models.utility.error import Error
 from base.decorators import require_authority, require_authentication, report_errors
-from base_stripe.models.payment_models import Invoice, Customer, Subscription
+from base_stripe.models.payment_models import StripeInvoice, StripeCustomer, StripeSubscription
 from base_stripe.services import webhook_service, config_service
 from the_hangar_hub.tasks import process_stripe_event
 

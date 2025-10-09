@@ -6,11 +6,11 @@ from django.urls import reverse
 from base.services import message_service, utility_service, date_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.services import price_service, accounts_service, invoice_service
-from base_stripe.models.connected_account import ConnectedAccount
-from base_stripe.models.payment_models import Subscription
-from base_stripe.models.payment_models import Customer
-from base_stripe.models.payment_models import CheckoutSession
-from base_stripe.models.payment_models import Invoice as StripeInvoice
+from base_stripe.models.connected_account import StripeConnectedAccount
+from base_stripe.models.payment_models import StripeSubscription
+from base_stripe.models.payment_models import StripeCustomer
+from base_stripe.models.payment_models import StripeCheckoutSession
+from base_stripe.models.payment_models import StripeInvoice as StripeInvoice
 from datetime import datetime, timezone, timedelta
 from the_hangar_hub.models.rental_models import RentalAgreement, RentalInvoice
 from the_hangar_hub.services import stripe_s
@@ -21,7 +21,7 @@ env = EnvHelper()
 
 def sync_rental_agreement_invoices(rental_agreement):
     """
-    Sync RentalInvoice with base_stripe.Invoice for given RentalAgreement
+    Sync RentalInvoice with base_stripe.StripeInvoice for given RentalAgreement
         - This only looks at a couple of invoices, and runs quickly
     """
     log.trace([rental_agreement])
@@ -74,7 +74,7 @@ def sync_rental_agreement_invoices(rental_agreement):
 
 def sync_rental_agreement_subscriptions(rental_agreement):
     """
-    Sync RentalInvoice with base_stripe.Subscription for given RentalAgreement
+    Sync RentalInvoice with base_stripe.StripeSubscription for given RentalAgreement
     """
     log.trace(rental_agreement)
     if rental_agreement.stripe_subscription:
@@ -83,7 +83,7 @@ def sync_rental_agreement_subscriptions(rental_agreement):
     # Look for other active subscriptions
     must_save = False
     customer_id = rental_agreement.tenant.stripe_customer_id
-    for sub in Subscription.objects.filter(
+    for sub in StripeSubscription.objects.filter(
         status__in=["trialing", "active", "past_due", "unpaid", "paused"],  # Active subscriptions (indexed)
         customer__stripe_id=customer_id,                                    # For this customer (indexed)
         metadata__contains=rental_agreement.stripe_metadata_content         # For this RentalAgreement
@@ -116,7 +116,7 @@ def sync_rental_agreement_subscriptions(rental_agreement):
 
 def sync_airport_invoices(airport):
     """
-    Sync RentalInvoice with base_stripe.Invoice for all RentalAgreements at given Airport
+    Sync RentalInvoice with base_stripe.StripeInvoice for all RentalAgreements at given Airport
         - This may look at a lot of invoices. Perhaps best done asynchronously?
     """
     for rental_agreement in RentalAgreement.objects.filter(airport=airport):
@@ -125,7 +125,7 @@ def sync_airport_invoices(airport):
 
 def stripe_invoice_from_rental_invoice(rental_invoice):
     """
-    Given a RentalInvoice, generate an invoice in Stripe and create a base_stripe.Invoice
+    Given a RentalInvoice, generate an invoice in Stripe and create a base_stripe.StripeInvoice
     """
     if not rental_invoice:
         return False
@@ -143,9 +143,9 @@ def stripe_invoice_from_rental_invoice(rental_invoice):
 
         # Get customer's Stripe ID (required)
         if tenant.stripe_customer_id:
-            stripe_customer = Customer.get(tenant.stripe_customer_id)
+            stripe_customer = StripeCustomer.get(tenant.stripe_customer_id)
         else:
-            stripe_customer = Customer.get_or_create(tenant.display_name, tenant.email, tenant.user)
+            stripe_customer = StripeCustomer.get_or_create(tenant.display_name, tenant.email, tenant.user)
             tenant.customer = stripe_customer
             tenant.save()
         if not stripe_customer:
@@ -210,9 +210,9 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
             return False
 
         # Look for existing subscriptions
-        existing = Subscription.objects.filter(
+        existing = StripeSubscription.objects.filter(
             customer=customer,
-            status__in=Subscription.active_statuses(),
+            status__in=StripeSubscription.active_statuses(),
             metadata__contains=rental_agreement.stripe_metadata_content,
         )
         if existing:
@@ -314,7 +314,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
         log.debug(f"CHECKOUT SESSION ID: {co_session_id}")
 
         # Save model to track this CO Session
-        co_model = CheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
+        co_model = StripeCheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
         co_model.related_type = "RentalAgreement"
         co_model.related_id = rental_agreement.id
         co_model.save()
@@ -336,7 +336,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
 # ToDo: Do I want to do this???
 def stripe_subscription_from_rental_invoice(rental_invoice):
     """
-    Given a RentalInvoice, generate a subscription in Stripe and create a base_stripe.Subscription
+    Given a RentalInvoice, generate a subscription in Stripe and create a base_stripe.StripeSubscription
     """
     if not rental_invoice:
         return False
@@ -365,9 +365,9 @@ def stripe_subscription_from_rental_invoice(rental_invoice):
 
         # Get customer's Stripe ID (required)
         if tenant.stripe_customer_id:
-            stripe_customer = Customer.get(tenant.stripe_customer_id)
+            stripe_customer = StripeCustomer.get(tenant.stripe_customer_id)
         else:
-            stripe_customer = Customer.get_or_create(tenant.display_name, tenant.email, tenant.user)
+            stripe_customer = StripeCustomer.get_or_create(tenant.display_name, tenant.email, tenant.user)
             tenant.customer = stripe_customer
             tenant.save()
         if not stripe_customer:
@@ -511,7 +511,7 @@ def stripe_subscription_from_rental_invoice(rental_invoice):
                 }
             )
             subscription_id = subscription.get("id")
-            sub_model = Subscription.from_stripe_id(subscription_id)
+            sub_model = StripeSubscription.from_stripe_id(subscription_id)
 
             if not rental_agreement.stripe_subscription:
                 rental_agreement.stripe_subscription = sub_model

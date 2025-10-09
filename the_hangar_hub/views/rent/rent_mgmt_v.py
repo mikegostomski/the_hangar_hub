@@ -4,7 +4,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from base_stripe.models.payment_models import Subscription
+from base_stripe.models.payment_models import StripeSubscription
 from the_hangar_hub.models.rental_models import Tenant, RentalAgreement, RentalInvoice
 from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
@@ -22,7 +22,7 @@ from base_upload.services import upload_service, retrieval_service
 from base.models.utility.error import Error
 from the_hangar_hub.services import stripe_service
 from django.contrib.auth.models import User
-from base_stripe.models.payment_models import Customer
+from base_stripe.models.payment_models import StripeCustomer
 from base.services import utility_service
 from base_stripe.services import invoice_service as stripe_invoice_service
 from the_hangar_hub.services import stripe_rental_s
@@ -330,7 +330,7 @@ def add_tenant(request, airport_identifier, hangar_id):
             tenant.user = user
 
             # Create (or locate) Stripe customer for this Tenant
-            tenant.customer = Customer.get_or_create(
+            tenant.customer = StripeCustomer.get_or_create(
                 full_name=tenant.display_name, email=tenant.email, user=tenant.user
             )
 

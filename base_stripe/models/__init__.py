@@ -1,3 +1,3 @@
-from base_stripe.models.connected_account import ConnectedAccount
-from base_stripe.models.events import WebhookEvent
-from base_stripe.models.payment_models import Customer, Invoice, Subscription, CheckoutSession
+from base_stripe.models.connected_account import StripeConnectedAccount
+from base_stripe.models.events import StripeWebhookEvent
+from base_stripe.models.payment_models import StripeCustomer, StripeInvoice, StripeSubscription, StripeCheckoutSession

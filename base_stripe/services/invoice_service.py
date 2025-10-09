@@ -1,12 +1,8 @@
 from base.models.utility.error import EnvHelper, Log, Error
-from base.classes.auth.session import Auth
 import stripe
-from decimal import Decimal
-from django.urls import reverse
-from base.services import message_service, utility_service
-from base_stripe.models import Customer, Invoice
-from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.classes.api.invoice import Invoice as InvoiceAPI
+from base_stripe.models import StripeCustomer, StripeInvoice
+from base_stripe.services.config_service import set_stripe_api_key
+from base_stripe.classes.api.invoice import InvoiceAPI as InvoiceAPI
 from datetime import datetime, timezone, timedelta
 
 log = Log()
@@ -18,7 +14,7 @@ def find_invoices(customer, limit=10):
     Find invoices created in stripe that did not get caught by a webhook
     """
     try:
-        customer_model = Customer.get(customer)
+        customer_model = StripeCustomer.get(customer)
         if customer_model:
             log.trace([customer_model, customer_model.stripe_id])
             set_stripe_api_key()
@@ -28,11 +24,11 @@ def find_invoices(customer, limit=10):
             )
             if invoices:
                 ids = [x.id for x in invoices.data]
-                models = Invoice.objects.filter(stripe_id__in=ids)
+                models = StripeInvoice.objects.filter(stripe_id__in=ids)
                 model_ids = [x.stripe_id for x in models] if models else []
                 for stripe_id in ids:
                     if stripe_id not in model_ids:
-                        inv = Invoice.from_stripe_id(stripe_id)
+                        inv = StripeInvoice.from_stripe_id(stripe_id)
                         log.info(f"Found stripe invoice {stripe_id}. Created {inv}")
     except Exception as ee:
         Error.unexpected("Could not find customer invoices", ee, customer)

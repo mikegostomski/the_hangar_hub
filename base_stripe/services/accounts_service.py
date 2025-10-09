@@ -1,7 +1,7 @@
 from base.models.utility.error import EnvHelper, Log, Error
 import stripe
 from base_stripe.services.config_service import set_stripe_api_key
-from base_stripe.models.connected_account import ConnectedAccount as AccountModel
+from base_stripe.models.connected_account import StripeConnectedAccount as AccountModel
 from base_stripe.classes.api.account import Account as AccountStripe
 
 log = Log()
@@ -79,7 +79,7 @@ def get_connected_account(account_id):
             ca = AccountModel.get(stripe_account.id)
             capabilities = stripe_account.get("capabilities")
             if not ca:
-                log.error(f"Unable to find ConnectedAccount for {stripe_account.id}")
+                log.error(f"Unable to find StripeConnectedAccount for {stripe_account.id}")
             else:
                 # Sync local data with Stripe data
                 ca.charges_enabled = stripe_account.get("charges_enabled")

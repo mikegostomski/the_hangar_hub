@@ -8,13 +8,13 @@ from django.urls import reverse
 from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.services import price_service, accounts_service, invoice_service
-from base_stripe.models.connected_account import ConnectedAccount
-from base_stripe.models.payment_models import Subscription
-from base_stripe.models.payment_models import Customer
+from base_stripe.models.connected_account import StripeConnectedAccount
+from base_stripe.models.payment_models import StripeSubscription
+from base_stripe.models.payment_models import StripeCustomer
 from datetime import datetime, timezone, timedelta
 from base.services import date_service, utility_service
 from the_hangar_hub.models.rental_models import RentalInvoice
-from base_stripe.models.payment_models import Invoice as StripeInvoice
+from base_stripe.models.payment_models import StripeInvoice as StripeInvoice
 from the_hangar_hub.services import stripe_rental_s
 
 log = Log()

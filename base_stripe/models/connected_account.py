@@ -7,7 +7,7 @@ log = Log()
 env = EnvHelper()
 
 
-class ConnectedAccount(models.Model):
+class StripeConnectedAccount(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -56,7 +56,7 @@ class ConnectedAccount(models.Model):
     @classmethod
     def from_stripe_id(cls, stripe_id):
         """
-        Get (or create if needed) the ConnectedAccount model from a Stripe ID
+        Get (or create if needed) the StripeConnectedAccount model from a Stripe ID
         """
         try:
             # Check for existing record linked to this Stripe invoice
@@ -65,8 +65,8 @@ class ConnectedAccount(models.Model):
             pass
 
         try:
-            # Create a new model representation for this ConnectedAccount
-            ca = ConnectedAccount()
+            # Create a new model representation for this StripeConnectedAccount
+            ca = StripeConnectedAccount()
             ca.stripe_id = stripe_id
             ca.sync()
             return ca

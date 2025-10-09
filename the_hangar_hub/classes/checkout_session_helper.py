@@ -4,13 +4,13 @@ from the_hangar_hub.services import stripe_rental_s, invoice_s, stripe_s
 from base.models.utility.error import Error, Log, EnvHelper
 from base.classes.util.date_helper import DateHelper
 from datetime import datetime, timezone, timedelta
-from base_stripe.models.payment_models import CheckoutSession
+from base_stripe.models.payment_models import StripeCheckoutSession
 
 log = Log()
 env = EnvHelper()
 
 
-class CheckoutSessionHelper:
+class StripeCheckoutSessionHelper:
     rental_agreement = None
     checkout_sessions = None
     checkout_session = None
@@ -62,7 +62,7 @@ class CheckoutSessionHelper:
 
         # Look for existing co sessions
         try:
-            self.checkout_sessions = CheckoutSession.objects.filter(
+            self.checkout_sessions = StripeCheckoutSession.objects.filter(
                 related_type="RentalAgreement",
                 related_id=rental_agreement.id,
             ).order_by("-date_created")

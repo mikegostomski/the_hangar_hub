@@ -8,7 +8,7 @@ log = Log()
 env = EnvHelper()
 
 
-class Invoice:
+class InvoiceAPI:
     id = None
     account_country = None
     account_name = None
@@ -210,7 +210,7 @@ class Invoice:
                     # discounts=self.discounts,
                     # due_date=self.due_date,
                 )
-                revision = Invoice(invoice)
+                revision = InvoiceAPI(invoice)
                 revision.auto_advance = self.auto_advance
                 revision.automatically_finalizes_at = self.automatically_finalizes_at
                 revision.collection_method = self.collection_method
