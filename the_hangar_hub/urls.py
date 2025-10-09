@@ -43,7 +43,8 @@ developer_paths = [
 
 
 
-    path(f'subscriptions', admin_v.subscriptions,                         name='subscriptions'),
+    path(f'products', admin_v.products,                         name='products'),
+    path(f'products/price/visibility', admin_v.price_visibility,                         name='price_visibility'),
     path(f'invitations', admin_v.invitation_dashboard,                         name='invitation_dashboard'),
     path(f'invitations/send', admin_v.send_invitation,                         name='send_invitation'),
 ]

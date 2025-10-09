@@ -1,24 +1,44 @@
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, redirect
 from base.classes.util.env_helper import Log, EnvHelper
+from base.models.utility.error import Error
 from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service
 from base.decorators import require_authority, require_authentication, report_errors
+from base_stripe.services import product_service
+from base_stripe.models.product_models import StripePrice
 
 
 log = Log()
 env = EnvHelper()
 
 @require_authority("developer")
-def subscriptions(request):
+def products(request):
     return render(
-        request, "the_hangar_hub/admin/subscriptions/index.html",
+        request, "the_hangar_hub/admin/products/index.html",
         {
+            "products": product_service.get_products()
         }
     )
 
+@require_authority("developer")
+def price_visibility(request):
+    try:
+        price_id = request.POST.get("price_id")
+        price = StripePrice.get(price_id)
+        if not price:
+            message_service.post_error("Unable to locate specified price")
+            return HttpResponseForbidden()
 
-
+        display = request.POST.get("new_visibility", "N") == "Y"
+        log.info(f"Display price {price}: {display}")
+        price.display = display
+        price.save()
+        return HttpResponse("ok")
+    except Exception as ee:
+        Error.unexpected("Unable to update price visibility", ee)
+        return HttpResponseForbidden()
 
 
 

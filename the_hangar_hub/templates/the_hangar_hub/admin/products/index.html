@@ -1,0 +1,55 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+
+{%block title%}The Hangar Hub{%endblock%}
+
+{% block main_content %}
+<div class="content-800">
+<h1>Products</h1>
+
+{%for product in products%}
+<section>
+    <h2>{{product.name}}</h2>
+    <span class="code">{{product.stripe_id}}</span><br />
+    <div class="indent">
+        <strong>Description:</strong> {{product.description}}<br />
+        <strong>Active:</strong> {{product.active}}<br />
+        <div class="list-group">
+            {%for price in product.prices.all%}
+                <div class="list-group-item" data-price_id="{{price.id}}">
+                    <div class="float-left">
+                        <strong>{{price.nickname}}:</strong> {%format_currency price.dollar_amount%}{{price.recurrence_suffix}}<br />
+                        <span class="code">{{price.stripe_id}}</span><br />
+                    </div>
+                    <div class="float-right">
+                        {% if price.display and price.active%}
+                            {%icon bi-check-circle text-success onclick="toggle_visibility($(this));"%} <span class="label">Displayed</span>
+                        {%elif price.active%}
+                            {%icon bi-incognito text-muted onclick="toggle_visibility($(this));"%} <span class="label">Hidden</span>
+                        {%else%}
+                            {%icon bi-slash-circle text-danger%} Inactive
+                        {%endif%}<br />
+                        {% if price.trial_days%}
+                            {%icon bi-gift%} {{price.trial_days}} days<br />
+                        {%endif%}
+                    </div>
+                    <br style="clear:both" />
+
+
+
+                </div>
+            {%endfor%}
+        </div>
+
+    </div>
+</section>
+
+{%endfor%}
+
+</div>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/admin/products/products.js"%}
+</script>
+{%endblock%}

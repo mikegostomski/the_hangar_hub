@@ -7,7 +7,7 @@ from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.services import price_service, accounts_service
+from base_stripe.services import product_service, accounts_service
 from base_stripe.models.connected_account import StripeConnectedAccount
 from base_stripe.models.payment_models import StripeSubscription
 from base_stripe.models.payment_models import StripeCustomer
@@ -19,7 +19,7 @@ env = EnvHelper()
 
 
 def get_subscription_prices():
-    return {price.lookup_key: price for  price in price_service.get_price_list() if price.name == "The Hangar Hub"}
+    return {price.lookup_key: price for  price in product_service.get_price_list() if price.name == "The Hangar Hub"}
 
 
 

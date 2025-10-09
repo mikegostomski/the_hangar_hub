@@ -1,15 +1,16 @@
 from base.models.utility.error import EnvHelper, Log, Error
 import stripe
-from decimal import Decimal
-from django.urls import reverse
-from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key
 from base_stripe.classes.price import Price
+from base_stripe.models.product_models import StripeProduct, StripePrice
+
 
 log = Log()
 env = EnvHelper()
 
-# ToDo: Is this still needed for anything?
+
+def get_products():
+    return StripeProduct.objects.prefetch_related('prices').all()
 
 
 def get_price_list():

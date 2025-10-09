@@ -7,7 +7,7 @@ from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
-from base_stripe.services import price_service, accounts_service, invoice_service
+from base_stripe.services import accounts_service, invoice_service
 from base_stripe.models.connected_account import StripeConnectedAccount
 from base_stripe.models.payment_models import StripeSubscription
 from base_stripe.models.payment_models import StripeCustomer

@@ -122,7 +122,7 @@ class StripePrice(models.Model):
 
     @property
     def dollar_amount(self):
-        return utility_service.convert_to_decimal(self.unit_amount * 100)
+        return utility_service.convert_to_decimal(self.unit_amount / 100)
 
     @property
     def trial_days(self):
@@ -136,6 +136,13 @@ class StripePrice(models.Model):
             return self.recurring.get("interval")
         else:
             return "one-time"
+    @property
+    def recurrence_suffix(self):
+        return {
+            "month": "/month",
+            "year": "/year",
+            "one-time": "",
+        }.get(self.recurrence)
 
     def sync(self):
         """
