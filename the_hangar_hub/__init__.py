@@ -1,5 +1,5 @@
 from .celery import app as celery_app
 
-__version__ = "0.0.0215"
+__version__ = "0.0.0216"
 
 __all__ = ('celery_app',)

@@ -8,6 +8,7 @@ from base.services import message_service
 from base.decorators import require_authority, require_authentication, report_errors
 from base_stripe.services import product_service
 from base_stripe.models.product_models import StripePrice
+import json
 
 
 log = Log()
@@ -38,6 +39,67 @@ def price_visibility(request):
         return HttpResponse("ok")
     except Exception as ee:
         Error.unexpected("Unable to update price visibility", ee)
+        return HttpResponseForbidden()
+
+@require_authority("developer")
+def price_trial_days(request):
+    try:
+        price_id = request.POST.get("price_id")
+        price = StripePrice.get(price_id)
+        if not price:
+            message_service.post_error("Unable to locate specified price")
+            return HttpResponseForbidden()
+
+        if price.set_trial_days(request.POST.get("trial_days") or 0):
+            return HttpResponse("ok")
+    except Exception as ee:
+        Error.unexpected("Unable to update price visibility", ee)
+    return HttpResponseForbidden()
+
+
+@require_authority("developer")
+def update_price_attr(request):
+    """
+    Update aspects of the price not saved in Stripe
+        - Visibility
+        - Featured
+        - Badge
+        - Feature List
+    """
+    attr = request.POST.get("attr")
+    val = request.POST.get("value")
+    if not attr:
+        message_service.post_error("Invalid request")
+        return HttpResponseForbidden()
+
+    if attr == "features":
+        # Must be valid JSON string
+        if not val:
+            val = None
+        else:
+            log.debug("Loading JSON")
+            try:
+                val = json.loads(val)
+                log.debug(f"Value: {val}")
+            except:
+                message_service.post_error("Features must be a valid JSON list format")
+                return HttpResponseForbidden()
+    elif attr == "featured":
+        val = val == "Y"
+
+    try:
+        price_id = request.POST.get("price_id")
+        price = StripePrice.get(price_id)
+        if not price:
+            message_service.post_error("Unable to locate specified price")
+            return HttpResponseForbidden()
+
+        log.info(f"Update {price}: {attr} = {val}")
+        setattr(price, attr, val)
+        price.save()
+        return HttpResponse("ok")
+    except Exception as ee:
+        Error.unexpected(f"Unable to update price {attr}", ee)
         return HttpResponseForbidden()
 
 

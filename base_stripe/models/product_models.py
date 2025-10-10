@@ -2,9 +2,11 @@
 from django.db import models
 from base.classes.util.env_helper import EnvHelper, Log
 from base.models.utility.error import Error
-from base.services import utility_service
+from base.services import utility_service, message_service
 from base_stripe.services import config_service
+from base_stripe.services.config_service import set_stripe_api_key
 import stripe
+import json
 
 log = Log()
 env = EnvHelper()
@@ -24,6 +26,9 @@ class StripeProduct(models.Model):
     name = models.CharField(max_length=80, null=True, blank=True)
     description = models.CharField(max_length=80, null=True, blank=True)
     metadata = models.JSONField(default=dict, null=True, blank=True)
+
+    def prices_for_display(self):
+        return self.prices.filter(display=True)
 
     def sync(self):
         """
@@ -48,7 +53,7 @@ class StripeProduct(models.Model):
             metadata.update(data_dict)
             # Make sure the model ID is always included
             metadata.update({"model_id": self.id})
-
+            set_stripe_api_key()
             stripe.Product.modify(
                 self.stripe_id,
                 metadata=metadata
@@ -111,6 +116,9 @@ class StripePrice(models.Model):
     # A price may be active, but not want to be displayed on the subscription form
     # (i.e. Early Adopter keeps low price, but no new customers can select it)
     display = models.BooleanField(default=False)
+    featured = models.BooleanField(default=False)
+    badge = models.CharField(max_length=20, null=True, blank=True)
+    features = models.JSONField(default=list, null=True, blank=True)
 
     product = models.ForeignKey("base_stripe.StripeProduct", models.CASCADE, related_name="prices", db_index=True)
     active = models.BooleanField(db_index=True)
@@ -144,6 +152,9 @@ class StripePrice(models.Model):
             "one-time": "",
         }.get(self.recurrence)
 
+    def features_json(self):
+        return json.dumps(self.features or [], indent=4)
+
     def sync(self):
         """
         Update data from Stripe API
@@ -170,7 +181,7 @@ class StripePrice(models.Model):
             metadata.update(data_dict)
             # Make sure the model ID is always included
             metadata.update({"model_id": self.id})
-
+            set_stripe_api_key()
             stripe.Price.modify(
                 self.stripe_id,
                 metadata=metadata
@@ -180,6 +191,26 @@ class StripePrice(models.Model):
             self.save()
         except Exception as ee:
             Error.record(ee, self.stripe_id)
+
+    def set_trial_days(self, num_days):
+        try:
+            if self.recurring:
+                days = int(num_days)
+                self.recurring["trial_period_days"] = days
+                set_stripe_api_key()
+                stripe.Price.modify(
+                    self.stripe_id,
+                    recurring={"trial_period_days": days}
+                )
+                self.save()
+                return True
+            else:
+                message_service.post_error("Only recurring prices can have trial periods")
+        except ValueError:
+            message_service.post_error("Trial period must be a number of days")
+        except Exception as ee:
+            Error.record(ee, self.stripe_id)
+        return False
 
     def api_data(self):
         try:

@@ -12,6 +12,9 @@ env = EnvHelper()
 def get_products():
     return StripeProduct.objects.prefetch_related('prices').all()
 
+def get_product_query():
+    return StripeProduct.objects.prefetch_related('prices')
+
 
 def get_price_list():
     prices = []

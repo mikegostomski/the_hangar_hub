@@ -167,6 +167,12 @@ function clearAjaxStatusClasses(container){
     });
 }
 
+function clearAllAjaxStatuses(container){
+    clearAjaxSaveIcon(container);
+    clearAjaxStatusIcon(container);
+    clearAjaxStatusClasses(container);
+    clearAjaxLoadImage(container);
+}
 
 function flash_success(element){
     flash_element(element, 'green')

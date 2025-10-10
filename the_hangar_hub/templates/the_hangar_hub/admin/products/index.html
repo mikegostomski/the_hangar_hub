@@ -19,19 +19,46 @@
             {%for price in product.prices.all%}
                 <div class="list-group-item" data-price_id="{{price.id}}">
                     <div class="float-left">
-                        <strong>{{price.nickname}}:</strong> {%format_currency price.dollar_amount%}{{price.recurrence_suffix}}<br />
-                        <span class="code">{{price.stripe_id}}</span><br />
+                        <div>
+                            <strong>{{price.nickname}}:</strong> {%format_currency price.dollar_amount%}{{price.recurrence_suffix}}<br />
+                            <span class="code">{{price.stripe_id}}</span>
+                        </div><br />
+                        <div>
+                            <label for="features-{{price.id}}">Features</label>
+                            <textarea name="features" id="features-{{price.id}}" class="form-control" onchange="update_price($(this));">{{price.features_json}}</textarea>
+                        </div>
                     </div>
                     <div class="float-right">
-                        {% if price.display and price.active%}
-                            {%icon bi-check-circle text-success onclick="toggle_visibility($(this));"%} <span class="label">Displayed</span>
-                        {%elif price.active%}
-                            {%icon bi-incognito text-muted onclick="toggle_visibility($(this));"%} <span class="label">Hidden</span>
-                        {%else%}
-                            {%icon bi-slash-circle text-danger%} Inactive
-                        {%endif%}<br />
-                        {% if price.trial_days%}
-                            {%icon bi-gift%} {{price.trial_days}} days<br />
+                        <div>
+                            {% if price.display and price.active%}
+                                {%icon bi-check-circle text-success onclick="toggle_visibility($(this));"%} <span class="label">Displayed</span>
+                            {%elif price.active%}
+                                {%icon bi-incognito text-muted onclick="toggle_visibility($(this));"%} <span class="label">Hidden</span>
+                            {%else%}
+                                {%icon bi-slash-circle text-danger%} Inactive
+                            {%endif%}
+                        </div><br />
+
+
+                        <div>
+                            <label>
+                                <input type="checkbox" name="featured" value="Y" onchange="update_price($(this));" /> Featured
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                {%icon bi-chat-right-heart title="Badge Text"%}
+                                <input type="text" name="badge" value="{{price.badge|default:''}}" size="20" onchange="update_price($(this));" style="border:1px solid #DDD;border-radius:5px;" />
+                            </label>
+                        </div>
+
+                        {% if price.recurring%}
+                        <div>
+                            <label>
+                                {%icon bi-gift title="Free Trial"%}
+                                <input type="text" value="{{price.trial_days}}" size="2" class="text-center" onchange="set_trial_days($(this));" style="border:1px solid #DDD;border-radius:5px;" />  days<br />
+                            </label>
+                        </div>
                         {%endif%}
                     </div>
                     <br style="clear:both" />

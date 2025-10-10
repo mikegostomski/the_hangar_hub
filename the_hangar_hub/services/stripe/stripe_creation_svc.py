@@ -53,19 +53,22 @@ def create_customer_from_airport(airport):
     return False
 
 
-def hh_checkout_session(airport, price_id):
+def hh_checkout_session(airport, price):
     """
     Create a checkout session for a HangarHub subscription
     """
-    log.trace([airport, price_id])
-    trial_days = Variable.get_value("hh_trial_days", 30)
+    log.trace([airport, price])
+
+    # ToDo: Previous subscribers do not get another free trial
+    trial_days = price.trial_days
+
     try:
         set_stripe_api_key()
         checkout_session = stripe.checkout.Session.create(
             customer=airport.stripe_customer.stripe_id,
             line_items=[
                 {
-                    'price': price_id,
+                    'price': price.strip_id,
                     'quantity': 1,
                 },
             ],

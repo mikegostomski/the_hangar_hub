@@ -7,78 +7,60 @@
 {% block main_content %}
 <div class="content-1024 content-center">
 
-
-        {%for lookup_key, price in prices.items%}
-        <div class="card">
-            <div class="card-body">
-                <h2 class="card-title">{{price.recurring|title}}ly Plan</h2>
-                <p class="card-text">
-                    <div class="xxl">{%format_currency price.amount%}/{{price.recurring}}</div>
-                    <br />
-                    <b>Billing begins after {{"hh_trial_days"|variable:30}} day free trial</b><br />
-                    <br />{{price.id}}
-                </p>
-                <div class="text-center">
-                    <form action="{%url 'airport:subscribe' airport.identifier%}" method="POST">
-                        {%csrf_token%}
-                        <input type="hidden" name="subscription_id" value="{{price.id}}" />
-                        <button id="checkout-and-portal-button" type="submit" class="btn btn-info">Subscribe</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {%endfor%}
-
-
     <div class="container">
         <div class="header">
             <h1>Choose Your Plan</h1>
-            <p>Manage your airport listings, connect with pilots, track hangar availability, and grow your aviation business</p>
+            <p>
+                Streamline hangar space management, manage applications and waitlists, and enhance transparency and communication with tenants
+            </p>
         </div>
-
         <div class="pricing-grid">
-            <div class="pricing-card">
-                <div class="plan-header">
-                    <h2 class="plan-name">Monthly Plan</h2>
-                    <div class="price">$15<span class="price-small">/month</span></div>
-                </div>
-                <div class="trial-info">Billing begins after 30 day free trial</div>
-                <ul class="features">
-                    <li>Unlimited hangar listings</li>
-                    <li>Real-time availability updates</li>
-                    <li>Pilot messaging system</li>
-                    <li>Basic analytics dashboard</li>
-                    <li>Email support</li>
-                    <li>Mobile app access</li>
-                </ul>
-                <button class="subscribe-btn">Start Free Trial</button>
-            </div>
 
-            <div class="pricing-card featured">
-                <span class="badge">Best Value</span>
+        {%for price in product.prices_for_display%}
+            <div class="pricing-card {%if price.featured%}featured{%endif%}">
+                {%if price.badge%}
+                    <span class="badge">{{price.badge}}</span>
+                {%endif%}
                 <div class="plan-header">
-                    <h2 class="plan-name">Yearly Plan</h2>
-                    <div class="price">$150<span class="price-small">/year</span></div>
-                    <span class="savings">Save $30 per year</span>
+                    <h2 class="plan-name">{{price.nickname}}</h2>
+                    <div class="price">
+                        {%format_currency price.dollar_amount%}<span class="price-small">{{price.recurrence_suffix}}</span>
+                    </div>
                 </div>
-                <div class="trial-info">Billing begins after 30 day free trial</div>
+                {%if price.trial_days%}
+                    <div class="trial-info">Billing begins after {{price.trial_days}} day free trial</div>
+                {%endif%}
                 <ul class="features">
-                    <li>Unlimited hangar listings</li>
-                    <li>Real-time availability updates</li>
-                    <li>Pilot messaging system</li>
-                    <li>Advanced analytics dashboard</li>
-                    <li>Priority email & phone support</li>
-                    <li>Mobile app access</li>
-                    <li>Custom branding options</li>
-                    <li>Featured airport placement</li>
+                    {%for ff in price.features%}
+                    <li>{{ff}}</li>
+                    {%endfor%}
                 </ul>
-                <button class="subscribe-btn">Start Free Trial</button>
+
+
+
+                <form action="{%url 'airport:subscribe' airport.identifier%}" method="POST">
+                    {%csrf_token%}
+                    <input type="hidden" name="price_id" value="{{price.id}}" />
+                    <button type="submit" class="btn btn-info" style="width:100%;">
+                    {%if price.trial_days%}
+                        Start Free Trial
+                    {%else%}
+                        Start Subscription
+                    {%endif%}
+                    </button>
+                </form>
+
+
             </div>
+        {%endfor%}
+
         </div>
 
         <div class="testimonial">
-            <p class="testimonial-text">"Hangar Hub has transformed how we manage our airport. We've connected with more pilots in 3 months than we did all of last year. The platform is intuitive and the support team is fantastic."</p>
-            <p class="testimonial-author">— Sarah Mitchell, Airport Manager at Skyview Regional</p>
+            <div class="testimonial-text">
+                "I wish my airport was using Hangar Hub!"
+            </div>
+            <div class="testimonial-author">— Mike Gostomski, Lead Developer at Hangar Hub</div>
         </div>
 
         <div class="faq-section">
@@ -86,17 +68,7 @@
 
             <div class="faq-item">
                 <div class="faq-question">What happens during the free trial?</div>
-                <div class="faq-answer">You get full access to all features for 30 days with no credit card required. After the trial, you can choose to continue with a paid subscription or your account will revert to view-only mode.</div>
-            </div>
-
-            <div class="faq-item">
-                <div class="faq-question">Can I switch between plans?</div>
-                <div class="faq-answer">Yes! You can upgrade or downgrade your plan at any time. If you switch from monthly to yearly, we'll prorate your current subscription and apply it to your new plan.</div>
-            </div>
-
-            <div class="faq-item">
-                <div class="faq-question">What payment methods do you accept?</div>
-                <div class="faq-answer">We accept all major credit cards (Visa, MasterCard, American Express, Discover) as well as ACH bank transfers for annual subscriptions.</div>
+                <div class="faq-answer">You get full access to all features. After the trial, you can choose to continue with a paid subscription or your airport will return to an inactive status.</div>
             </div>
 
             <div class="faq-item">
@@ -105,9 +77,14 @@
             </div>
 
             <div class="faq-item">
-                <div class="faq-question">Do you offer discounts for multiple airports?</div>
-                <div class="faq-answer">Yes! If you manage multiple airports, contact our sales team for volume pricing. We offer special rates for airport networks and management companies.</div>
+                <div class="faq-question">Will I find bugs in the site?</div>
+                <div class="faq-answer">
+                    Absolutely. This is a brand-new product, and there will certainly be issues that I had not anticipated.
+                    The early adopter plan includes a lifetime low price to thank you for your willingness to help me work through
+                    the bugs and make Hangar Hub an indispensable tool for GA airports across the country.
+                </div>
             </div>
+
         </div>
     </div>
 
@@ -250,18 +227,19 @@
         }
 
         .features li {
-            padding: 12px 0;
+            padding: 7px 0;
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 7px;
             color: #475569;
+            margin-left: -15px;
         }
 
         .features li::before {
             content: "✓";
             color: #3b82f6;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1rem;
             flex-shrink: 0;
         }
 
@@ -295,23 +273,25 @@
         .testimonial {
             background: white;
             border-radius: 16px;
-            padding: 40px;
+            padding: 40px 60px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
             margin-bottom: 60px;
             text-align: center;
         }
 
         .testimonial-text {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             color: #475569;
             font-style: italic;
             margin-bottom: 20px;
             line-height: 1.8;
+            text-align: left;
         }
 
         .testimonial-author {
             color: #64748b;
             font-weight: 600;
+            text-align: right;
         }
 
         .faq-section {

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.db.models import Q
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from base.services import message_service
@@ -8,8 +9,9 @@ from the_hangar_hub.services.stripe import stripe_creation_svc
 from base.classes.breadcrumb import Breadcrumb
 from the_hangar_hub.decorators import require_airport
 from base.models.utility.error import Error
-from base_stripe.services import checkout_service
+from base_stripe.services import checkout_service, product_service
 from base_stripe.models.payment_models import StripeSubscription
+from base_stripe.models.product_models import StripePrice
 
 log = Log()
 env = EnvHelper()
@@ -26,6 +28,14 @@ def claim_airport(request, airport_identifier):
     if airport.is_active():
         return redirect("airport:welcome", airport.identifier)
 
+
+    try:
+        product = product_service.get_product_query().get(Q(name__contains="Hangar Hub")|Q(name__contains="HangarHub"))
+        log.debug(f"PRODUCT####::: {product}")
+    except Exception as ee:
+        Error.unexpected("Unable to retrieve subscription prices", ee)
+        product = []
+
     # If airport has a city/state but not a billing city/state, update billing to match
     if airport.city and airport.state:
         if not airport.billing_city and airport.billing_state:
@@ -39,8 +49,7 @@ def claim_airport(request, airport_identifier):
     return render(
         request, "the_hangar_hub/airport/subscription/index.html",
         {
-            "is_manager": False,
-            "prices": prices,
+            "product": product,
         }
     )
 
@@ -49,14 +58,17 @@ def claim_airport(request, airport_identifier):
 @require_authentication()
 @require_airport()
 def subscriptions(request, airport_identifier):
-    is_manager = airport_service.manages_this_airport()
-    prices = stripe_service.get_subscription_prices()
+    try:
+        product = product_service.get_product_query().get(Q(name__contains="Hangar Hub")|Q(name__contains="HangarHub"))
+        log.debug(f"PRODUCT::: {product}")
+    except Exception as ee:
+        Error.unexpected("Unable to retrieve subscription prices", ee)
+        product = []
 
     return render(
         request, "the_hangar_hub/airport/subscription/index.html",
         {
-            "is_manager": is_manager,
-            "prices": prices,
+            "product": product
         }
     )
 
@@ -65,7 +77,8 @@ def subscriptions(request, airport_identifier):
 @require_authentication()
 @require_airport()
 def subscribe(request, airport_identifier):
-    subscription_id = request.POST.get("subscription_id")
+    price_id = request.POST.get("price_id")
+    price = StripePrice.get(price_id)
 
     # Make sure billing address/contact info is present
     airport = request.airport
@@ -85,7 +98,7 @@ def subscribe(request, airport_identifier):
             return render(
                 request, "the_hangar_hub/airport/subscription/billing_data.html",
                 {
-                    "subscription_id": subscription_id,
+                    "price_id": price_id,
                 }
             )
 
@@ -96,7 +109,7 @@ def subscribe(request, airport_identifier):
             return redirect("airport:subscriptions", airport.identifier)
 
     try:
-        checkout_session = stripe_creation_svc.hh_checkout_session(request.airport, subscription_id)
+        checkout_session = stripe_creation_svc.hh_checkout_session(request.airport, price)
         if checkout_session:
             env.set_session_variable("stripe_checkout_session_id", checkout_session.stripe_id)
             return redirect(checkout_session.url, code=303)

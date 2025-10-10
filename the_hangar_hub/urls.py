@@ -45,6 +45,8 @@ developer_paths = [
 
     path(f'products', admin_v.products,                         name='products'),
     path(f'products/price/visibility', admin_v.price_visibility,                         name='price_visibility'),
+    path(f'products/price/trial_days', admin_v.price_trial_days,                         name='trial_days'),
+    path(f'products/price/attribute', admin_v.update_price_attr,                         name='update_price'),
     path(f'invitations', admin_v.invitation_dashboard,                         name='invitation_dashboard'),
     path(f'invitations/send', admin_v.send_invitation,                         name='send_invitation'),
 ]
