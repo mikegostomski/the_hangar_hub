@@ -57,27 +57,27 @@ def rent_subscription_email(request, airport_identifier, rental_agreement_id):
         message_service.post_error("Rental agreement was not found.")
         return rental_router(request)
 
-    # Expiration date is required
-    expiration_date = None
-    expiration_date_str = request.POST.get("expiration_date")
-    if expiration_date_str:
-        expiration_date = date_service.string_to_date(
-            expiration_date_str, source_timezone=rental_agreement.airport.timezone
-        )
-        if expiration_date:
-            exp_local = expiration_date.astimezone(rental_agreement.airport.tz)
-            if exp_local.hour == 0 and exp_local.minute == 0:
-                # Expire at end-of-day
-                expiration_date = expiration_date + timedelta(days=1)
-            log.debug(f"EXPIRATION DATE::: {expiration_date_str}  ==> {expiration_date}")
-        else:
-            message_service.post_error(f"Invalid expiration date: {expiration_date_str}")
-    if not expiration_date:
-        message_service.post_error(f"Expiration date is required")
-        return rental_router(request)
+    # # Expiration date is required
+    # expiration_date = None
+    # expiration_date_str = request.POST.get("expiration_date")
+    # if expiration_date_str:
+    #     expiration_date = date_service.string_to_date(
+    #         expiration_date_str, source_timezone=rental_agreement.airport.timezone
+    #     )
+    #     if expiration_date:
+    #         exp_local = expiration_date.astimezone(rental_agreement.airport.tz)
+    #         if exp_local.hour == 0 and exp_local.minute == 0:
+    #             # Expire at end-of-day
+    #             expiration_date = expiration_date + timedelta(days=1)
+    #         log.debug(f"EXPIRATION DATE::: {expiration_date_str}  ==> {expiration_date}")
+    #     else:
+    #         message_service.post_error(f"Invalid expiration date: {expiration_date_str}")
+    # if not expiration_date:
+    #     message_service.post_error(f"Expiration date is required")
+    #     return rental_router(request)
 
     # Create checkout session
-    co_helper = StripeCheckoutSessionHelper.initiate_checkout_session(rental_agreement, expiration_date)
+    co_helper = StripeCheckoutSessionHelper.initiate_checkout_session(rental_agreement)
 
     # Generate email to tenant
     airport = rental_agreement.airport

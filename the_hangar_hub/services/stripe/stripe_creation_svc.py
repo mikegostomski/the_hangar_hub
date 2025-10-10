@@ -68,7 +68,7 @@ def hh_checkout_session(airport, price):
             customer=airport.stripe_customer.stripe_id,
             line_items=[
                 {
-                    'price': price.strip_id,
+                    'price': price.stripe_id,
                     'quantity': 1,
                 },
             ],
@@ -201,7 +201,7 @@ def get_checkout_session_application_fee(application):
         return None
 
 
-def get_subscription_checkout_session(rental_agreement, collection_start_date, expiration_date):
+def get_subscription_checkout_session(rental_agreement, collection_start_date, expiration_date=None):
     try:
         # Gather data
         tenant = rental_agreement.tenant
@@ -217,7 +217,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
         existing = StripeSubscription.objects.filter(
             customer=customer,
             status__in=StripeSubscription.active_statuses(),
-            metadata__contains=rental_agreement.stripe_metadata_content,
+            metadata__RentalAgreement=rental_agreement.id,
         )
         if existing:
             message_service.post_error("Tenant already has an active subscription.")
@@ -270,8 +270,10 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
         return_url = reverse('rent:rental_agreement_router', args=[airport.identifier, rental_agreement.id])
 
         # Expiration date may be specified by airport in local time
-        expiration_date = expiration_date.astimezone(timezone.utc)
-        expires_at = int(expiration_date.timestamp())
+        if expiration_date:
+            expiration_date = expiration_date.astimezone(timezone.utc)
+            expires_at = int(expiration_date.timestamp())
+            log.warning("Expiration date not used. Will expire in 24 hours.")
 
         set_stripe_api_key()
         checkout_session = stripe.checkout.Session.create(
@@ -310,7 +312,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
             metadata={
                 "rental_agreement": rental_agreement.id
             },
-            expires_at=expires_at,
+            # expires_at=expires_at,
             success_url=f"{env.absolute_root_url}{return_url}",
             cancel_url=f"{env.absolute_root_url}{return_url}",
         )

@@ -66,9 +66,25 @@ class Tenant(models.Model):
                     # Return tenant record tied to user
                     return Tenant.objects.get(user=tenant_data)
                 except Tenant.DoesNotExist:
-                    # User may have joined after Tenant record was created
                     user = tenant_data
                     tenant_data = user.email
+                    # User may have joined after Tenant record was created, or may have multiple verified emails
+                    try:
+                        user_profile = Auth.lookup_user_profile(user)
+                        for email in user_profile.emails if user_profile else []:
+                            try:
+                                tenant = Tenant.objects.get(contact__email__iexact=email)
+                                if tenant:
+                                    tenant.user = user
+                                    tenant.save()
+                                    if tenant.customer and not tenant.customer.user:
+                                        tenant.customer.user = user
+                                        tenant.customer.save()
+                                    return tenant
+                            except:
+                                pass  # Not found via this email
+                    except Exception as ee:
+                        Error.record(ee, tenant_data)
 
             # If given an email address (or user not associated with a Tenant in previous condition)
             if "@" in str(tenant_data):

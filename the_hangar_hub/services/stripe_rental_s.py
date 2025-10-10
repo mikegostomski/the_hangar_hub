@@ -83,7 +83,7 @@ def sync_rental_agreement_subscriptions(rental_agreement):
     for sub in StripeSubscription.objects.filter(
         status__in=["trialing", "active", "past_due", "unpaid", "paused"],  # Active subscriptions (indexed)
         customer__stripe_id=customer_id,                                    # For this customer (indexed)
-        metadata__contains=rental_agreement.stripe_metadata_content         # For this RentalAgreement
+        metadata__RentalAgreement=rental_agreement.id         # For this RentalAgreement
     ):
         if sub.stripe_id == rental_agreement.stripe_subscription_id:
             continue

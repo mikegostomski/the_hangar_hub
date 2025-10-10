@@ -190,7 +190,7 @@ class Airport(models.Model):
 
     def application_preferences(self):
         try:
-            return self.application_prefs.get()
+            return self.application_prefs
         except HangarApplicationPreferences.DoesNotExist:
             return HangarApplicationPreferences.objects.create(airport=self)
 
@@ -228,7 +228,6 @@ class HangarApplicationPreferences(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    # airport = models.ForeignKey("the_hangar_hub.Airport", models.CASCADE, related_name="application_prefs", db_index=True, unique=True)
     airport = models.OneToOneField("the_hangar_hub.Airport", models.CASCADE, related_name="application_prefs", db_index=True, unique=True)
 
     required_fields_csv = models.TextField(blank=True, null=True)

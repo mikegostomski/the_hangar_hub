@@ -101,7 +101,6 @@ def my_airport(request, airport_identifier):
     if not airport.stripe_account:
         stripe_creation_svc.create_connected_account(airport)
 
-
     # Check connected account
     onboarding_link = None
     if airport.stripe_account:

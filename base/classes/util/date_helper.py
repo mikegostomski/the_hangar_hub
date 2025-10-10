@@ -2,12 +2,16 @@ from base.services import date_service
 from base.classes.util.log import Log
 import arrow
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 log = Log()
 
 
 class DateHelper:
     # All dates will be UTC
+
+    # Allow formatted dates to be printed in specified timezone
+    format_as_timezone = "UTC"
 
     # The user-entered value
     original_value = None
@@ -126,12 +130,13 @@ class DateHelper:
         https://arrow.readthedocs.io/en/latest/
         """
         if self.arrow_instance:
-            return self.arrow_instance.format(format_string)
+            tz_date = self.arrow_instance.to(self.format_as_timezone)
+            return tz_date.format(format_string)
         else:
             return ""
 
-    def __init__(self, date_string, source_timezone="UTC"):
-
+    def __init__(self, date_string, source_timezone="UTC", format_as_timezone="UTC"):
+        self.format_as_timezone = format_as_timezone
         if date_string:
             self.original_value = date_string
 

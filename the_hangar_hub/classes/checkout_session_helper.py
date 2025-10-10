@@ -5,6 +5,8 @@ from base.models.utility.error import Error, Log, EnvHelper
 from base.classes.util.date_helper import DateHelper
 from datetime import datetime, timezone, timedelta
 from base_stripe.models.payment_models import StripeCheckoutSession
+from the_hangar_hub.services.stripe import stripe_creation_svc
+from the_hangar_hub.models.airport import Airport
 
 log = Log()
 env = EnvHelper()
@@ -49,8 +51,7 @@ class StripeCheckoutSessionHelper:
     def expiration_display(self):
         exp_utc = self.expiration_moment
         if exp_utc:
-            exp_local = exp_utc.astimezone(self.airport.tz)
-            cd = DateHelper(exp_local)
+            cd = DateHelper(exp_utc, format_as_timezone=self.airport.timezone)
             return f"{cd.format()} at {cd.time()}"
         else:
             return "No Expiration"
@@ -83,7 +84,7 @@ class StripeCheckoutSessionHelper:
 
 
     @classmethod
-    def initiate_checkout_session(cls, rental_agreement, expiration_date=None):
+    def initiate_checkout_session(cls, rental_agreement):
         if rental_agreement:
             try:
                 co = cls(rental_agreement)
@@ -97,18 +98,9 @@ class StripeCheckoutSessionHelper:
                 # Start subscription after any paid periods (or on agreement start date)
                 collection_start_date = invoice_s.get_next_collection_start_date(rental_agreement)
 
-                # Specified expiration, or 00:00 tomorrow
-                co.expiration_cd = DateHelper(expiration_date or "tomorrow", source_timezone=co.airport.timezone)
-
-                # Make sure tenant has at least 30 minutes to check out
-                ap_now = datetime.now(co.airport.tz)
-                min_expiration = ap_now + timedelta(minutes=30)
-                if co.expiration_cd.datetime_instance < min_expiration:
-                    co.expiration_cd = DateHelper(min_expiration)
-
                 # Create checkout session in Stripe
-                co.checkout_session = stripe_rental_s.get_subscription_checkout_session(
-                    rental_agreement, collection_start_date, co.expiration_cd.datetime_instance
+                co.checkout_session = stripe_creation_svc.get_subscription_checkout_session(
+                    rental_agreement, collection_start_date
                 )
 
                 return co

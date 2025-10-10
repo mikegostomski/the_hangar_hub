@@ -155,6 +155,9 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'N9214V@gmail.com'
 
+SUPPORT_EMAIL_ADDRESS = "mikegostomski@gmail.com"
+SUPPORT_PHONE_NUMBER = "(503) 741-9401"
+
 # Session expiration
 SESSION_COOKIE_AGE = 30 * 60  # 30 minutes
 

@@ -11,7 +11,7 @@ from base_stripe.models.payment_models import StripeCheckoutSession
 from the_hangar_hub.models.rental_models import Tenant, RentalInvoice, RentalAgreement
 
 from base_stripe.services import webhook_service
-from the_hangar_hub.models import Tenant
+from the_hangar_hub.models import Tenant, Airport
 
 log = Log()
 env = EnvHelper()
@@ -120,15 +120,23 @@ def handle_invoice_event(event):
                 rental_agreement_id = invoice.related_id
             elif invoice.subscription and invoice.subscription.related_type == "RentalAgreement":
                 rental_agreement_id = invoice.subscription.related_id
-            elif "RentalAgreement" in invoice.metadata:
-                rental_agreement_id = invoice.metadata.get("RentalAgreement")
-            elif invoice.subscription and invoice.subscription.metadata and "RentalAgreement" in invoice.subscription.metadata:
-                rental_agreement_id = invoice.subscription.metadata.get("RentalAgreement")
+            elif invoice.metadata and "rental_agreement" in invoice.metadata:
+                rental_agreement_id = invoice.metadata.get("rental_agreement")
+            elif invoice.subscription and invoice.subscription.metadata and "rental_agreement" in invoice.subscription.metadata:
+                rental_agreement_id = invoice.subscription.metadata.get("rental_agreement")
             else:
                 rental_agreement_id = None
 
             if rental_agreement_id:
                 rental_agreement = RentalAgreement.get(rental_agreement_id)
+                invoice.related_type = "RentalAgreement"
+                invoice.related_id = rental_agreement.id
+                invoice.save()
+                # invoice.add_metadata({
+                #     "rental_agreement": rental_agreement.id,
+                #     # "airport": rental_agreement.airport.identifier,
+                #     # "type": "Hangar Rent"
+                # })
                 # ToDo: Make sure invoice exists for rental_agreement
 
             else:
@@ -150,7 +158,78 @@ def handle_invoice_event(event):
 
 
 def handle_subscription_event(event):
-    # Probably need to do something...
+    has_relation = False
+    change_handled = False
+    try:
+        subscription = StripeSubscription.get(event.object_id)
+        if subscription:
+            if has_relation:
+                pass
+
+            elif subscription.related_type and subscription.related_id:
+                has_relation = True
+
+            elif subscription.metadata and "rental_agreement" in subscription.metadata:
+                subscription.related_type = "RentalAgreement"
+                subscription.related_id = subscription.metadata.get("rental_agreement")
+                subscription.save()
+                has_relation = True
+
+            else:
+                # If not linked to a rental agreement, might be a HangarHub subscription
+                try:
+                    airport = Airport.objects.get(stripe_customer=subscription.customer)
+                    if airport:
+                        subscription.related_type = "Airport"
+                        subscription.related_id = airport.id
+                        subscription.save()
+                        has_relation = True
+                except Airport.DoesNotExist:
+                    pass
+                except Exception as ee:
+                    Error.record(ee, subscription)
+
+            # Can only react to the change if there is a related object
+            if has_relation:
+                if subscription.related_type == "RentalAgreement":
+                    rental_agreement = RentalAgreement.get(subscription.related_id)
+                    if not rental_agreement:
+                        Error.record(
+                            f"{subscription} Relation Invalid: {subscription.related_type} #{subscription.related_id} does not exist"
+                        )
+                        subscription.related_type = None
+                        subscription.related_id = None
+                        subscription.save()
+                        return False
+                    cu_sub = rental_agreement.stripe_subscription
+                    fu_sub = rental_agreement.future_stripe_subscription
+                    this_sub = subscription
+                    if not cu_sub:
+                        rental_agreement.stripe_subscription = this_sub
+                    elif cu_sub.id == this_sub.id:
+                        pass
+                    elif this_sub.is_active and not cu_sub.is_active:
+                        rental_agreement.stripe_subscription = this_sub
+                    elif this_sub.is_active and not fu_sub:
+                        rental_agreement.future_stripe_subscription = this_sub
+                    elif this_sub.is_active and not fu_sub.is_active:
+                        rental_agreement.future_stripe_subscription = this_sub
+                    else:
+                        Error.record(f"Unsure how to handle subscription event: {event}")
+                        return False
+                    rental_agreement.save()
+
+                    if this_sub.status in ["past_due", "unpaid"]:
+                        # ToDo: Notify AirportManager of "past_due", "unpaid" subscription updates
+                        return False
+
+                    # Otherwise, I don't think there's anything else to do atthis time
+                    return True
+
+        else:
+            log.error(f"Unknown subscription: {subscription}")
+    except Exception as ee:
+        Error.record(ee, event)
     return False
 
 

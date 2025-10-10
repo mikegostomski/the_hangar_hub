@@ -1,5 +1,7 @@
 from base.models.utility.error import EnvHelper, Log, Error
 import stripe
+from base.services import message_service
+from base.views import messages
 from base_stripe.services.config_service import set_stripe_api_key
 from base_stripe.models.connected_account import StripeConnectedAccount
 
@@ -25,6 +27,13 @@ def create_account(params_dict):
             Error.unexpected("Unable to save connected account record", ee)
     except Exception as ee:
         Error.unexpected("Unable to create connected account in Stripe", ee)
+        if "Invalid" in str(ee):
+            try:
+                msg = str(ee).split(":")[1]
+                message_service.post_error(msg)
+            except Exception as ee:
+                pass
+
     return None
 
 

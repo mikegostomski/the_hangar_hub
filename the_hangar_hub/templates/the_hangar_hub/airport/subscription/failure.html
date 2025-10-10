@@ -2,18 +2,117 @@
 {% load base_taglib %}
 {% load static %}
 
-{%block title%}Subscription Failure{%endblock%}
+{%block title%}Payment Not Completed - The Hangar Hub{%endblock%}
 
 {% block main_content %}
 <div class="content-1024 content-center">
-    <h1>Failed to Complete Subscription</h1>
+    <!-- Error Icon and Header -->
+    <div class="text-center" style="margin-bottom: 2rem;">
+        {%icon bi-exclamation-triangle text-warning style="font-size:5em;"%}
+        <h1 style="color: #495057; margin-bottom: 0.5rem;">Payment Not Completed</h1>
+        Your subscription setup was unsuccessful
+    </div>
 
-    <section>
-        <b>Your stripe transaction was not completed successfully.</b><br />
-        If you believe this to be an error, please contact support to manually verify your transaction.
-    </section>
+    <!-- Main Message Card -->
+    <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.5rem; color: #495057;">
+            Your payment transaction was not completed successfully. This can happen for several reasons:
+        </p>
 
-    ToDo: Provide contact info or a contact form
+        <ul style="line-height: 1.8; color: #495057; margin-bottom: 1.5rem;">
+            <li>Payment was cancelled before completion</li>
+            <li>Payment information was declined by your financial institution</li>
+            <li>A technical issue occurred during processing</li>
+            <li>Session timeout or connection interruption</li>
+        </ul>
 
+        <p style="font-size: 1.05rem; line-height: 1.6; margin: 0; color: #495057;">
+            Don't worry - no charges have been made to your account.
+        </p>
+    </div>
+
+    <!-- Action Cards -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Try Again Card -->
+        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 1.5rem;">
+            <h2 style="color: #004085; font-size: 1.1rem; margin-bottom: 0.75rem;">Try Again</h2>
+            <p style="color: #004085; margin-bottom: 1rem; line-height: 1.6;">
+                Ready to complete your subscription? You can restart the process.
+            </p>
+            <a href="{% url 'airport:subscriptions' airport.identifier%}" class="btn btn-primary">
+                Return to Subscription Plans
+            </a>
+        </div>
+
+        <!-- Contact Support Card -->
+        <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1.5rem;">
+            <h2 style="color: #495057; font-size: 1.1rem; margin-bottom: 0.75rem;">Need Help?</h2>
+            <p style="color: #495057; margin-bottom: 1rem; line-height: 1.6;">
+                If you believe this is an error or need assistance, our support team is here to help.
+            </p>
+            <a href="mailto:{{support_email}}?subject=Payment%20Issue%20-%20Airport%20Subscription" class="btn btn-outline-secondary" >
+                Contact Support
+            </a>
+        </div>
+    </div>
+
+    <!-- Support Information -->
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem;">
+        <h2 style="color: #495057;  margin-bottom: 1rem;">Support Contact Information</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; color: #495057;">
+            <div>
+                <strong>Email:</strong><br />
+                <a href="mailto:{{support_email}}" style="color: #0066cc;">{{support_email}}</a>
+            </div>
+            <div>
+                <strong>Phone:</strong><br />
+                <a href="{{support_phone}}" style="color: #0066cc;">{{support_phone}}</a>
+            </div>
+            <div>
+                <strong>Hours:</strong><br />
+                Monday-Friday, 8am-6pm EST
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Help -->
+    <div style="text-align: left; padding: 1.5rem; background: white; border: 1px solid #dee2e6; border-radius: 8px;">
+        <p style="color: #6c757d; margin-bottom: 1rem; line-height: 1.6;">
+            <strong>When contacting support, please provide:</strong>
+        </p>
+            <ul style="list-style: none; padding: 0; margin: 0; color: #6c757d; line-height: 1.8;">
+                <li>✓ Your airport identifier{% if airport %}: <strong>{{airport.identifier}}</strong>{% endif %}</li>
+                <li>✓ The date and time this error occurred</li>
+                <li>✓ Any error messages you received</li>
+            </ul>
+    </div>
+
+    <!-- Return Home Link -->
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="{% url 'public:home' %}" style="color: #6c757d; text-decoration: none; font-size: 0.95rem;">
+            ← Return to Home
+        </a>
+    </div>
 </div>
+
+<style>
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .content-1024 > div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    /* Button hover effects */
+    .btn-primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #e9ecef;
+        transition: all 0.2s ease;
+    }
+</style>
 {%endblock%}

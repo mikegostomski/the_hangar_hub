@@ -10,6 +10,7 @@ from django.utils.functional import SimpleLazyObject
 import stripe
 from base_stripe.services.config_service import set_stripe_api_key
 from base.services import date_service, message_service
+from base.classes.util.date_helper import DateHelper
 
 log = Log()
 env = EnvHelper()
@@ -112,6 +113,7 @@ class StripeCustomer(models.Model):
 
             self.metadata = metadata
             self.save()
+            return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -330,24 +332,30 @@ class StripeInvoice(models.Model):
         return False
 
     def add_metadata(self, data_dict):
+        log.trace([self, data_dict])
         try:
             config_service.set_stripe_api_key()
             invoice = stripe.Invoice.retrieve(self.stripe_id)
             metadata = invoice.get("metadata")
             if not metadata:
                 metadata = {}
+            log.debug(f"Initial Metadata: {metadata}")
             # Add the given data
             metadata.update(data_dict)
+            log.debug(f"Updated Metadata: {metadata}")
             # Make sure the model ID is always included
-            metadata.update({"model_id": self.id})
+            # metadata.update({"model_id": self.id})
+            # log.debug(f"Final Metadata: {metadata}")
 
             stripe.Invoice.modify(
                 self.id,
                 metadata=metadata
             )
 
+            log.debug(f"Saving Metadata: {metadata}")
             self.metadata = metadata
             self.save()
+            return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -448,7 +456,7 @@ class StripeSubscription(models.Model):
         return {
             "incomplete": "Payment Attempt Failed",
             "incomplete_expired": "Expired - Payment Failed",
-            "trialing": "Not Yet Started",
+            "trialing": f"Starting {DateHelper(self.current_period_end).humanize()}",
             "active": "Active",
             "past_due": "Past Due",
             "canceled": "Canceled",
@@ -495,6 +503,7 @@ class StripeSubscription(models.Model):
                 self._populate_first_paid_date()
 
                 self.save()
+                return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -518,6 +527,7 @@ class StripeSubscription(models.Model):
 
             self.metadata = metadata
             self.save()
+            return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -652,6 +662,7 @@ class StripeCheckoutSession(models.Model):
                 self.customer = StripeCustomer.from_stripe_id(co.customer)
 
                 self.save()
+            return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 

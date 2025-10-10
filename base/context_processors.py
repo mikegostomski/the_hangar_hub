@@ -25,6 +25,9 @@ def util(request):
         'app_version': app_version,
         'absolute_root_url': env.absolute_root_url,
 
+        'support_email': env.get_setting("SUPPORT_EMAIL_ADDRESS"),
+        'support_phone': env.get_setting("SUPPORT_PHONE_NUMBER"),
+
         # The home URL (path) depends on the existence of URL Context
         'home_url': '/',
         'custom_plugins': env.installed_plugins,

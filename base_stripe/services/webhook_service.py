@@ -40,6 +40,8 @@ def stripe_model_refresh(webhook_event_instance):
             refreshed = _handle_product_event(webhook_event_instance)
         elif webhook_event_instance.object_type == 'price':
             refreshed = _handle_price_event(webhook_event_instance)
+        elif webhook_event_instance.object_type == 'account':
+            refreshed = _handle_account_event(webhook_event_instance)
 
     except Exception as ee:
         Error.record(ee, webhook_event_instance)
@@ -94,6 +96,10 @@ def _handle_product_event(event):
 
 def _handle_price_event(event):
     co = StripePrice.from_stripe_id(event.object_id)
+    return co.sync()
+
+def _handle_account_event(event):
+    co = StripeConnectedAccount.from_stripe_id(event.object_id)
     return co.sync()
 
 

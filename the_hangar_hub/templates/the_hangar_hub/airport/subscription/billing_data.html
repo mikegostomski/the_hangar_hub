@@ -6,20 +6,47 @@
 
 {% block main_content %}
 <div class="content-1024">
-    <h1>Billing Information: {{airport.identifier}}</h1>
-    <br />
+    <!-- Page Header -->
+    <div class="billing-header" style="margin-bottom: 2rem;">
+        <h1 style="margin-bottom: 0.5rem;">Billing Information: {{airport.identifier}}</h1>
+        We need to collect your airport's billing address and contact information.<br />
+    </div>
 
-    We need to collect your airport's billing address and contact information.<br />
-    <b>Note:</b> The email address you enter here will receive invoices, receipts, and any other billing-related notices.<br />
-    <br />
+    <!-- Information Card -->
+    <div style="background: #f8f9fa; border-left: 4px solid #0066cc; padding: 1rem 1.25rem; margin-bottom: 2rem; border-radius: 4px;">
+        <p style="margin: 0; line-height: 1.6;">
+            <strong>Important:</strong><br />
+            The email address you enter here will receive invoices, receipts, and any other billing-related notices. It will not be displayed to airport tenants.
+        </p>
+    </div>
 
-    <form method="post" action="{%url 'airport:subscribe' airport.identifier%}">
-        {%csrf_token%}
-        <input type="hidden" name="price_id" value="{{price_id}}" />
-        {%include "the_hangar_hub/airport/subscription/_billing_data_fields.html" with use_ajax=False%}
-        <button type="submit" class="btn btn-success">Continue</button>
-    </form>
+    <!-- Form Card -->
+    <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <form method="post" action="{%url 'airport:subscribe' airport.identifier%}">
+            {%csrf_token%}
+            <input type="hidden" name="price_id" value="{{price_id}}" />
 
+            <!-- Contact Information Section -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.1rem; color: #495057; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e9ecef;">
+                    Contact Information
+                </h3>
+                {%include "the_hangar_hub/airport/subscription/_billing_data_fields.html" with use_ajax=False%}
+            </div>
+
+            <!-- Submit Button -->
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e9ecef; text-align: right;">
+                <button type="submit" class="btn btn-success">
+                    Continue to Payment Setup
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Text -->
+    <div style="margin-top: 1.5rem; text-align: center; color: #6c757d; font-size: 0.875rem;">
+        <p style="margin: 0;">Need help? Contact support at <a href="mailto:{{support_email}}">{{support_email}}</a></p>
+    </div>
 </div>
 
 <script type="text/javascript">

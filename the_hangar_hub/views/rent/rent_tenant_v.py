@@ -72,13 +72,6 @@ def payment_dashboard(request):
     current_user = Auth.current_user()
     rental_agreements = tenant_s.get_rental_agreements(current_user)
     stripe_customer = StripeCustomer.get(current_user)
-
-    stripe_customer.sync()
-
-    # open_invoices = invoice_service.get_customer_invoices(stripe_customer.id, "open")
-    # recent_invoices = invoice_service.get_customer_invoices(stripe_customer.id, "paid", since_days=180)
-    # customer_model = Customer.get(stripe_customer.id)
-
     return render(
         request, "the_hangar_hub/airport/rent/tenant/payment/dashboard/dashboard.html",
         {

@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from base.classes.util.log import Log
 from base.services import utility_service, message_service, email_service, auth_service
 from base.classes.auth.session import Auth
@@ -124,6 +125,15 @@ class Invitation(models.Model):
         # Invitations can only be accepted by the invited user
         user_profile = Auth.current_user_profile()
         if self.email.lower() not in user_profile.emails:
+            message_service.post_error(f"""
+                <strong>bi-exclamation-triangle Unexpected Email Address</strong><br>
+                You attempted to accept an invitation for <b>{self.email}</b>, but are logged in as 
+                <b>{user_profile.email}<b>.<br>
+                <br>
+                You may add {self.email} via your 
+                <a href="{reverse('base:profile')}">profile</a>, 
+                or <a href="{reverse('account_logout')}">log out</a> and try again with your other email address. 
+            """)
             log.warning("Invitation can only be accepted by the invited person")
             return False
 

@@ -8,8 +8,12 @@
         {{subscription.status_display}}<br />
 
         {%icon bi-calendar4-week title="Current Period"%}
-        {{subscription.current_period_start|date:preferred_date_format}} -
-        {{subscription.current_period_end|date:preferred_date_format}}<br />
+        {%if subscription.status == "trialing"%}
+            {{subscription.current_period_end|date:preferred_date_format}}
+        {%else%}
+            {{subscription.current_period_start|date:preferred_date_format}} -
+            {{subscription.current_period_end|date:preferred_date_format}}
+        {%endif%}<br />
 
 
         {%icon bi-credit-card title="Recurring Charge"%}
@@ -37,14 +41,16 @@
             {{subscription.cancellation_reason}}<br />
         {%endif%}
     {%else%}
-        <div class="list-group">
-            <a href="{%url 'rent:subscription_checkout' airport.identifier rental_agreement.id%}" class="list-group-item">
+
+            <a href="{%url 'rent:subscription_checkout' airport.identifier rental_agreement.id%}" class="btn btn-primary" style="width: 100%;">
                 {%icon bi-credit-card%} Start Auto-Pay<br />
                 <em style="font-size:.9em;">Must have a credit card on-hand</em>
             </a>
-            <div class="list-group-item" style="cursor:pointer;" onclick="$(this).parent().find('.popup').removeClass('hidden');">
+
+            {%if is_airport_manager%}
+            <div class="btn btn-secondary" style="width: 100%;" onclick="$(this).parent().find('.popup').removeClass('hidden');">
                 {%icon bi-credit-card%} Configure Auto-Pay<br />
-                <em style="font-size:.9em;">Tenant must complete later</em>
+                <em style="font-size:.9em;">Tenant must complete within 24 hours</em>
                 <div class="popup hidden" style="max-width:400px;max-height:500px;cursor:default;">
                     <form method="post" action="{%url 'rent:subscription_email' airport.identifier rental_agreement.id%}">
                         {%csrf_token%}
@@ -57,18 +63,15 @@
                         </div>
                         <div class="input-group mb-1">
                             <label class="input-group-text" for="airport_email">From</label>
-                            <input type="email" value="{{airport.info_email}}" id="airport_email" name="airport_email" class="form-control" />
+                            <input type="email" value="{{airport.info_email|default:current_user.email}}" id="airport_email" name="airport_email" class="form-control" />
                         </div>
 
 
                         <br />
                         <br />
-                        The link will expire at the end of the day specified:<br />
+                        The link will expire in 24 hours<br />
 
-                        <div class="input-group mb-1">
-                            <label class="input-group-text" for="expiration_date">Expiration Date</label>
-                            <input type="date" id="expiration_date" name="expiration_date" class="form-control" />
-                        </div>
+
                         <br />
 
                         <div class="text-center">
@@ -77,7 +80,7 @@
                     </form>
                 </div>
             </div>
-        </div>
+            {%endif%}
 
 
     {%endif%}

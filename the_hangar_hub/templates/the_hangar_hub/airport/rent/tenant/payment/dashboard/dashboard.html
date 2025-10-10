@@ -7,9 +7,19 @@
 <h1>Payment Dashboard</h1>
 <br />
 
-<section>
-
-</section>
+{%if not rental_agreements%}
+    <section class="text-center">
+        {%icon bi-exclamation-triangle text-warning style="font-size:4em;"%}<br />
+        <br />
+        <strong>You Have No Rental Agreements</strong>
+    </section>
+    <section class="text-center">
+        You are currently logged in as <b>{{current_user.email}}</b>.<br />
+        If the airport set up your rental agreements with a different email, you'll have to add that email in your
+        <a href="{%url 'base:profile'%}">profile</a>,
+        or have the airport update your rental agreement.
+    </section>
+{%endif%}
 
 
 {%for rental_agreement in rental_agreements%}
@@ -17,8 +27,9 @@
     {%include "the_hangar_hub/airport/rent/summaries/_cards.html"%}
 
     <section>
-    {%if rental_agreement.relevant_invoice_models%}
         <h2>Invoices</h2>
+        {%if rental_agreement.relevant_invoice_models%}
+
         <table class="table" id="invoice_table">
             <tr>
                 <th scope="col">Created</th>
@@ -34,7 +45,14 @@
             {%endfor%}
         </table>
 
-    {%endif%}
+        {%else%}
+        <div class="content-800">
+            <div class="alert alert-info">
+                <strong>No Invoices to Display</strong><br />
+                There are currently no invoices associated with your rental agreement.
+            </div>
+        </div>
+        {%endif%}
     </section>
 
 {%endfor%}

@@ -33,10 +33,16 @@
 {%endif%}
 </section>
 
-<section>
-    <h2>Create an Invoice</h2>
-    {%include "the_hangar_hub/airport/rent/management/invoices/_form_create_invoice.html"%}
-</section>
+ <section>
+    <button type="button" class="btn btn-secondary" onclick="$(this).addClass('hidden');$('#manual-invoice-form').removeClass('hidden');">
+        Create a Manual Invoice
+    </button>
+    <div class="hidden" id="manual-invoice-form">
+        <h2>Create an Invoice</h2>
+        {%include "the_hangar_hub/airport/rent/management/invoices/_form_create_invoice.html"%}
+    </div>
+ </section>
+
 
 <script type="text/javascript">
     {%include "the_hangar_hub/airport/rent/management/invoices/invoice.js"%}
