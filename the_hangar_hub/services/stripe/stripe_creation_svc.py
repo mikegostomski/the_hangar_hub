@@ -13,6 +13,7 @@ from django.urls import reverse
 import stripe
 from decimal import Decimal
 from the_hangar_hub.services.stripe import stripe_lookup_svc
+from the_hangar_hub.classes.checkout_session_helper import StripeCheckoutSessionHelper
 
 log = Log()
 env = EnvHelper()
@@ -162,9 +163,12 @@ def get_checkout_session_application_fee(application):
     """
     try:
         airport = application.airport
+
         set_stripe_api_key()
+        stripe_customer = StripeCustomer.get_or_create(user=application.user)
+        log.debug(f"Stripe Customer: {stripe_customer.stripe_id}")
         checkout_session = stripe.checkout.Session.create(
-            customer_email=application.email,
+            customer=stripe_customer.stripe_id,
             mode="payment",
             line_items=[
                 {
@@ -186,7 +190,7 @@ def get_checkout_session_application_fee(application):
             success_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
             cancel_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
             stripe_account= airport.stripe_account.stripe_id,
-            # application_fee_amount=airport.application_fee_stripe * .01,  # 1% fee for HangarHub
+            # application_fee_amount=airport.application_fee_stripe * airport.stripe_tx_fee,
         )
         co_session_id = checkout_session.id
         co_model = StripeCheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)

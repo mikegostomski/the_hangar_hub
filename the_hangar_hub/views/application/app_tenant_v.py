@@ -95,55 +95,58 @@ def save(request, application_id):
 @require_authentication()
 @require_airport()
 def submit(request, application_id):
-    airport = request.airport
-    application = _get_user_application(request, application_id)
-    if not application:
-        return redirect("application:resume", application.id)
-
-    if not _save_application_fields(request, application):
-        return redirect("application:resume", application.id)
-
-    # Validate fields...
-    issues = []
     try:
-        airport_preferences = application.airport.application_preferences()
-        for ff in airport_preferences.fields():
-            attr = ff.name
-            val = getattr(application, attr)
-            if attr in airport_preferences.required_fields and not val:
-                issues.append(f"{ff.verbose_name} is a required field.")
+        airport = request.airport
+        application = _get_user_application(request, application_id)
+        if not application:
+            return redirect("application:resume", application.id)
 
-        if not issues:
-            if airport.application_fee_amount:
-                application.change_status("P")
-            else:
-                application.change_status("S")
-            application.save()
-    except Exception as ee:
-        issues.append("There was an error submitting your application.")
+        if not _save_application_fields(request, application):
+            return redirect("application:resume", application.id)
 
-    if issues:
-        msg = ["There were issues submitting your application:<ul>"]
-        for ii in issues:
-            msg.append(f"<li>{ii}</li>")
-        msg.append("</ul>")
-        message_service.post_error("".join(msg))
+        # Validate fields...
+        issues = []
+        try:
+            airport_preferences = application.airport.application_preferences()
+            for ff in airport_preferences.fields():
+                attr = ff.name
+                val = getattr(application, attr)
+                if attr in airport_preferences.required_fields and not val:
+                    issues.append(f"{ff.verbose_name} is a required field.")
 
-        return redirect("application:resume", application.id)
+            if not issues:
+                if airport.application_fee_amount:
+                    application.change_status("P")
+                else:
+                    application.change_status("S")
+                application.save()
+        except Exception as ee:
+            issues.append("There was an error submitting your application.")
 
-    else:
-        if application.status_code == "P":
-            co = stripe_creation_svc.get_checkout_session_application_fee(application)
-            session_id = co.id
-            env.set_session_variable(f"cs_applicationFee_{application_id}", session_id)
-            log.info(f"Checkout Session ID: {session_id}")
+        if issues:
+            msg = ["There were issues submitting your application:<ul>"]
+            for ii in issues:
+                msg.append(f"<li>{ii}</li>")
+            msg.append("</ul>")
+            message_service.post_error("".join(msg))
 
-            # Must pay application fee
-            return redirect(co.url, code=303)
+            return redirect("application:resume", application.id)
 
         else:
-            return redirect("application:dashboard")
+            if application.status_code == "P":
+                co = stripe_creation_svc.get_checkout_session_application_fee(application)
+                session_id = co.id
+                env.set_session_variable(f"cs_applicationFee_{application_id}", session_id)
+                log.info(f"Checkout Session ID: {session_id}")
 
+                # Must pay application fee
+                return redirect(co.url, code=303)
+
+            else:
+                return redirect("application:dashboard")
+    except Exception as ee:
+        Error.record(ee, application_id)
+        return redirect("application:resume", application_id)
 
 @report_errors()
 @require_authentication()
