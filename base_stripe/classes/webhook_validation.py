@@ -71,6 +71,7 @@ class WebhookValidation:
 
         # Get the event and verify it
         try:
+            alt_object = alt_object_id = None
             response.event_type = payload_json.get('type', 'unknown')
             response.event_id = payload_json.get('id', 'unknown')
             log.info(f"Event: <{response.event_type}: {response.event_id}>")
@@ -82,10 +83,14 @@ class WebhookValidation:
             log.info(f"Successfully validated Stripe webhook event")
 
             if not response.object_id:
-                log.info(f"No object ID in webhook response:\n{payload_text}")
-                return response
+                if "balance" in response.event_type and hasattr(response, "account"):
+                    alt_object = "account"
+                    alt_object_id = response.account
+                else:
+                    log.info(f"No object ID in webhook response:\n{payload_text}")
+                    return response
 
-            log.info(f"Webhook Object: <{response.object_type}: {response.object_id}>")
+            log.info(f"Webhook Object: <{response.object_type or alt_object}: {response.object_id or alt_object_id}>")
 
             response.valid_request = True
             response.status_code = 200
@@ -100,8 +105,8 @@ class WebhookValidation:
                     whe = StripeWebhookEvent.objects.create(
                         event_type=response.event_type,
                         event_id=response.event_id,
-                        object_type=response.object_type,
-                        object_id=response.object_id,
+                        object_type=response.object_type or alt_object,
+                        object_id=response.object_id or alt_object_id,
                     )
                     log.info(f"Webhook Event Logged: {whe}")
                     response.webhook_event_id = whe.id
