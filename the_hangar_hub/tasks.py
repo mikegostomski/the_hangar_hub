@@ -129,19 +129,33 @@ def handle_invoice_event(event):
 
             if rental_agreement_id:
                 rental_agreement = RentalAgreement.get(rental_agreement_id)
-                invoice.related_type = "RentalAgreement"
-                invoice.related_id = rental_agreement.id
-                invoice.save()
-                # invoice.add_metadata({
-                #     "rental_agreement": rental_agreement.id,
-                #     # "airport": rental_agreement.airport.identifier,
-                #     # "type": "Hangar Rent"
-                # })
+                if invoice.related_id != rental_agreement_id:
+                    invoice.related_type = "RentalAgreement"
+                    invoice.related_id = rental_agreement.id
+                    invoice.save()
+
+                # Make sure a Rental Invoice exists
+                existing = RentalInvoice.get(invoice.stripe_id)
+                if not existing:
+                    log.info(f"Linking StripeInvoice to new RentalInvoice")
+                    # Period start and end are required to track invoice in HangarHub model
+                    if invoice.period_start and invoice.period_end:
+                        # Create a RentalInvoice
+                        ri = RentalInvoice.objects.create(
+                            agreement=rental_agreement,
+                            stripe_invoice=invoice,
+                            stripe_subscription=invoice.subscription,
+                            period_start_date=invoice.period_start,
+                            period_end_date=invoice.period_end,
+                            amount_charged=invoice.amount_charged,
+                            status_code="I",  # sync() will map to the correct status code
+                        )
+                        ri.sync()
                 # ToDo: Make sure invoice exists for rental_agreement
 
             else:
                 # ToDo: Maybe a HangarHub subscription?
-                pass
+                return False
 
 
             if event.event_type == "invoice.created":
