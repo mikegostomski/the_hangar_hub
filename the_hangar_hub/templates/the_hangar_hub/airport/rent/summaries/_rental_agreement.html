@@ -2,6 +2,10 @@
 
 {## Parameter: rental_agreement ##}
 
+{%if is_development or is_developer%}
+    {%icon bi-code title="ID"%} {{rental_agreement.id}}<br />
+{%endif%}
+
 {%icon bi-person title="Tenant"%} {{rental_agreement.tenant.display_name}}<br />
 {%icon bi-shop-window title="Hangar"%} {{rental_agreement.hangar.code}}<br />
 {%icon bi-cash-coin title="Rent"%} {%format_currency rental_agreement.rent%}<br />

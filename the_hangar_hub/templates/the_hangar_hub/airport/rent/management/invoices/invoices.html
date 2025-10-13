@@ -16,6 +16,9 @@
     <h2>Invoices</h2>
     <table class="table" id="invoice_table">
         <tr>
+            {%if is_development or is_developer%}
+                <th scope="col">ID</th>
+            {%endif%}
             <th scope="col">Created</th>
             <th scope="col">Period</th>
             <th scope="col">Collection Method</th>

@@ -19,6 +19,9 @@
                 </a>
             </div>
         {%else%}
+            {%if is_development or is_developer%}
+                {%icon bi-code title="ID"%} {{customer.id}}: {{customer.stripe_id}}<br />
+            {%endif%}
 
             {%if customer.delinquent%}
                 {%icon bi-heart-pulse text-danger%}

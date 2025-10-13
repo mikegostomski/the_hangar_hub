@@ -4,6 +4,10 @@
 
 {%with subscription=rental_agreement.stripe_subscription%}
     {%if subscription%}
+        {%if is_development or is_developer%}
+            {%icon bi-code title="ID"%} {{subscription.id}}: {{subscription.stripe_id}}<br />
+        {%endif%}
+
         {%icon bi-heart-pulse title="Subscription Status"%}
         {{subscription.status_display}}<br />
 

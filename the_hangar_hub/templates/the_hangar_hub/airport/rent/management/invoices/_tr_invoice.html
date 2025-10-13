@@ -3,6 +3,15 @@
 {## Parameter: invoice ##}
 
 <tr data-invoice_id="{{invoice.id}}">
+    {%if is_development or is_developer%}
+        <td style="font-size:.8em;">
+            Rental Invoice: <span class="">{{invoice.id}}</span> <br />
+            {%if invoice.stripe_invoice%}
+                Stripe Invoice: <span class="">{{invoice.stripe_invoice.id}}</span><br />
+                Stripe ID: <span class="code">{{invoice.stripe_invoice.stripe_id}}</span><br />
+            {%endif%}
+        </td>
+    {%endif%}
     <td>{%humanized_date invoice.date_created%}</td>
     <td>
         {{invoice.period_start_date|date:preferred_date_format}} - {{invoice.period_end_date|date:preferred_date_format}}
