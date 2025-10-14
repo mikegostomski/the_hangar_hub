@@ -156,7 +156,8 @@ def record_payment(request, application_id):
     application = _get_user_application(request, application_id)
 
     if checkout_service.verify_checkout(
-            session_var=f"cs_applicationFee_{application_id}", account_id=airport.stripe_account.stripe_id
+            session_var=f"cs_applicationFee_{application_id}",
+            # account_id=airport.stripe_account.stripe_id
     ):
         message_service.post_success("Application fee has been paid")
         if not application:

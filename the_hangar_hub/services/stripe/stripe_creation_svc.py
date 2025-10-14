@@ -189,8 +189,13 @@ def get_checkout_session_application_fee(application):
             },
             success_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
             cancel_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
-            stripe_account= airport.stripe_account.stripe_id,
+            # stripe_account= airport.stripe_account.stripe_id,
             # application_fee_amount=airport.application_fee_stripe * airport.stripe_tx_fee,
+            payment_intent_data={
+                "on_behalf_of": airport.stripe_account.stripe_id,
+                "transfer_data": {"destination": airport.stripe_account.stripe_id},
+                "application_fee_amount": int(airport.application_fee_stripe * airport.stripe_tx_fee),
+            },
         )
         co_session_id = checkout_session.id
         co_model = StripeCheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
@@ -335,28 +340,6 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
         if backdate_start_date:
             metadata["backdate_start_date"] = str(backdate_start_date)
             metadata["backdate_days"] = str(backdate_days)
-
-        log.debug(f"""
-        checkout_session = stripe.checkout.Session.create(
-            customer={customer.stripe_id},
-            line_items=[<
-                "price_data": <
-                    "unit_amount": {amount_due},
-                    "product": "prod_TEfRvyTmqjKlwG",  # TODO: Make a setting? Variable?
-                    "currency": currency,
-                    "recurring": <
-                        "interval": "month",
-                    >
-                >,
-                "quantity": 1,
-            >],
-            mode='subscription',
-            subscription_data={subscription_data},
-            metadata={metadata},
-            success_url=f"{env.absolute_root_url}{return_url}",
-            cancel_url=f"{env.absolute_root_url}{return_url}",
-        )
-        """)
 
         checkout_session = stripe.checkout.Session.create(
             customer=customer.stripe_id,
