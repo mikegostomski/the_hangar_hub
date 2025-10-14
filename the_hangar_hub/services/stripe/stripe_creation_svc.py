@@ -1,7 +1,7 @@
 """
 Any objects created in Stripe directly by HangarHub code should live here
 """
-
+from base.classes.util.date_helper import DateHelper
 from base.models.utility.error import EnvHelper, Log, Error
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.models.payment_models import StripeCheckoutSession, StripeSubscription, StripeCustomer, StripeInvoice
@@ -205,7 +205,7 @@ def get_checkout_session_application_fee(application):
         return None
 
 
-def get_subscription_checkout_session(rental_agreement, collection_start_date, expiration_date=None):
+def get_subscription_checkout_session(rental_agreement, collection_start_date):
     try:
         # Gather data
         tenant = rental_agreement.tenant
@@ -224,45 +224,71 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
             metadata__RentalAgreement=rental_agreement.id,
         )
         if existing:
+            # ToDo: If price increases, is that a new subscription, or is this one altered?
             message_service.post_error("Tenant already has an active subscription.")
             return False
     except Exception as ee:
         Error.unexpected("There was an error gathering subscription data from the rental agreement", ee)
         return False
 
-    # Process subscription start date
-    trial_days = None
     try:
         now = datetime.now(timezone.utc)
-        nowish = now + timedelta(minutes=2) # Anchor dates must be in the future. 2 minutes is enough.
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        nowish = now + timedelta(minutes=2)  # Anchor dates must be in the future
+
+        # By default, start with the rental agreement start date
         if not collection_start_date:
             collection_start_date = rental_agreement.start_date
-
-        # If collection started in the past
-        if collection_start_date < today:
-            backdate_start_date = int(collection_start_date.timestamp())
-            billing_cycle_anchor = _next_anchor_date(now, collection_start_date.day)
-            billing_cycle_anchor_config = None
-
-        # If collection started today, but before now
-        elif collection_start_date < nowish:
-            # Set anchor to two minutes in the future
-            anchor_time = nowish
-            backdate_start_date = None
-            billing_cycle_anchor = int(anchor_time.timestamp())
-            billing_cycle_anchor_config = None
         else:
-            backdate_start_date = None
-            billing_cycle_anchor = int(collection_start_date.timestamp())
-            billing_cycle_anchor_config = None
+            # Make sure specified date is UTC
+            collection_start_date = collection_start_date.astimezone(timezone.utc)
 
-            # If collection does not start until future date, use trial period to prevent billing until then
-            now = datetime.now(timezone.utc)
-            if collection_start_date > now:
-                trial_days = (collection_start_date - today).days
-                if trial_days == 0:
-                    trial_days = None  # Stripe will not allow 0
+        # Is the start date on the current day (local time)
+        local_today = now.astimezone(airport.tz).replace(hour=0, minute=0, second=0, microsecond=0)
+        local_start = collection_start_date.astimezone(airport.tz).replace(hour=0, minute=0, second=0, microsecond=0)
+        is_today = local_start == local_today
+
+        trial_days = None
+        backdate_start_date = billing_cycle_anchor = backdate_days = None
+        if is_today:
+            # Collection starts today: if it's already past, use nowish; otherwise use the date
+            if now >= collection_start_date:
+                billing_cycle_anchor = int(now.timestamp())
+            else:
+                billing_cycle_anchor = int(collection_start_date.timestamp())
+
+        elif collection_start_date < now:
+            # Checkout sessions cannot be backdated
+            # Subscriptions can be created in the past, but only if the tenant already had a saved payment method
+            # There is no way to start a subscription in the past unless the tenant already set up their payment method
+
+            # Save the desired start date in the metadata.
+            # A manual invoice could be created to pay the past-due amount after the tenant has a payment method.
+
+            # Start the subscription now (in two minutes, actually)
+            billing_cycle_anchor = int(now.timestamp())
+
+            # Calculate the anchor for the past date and pass it via metadata
+            # Store the backdated start in metadata for webhook processing
+            backdate_start_date = int(collection_start_date.timestamp())
+            backdate_days = (nowish - collection_start_date).days
+
+        else:
+            # Collection starts in the future: use trial period to delay billing
+            billing_cycle_anchor = int(collection_start_date.timestamp())
+            trial_days = (nowish - collection_start_date).days
+            if trial_days == 0:
+                trial_days = None  # Stripe won't allow 0 days
+
+        cd_s = DateHelper(collection_start_date)
+        cd_n = DateHelper(now)
+        cd_f = DateHelper(nowish)
+        log.debug(f"""
+        Start Collecting: {cd_s.banner_date_time()}
+        Now: {cd_n.banner_date_time()}
+        Near Future: {cd_f.banner_date_time()}
+        Trial Days: {trial_days}
+        """)
+
     except Exception as ee:
         Error.unexpected("Unable to process subscription start date", ee, collection_start_date)
         return False
@@ -273,19 +299,71 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
         application_fee_percent = utility_service.convert_to_decimal(airport.stripe_tx_fee * 100)
         return_url = reverse('rent:rental_agreement_router', args=[airport.identifier, rental_agreement.id])
 
-        # Expiration date may be specified by airport in local time
-        if expiration_date:
-            expiration_date = expiration_date.astimezone(timezone.utc)
-            expires_at = int(expiration_date.timestamp())
-            log.warning("Expiration date not used. Will expire in 24 hours.")
-
         set_stripe_api_key()
+
+        # Build subscription data
+        subscription_data = {
+            "billing_cycle_anchor": billing_cycle_anchor,
+            "trial_period_days": trial_days,
+            "metadata": {
+                "airport": airport.identifier,
+                "rental_agreement": rental_agreement.id,
+                "hangar": rental_agreement.hangar.code,
+                "backdate_start_date": str(backdate_start_date),
+                "backdate_days": str(backdate_days),
+            },
+            "invoice_settings": {
+                "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
+            },
+            "on_behalf_of": airport.stripe_account.stripe_id,
+            "transfer_data": {"destination": airport.stripe_account.stripe_id},
+            "application_fee_percent": application_fee_percent,
+        }
+
+        # Add trial days if applicable
+        if trial_days is not None:
+            subscription_data["trial_period_days"] = trial_days
+
+        # Add billing cycle anchor if set
+        if billing_cycle_anchor is not None:
+            subscription_data["billing_cycle_anchor"] = billing_cycle_anchor
+
+        # Metadata for CheckoutSession
+        metadata = {
+            "rental_agreement": rental_agreement.id,
+        }
+        if backdate_start_date:
+            metadata["backdate_start_date"] = str(backdate_start_date)
+            metadata["backdate_days"] = str(backdate_days)
+
+        log.debug(f"""
+        checkout_session = stripe.checkout.Session.create(
+            customer={customer.stripe_id},
+            line_items=[<
+                "price_data": <
+                    "unit_amount": {amount_due},
+                    "product": "prod_TEfRvyTmqjKlwG",  # TODO: Make a setting? Variable?
+                    "currency": currency,
+                    "recurring": <
+                        "interval": "month",
+                    >
+                >,
+                "quantity": 1,
+            >],
+            mode='subscription',
+            subscription_data={subscription_data},
+            metadata={metadata},
+            success_url=f"{env.absolute_root_url}{return_url}",
+            cancel_url=f"{env.absolute_root_url}{return_url}",
+        )
+        """)
+
         checkout_session = stripe.checkout.Session.create(
             customer=customer.stripe_id,
             line_items=[{
                 "price_data": {
                     "unit_amount": amount_due,
-                    "product": "prod_SlruA5rXT1JeD2", # ToDo: Make a setting? Variable?
+                    "product": "prod_TEfRvyTmqjKlwG",  # TODO: Make a setting? Variable?
                     "currency": currency,
                     "recurring": {
                         "interval": "month",
@@ -294,32 +372,12 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
                 "quantity": 1,
             }],
             mode='subscription',
-            subscription_data={
-                "trial_period_days": trial_days,
-                "metadata": {
-                    "airport": airport.identifier,
-                    "rental_agreement": rental_agreement.id,
-                    "hangar": rental_agreement.hangar.code,
-                },
-                "invoice_settings": {
-                    "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
-                    # "metadata": {
-                    #     "airport": airport.identifier,
-                    #     "rental_agreement": rental_agreement.id,
-                    #     "hangar": rental_agreement.hangar.code,
-                    # }
-                },
-                "on_behalf_of": airport.stripe_account.stripe_id,
-                "transfer_data": {"destination": airport.stripe_account.stripe_id},
-                "application_fee_percent": application_fee_percent,
-            },
-            metadata={
-                "rental_agreement": rental_agreement.id
-            },
-            # expires_at=expires_at,
+            subscription_data=subscription_data,
+            metadata=metadata,
             success_url=f"{env.absolute_root_url}{return_url}",
             cancel_url=f"{env.absolute_root_url}{return_url}",
         )
+
         co_session_id = checkout_session.id
         log.debug(f"CHECKOUT SESSION ID: {co_session_id}")
 
@@ -330,6 +388,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date, e
         co_model.save()
 
         return co_model
+
     except Exception as ee:
         Error.unexpected("Unable to create rental subscription", ee, rental_agreement)
         return False
@@ -428,6 +487,6 @@ def _next_anchor_date(from_date, anchor_day_number):
         if from_date.month == 12:
             return int(from_date.replace(month=1, day=anchor_day_number, year=from_date.year + 1).timestamp())
         else:
-            return int(from_date.replace(month=from_date.month + 1, day=anchor_day_number).timestamp())
+            return from_date.replace(month=from_date.month + 1, day=anchor_day_number)
     else:
         return int(from_date.timestamp())
