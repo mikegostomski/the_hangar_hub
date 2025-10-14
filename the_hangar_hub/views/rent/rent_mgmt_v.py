@@ -298,7 +298,10 @@ def add_tenant(request, airport_identifier, hangar_id):
     # If user or contact exists, look for existing tenant record
     if user or contact:
         try:
-            tenant = Tenant.objects.get(Q(user=user) | Q(contact=contact))
+            if user:
+                tenant = Tenant.objects.get(Q(user=user) | Q(contact=contact))
+            else:
+                tenant = Tenant.objects.get(contact=contact)
         except Tenant.DoesNotExist:
             pass
 

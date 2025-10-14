@@ -14,6 +14,7 @@ import stripe
 from decimal import Decimal
 from the_hangar_hub.services.stripe import stripe_lookup_svc
 from the_hangar_hub.classes.checkout_session_helper import StripeCheckoutSessionHelper
+import random
 
 log = Log()
 env = EnvHelper()
@@ -238,7 +239,6 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
 
     try:
         now = datetime.now(timezone.utc)
-        nowish = now + timedelta(minutes=2)  # Anchor dates must be in the future
 
         # By default, start with the rental agreement start date
         if not collection_start_date:
@@ -253,13 +253,9 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
         is_today = local_start == local_today
 
         trial_days = None
-        backdate_start_date = billing_cycle_anchor = backdate_days = None
+        backdate_start_date = billing_cycle_anchor = backdate_days = proration_behavior = None
         if is_today:
-            # Collection starts today: if it's already past, use nowish; otherwise use the date
-            if now >= collection_start_date:
-                billing_cycle_anchor = int(now.timestamp())
-            else:
-                billing_cycle_anchor = int(collection_start_date.timestamp())
+            billing_cycle_anchor = None
 
         elif collection_start_date < now:
             # Checkout sessions cannot be backdated
@@ -269,28 +265,40 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             # Save the desired start date in the metadata.
             # A manual invoice could be created to pay the past-due amount after the tenant has a payment method.
 
-            # Start the subscription now (in two minutes, actually)
-            billing_cycle_anchor = int(now.timestamp())
+            # Start the subscription now
+            billing_cycle_anchor = None
 
             # Calculate the anchor for the past date and pass it via metadata
             # Store the backdated start in metadata for webhook processing
             backdate_start_date = int(collection_start_date.timestamp())
-            backdate_days = (nowish - collection_start_date).days
+            backdate_days = (now - collection_start_date).days
 
         else:
+            # collection_start_date is after today (local time).
+            # select a reasonable time on that day to start billing.
+            # Infuse some randomness in the time selection to avoid everyone's billing happening at the same time
+            local_start_time = collection_start_date.astimezone(airport.tz)
+            start_hour = random.choice(range(8, 12))   # 8am - noon
+            start_minute = random.choice(range(0, 59)) # any minute
+            local_start_time = local_start_time.replace(hour=start_hour, minute=start_minute)
+            billing_cycle_anchor = int(local_start_time.timestamp())
+            proration_behavior = "none"
+
             # Collection starts in the future: use trial period to delay billing
-            billing_cycle_anchor = int(collection_start_date.timestamp())
-            trial_days = (nowish - collection_start_date).days
-            if trial_days == 0:
-                trial_days = None  # Stripe won't allow 0 days
+            # billing_cycle_anchor = None
+            # trial_days = (collection_start_date - now).days
+            # # If billing starts tomorrow, it may be just a few hours and result in 0 days
+            # if trial_days < 1:
+            #     trial_days = 1
+            #
+            # if trial_days == 0:
+            #     trial_days = None  # Stripe won't allow 0 days
 
         cd_s = DateHelper(collection_start_date)
         cd_n = DateHelper(now)
-        cd_f = DateHelper(nowish)
         log.debug(f"""
         Start Collecting: {cd_s.banner_date_time()}
         Now: {cd_n.banner_date_time()}
-        Near Future: {cd_f.banner_date_time()}
         Trial Days: {trial_days}
         """)
 
@@ -308,8 +316,6 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
 
         # Build subscription data
         subscription_data = {
-            "billing_cycle_anchor": billing_cycle_anchor,
-            "trial_period_days": trial_days,
             "metadata": {
                 "airport": airport.identifier,
                 "rental_agreement": rental_agreement.id,
@@ -332,6 +338,10 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
         # Add billing cycle anchor if set
         if billing_cycle_anchor is not None:
             subscription_data["billing_cycle_anchor"] = billing_cycle_anchor
+
+        # Add proration_behavior if set
+        if proration_behavior is not None:
+            subscription_data["proration_behavior"] = proration_behavior
 
         # Metadata for CheckoutSession
         metadata = {
