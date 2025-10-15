@@ -176,11 +176,7 @@
                     </div>
 
                     <div class="float-right">
-                        {%with logo=airport.get_logo%}
-                        {%if logo%}
-                            {%display_image file=logo class="img-fluid" style="max-width:100px;max-height:100px;" %}
-                        {%endif%}
-                        {%endwith%}
+                        {%include "the_hangar_hub/airport/_logo.html" with class="img-fluid" style="max-width:100px;max-height:100px;"%}
                     </div>
                     <br style="clear:both;" />
                 </td>

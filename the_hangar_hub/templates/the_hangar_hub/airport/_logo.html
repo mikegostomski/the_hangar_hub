@@ -1,0 +1,18 @@
+{% load base_taglib %}
+{% load upload_taglib %}
+
+{%if airport%}
+    {%with logo=airport.get_logo%}
+        {%if logo%}
+            {%with class=class|default:"img-fluid"%}
+            {%with alt=style|default:""%}
+            {%with id=id|default:""%}
+            {%with alt=alt|default:"Airport Logo"%}
+                {%display_image file=logo id=id class=class style=style alt=alt %}
+            {%endwith%}
+            {%endwith%}
+            {%endwith%}
+            {%endwith%}
+        {%endif%}
+    {%endwith%}
+{%endif%}

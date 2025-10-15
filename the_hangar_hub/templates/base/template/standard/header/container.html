@@ -1,0 +1,23 @@
+{% load base_taglib %}
+<div class="header-action">
+    {%if airport%}
+        <a href="{%url 'airport:welcome' airport.identifier%}">
+        {%include "the_hangar_hub/airport/_logo.html" with class="img-fluid" style="max-height:55px;"%}
+        </a>
+    {%endif%}
+
+    {%include "base/template/standard/navbar/hamburger.html"%}
+</div>
+<div class="header-icons">
+    <div style="float: right;">
+        <div style="padding-top: 0.375rem;">
+            {%include 'base/template/standard/header/_icons.html' %}
+        </div>
+
+        {%include 'base/template/standard/header/developer/_menu.html' %}
+        {%include 'base/template/standard/header/settings/_menu.html' %}
+    </div>
+</div>
+<div class="header-auth" style="padding-top: 0.375rem;">
+    {%include "base/template/standard/header/auth/container.html"%}
+</div>
