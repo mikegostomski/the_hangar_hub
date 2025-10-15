@@ -65,7 +65,9 @@
         </tr>
         {%for rental in rentals%}
             <tr>
-                <td>{{rental.tenant}}</td>
+                <td>
+                    <a href="{%url 'rent:rental_invoices' airport.identifier rental.id%}">{{rental.tenant.display_name}}</a>
+                </td>
                 <td>{{rental.start_date|date:preferred_date_format}}</td>
                 <td>{{rental.end_date|date:preferred_date_format}}</td>
                 <td>{{rental.rent}}</td>
@@ -81,6 +83,8 @@
 </div>
 
 {%include "the_hangar_hub/airport/application/management/_selected_application.html"%}
-
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/infrastructure/scripts.js"%}
+</script>
 
 {%endblock%}

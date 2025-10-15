@@ -12,7 +12,8 @@ from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
 from base.services import message_service, date_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service, invoice_s
+from the_hangar_hub.services import airport_service
+from the_hangar_hub.services.rental import invoice_svc
 from base.classes.breadcrumb import Breadcrumb
 import re
 from datetime import datetime, timezone
@@ -26,6 +27,7 @@ from base_stripe.models.payment_models import StripeCustomer
 from base.services import utility_service
 from base_stripe.services import invoice_service as stripe_invoice_service
 from the_hangar_hub.services import stripe_rental_s
+from the_hangar_hub.services.rental import agreement_svc
 
 log = Log()
 env = EnvHelper()
@@ -96,7 +98,7 @@ def create_rental_invoice(request, airport_identifier, rental_agreement_id):
     collection = request.POST.get("collection") or "airport"
     invoice_number = request.POST.get("invoice_number")
 
-    invoice = invoice_s.create_rental_invoice(
+    invoice = invoice_svc.create_rental_invoice(
         rental_agreement, period_start, period_end, amount_charged, collection, invoice_number
     )
 
@@ -144,13 +146,13 @@ def update_rental_invoice(request, airport_identifier, rental_agreement_id):
             return HttpResponseForbidden()
 
     elif action == "cancel":
-        if invoice_s.cancel_invoice(invoice):
+        if invoice_svc.cancel_invoice(invoice):
             return render(request, tr_html,{"invoice": invoice})
         else:
             return HttpResponseForbidden()
 
     elif action == "waive":
-        if invoice_s.waive_invoice(invoice):
+        if invoice_svc.waive_invoice(invoice):
             return render(request, tr_html, {"invoice": invoice})
         else:
             return HttpResponseForbidden()
@@ -163,19 +165,19 @@ def update_rental_invoice(request, airport_identifier, rental_agreement_id):
 
         # If waiving with no partial payment
         if waive_remainder and not amount_paid:
-            if invoice_s.waive_invoice(invoice):
+            if invoice_svc.waive_invoice(invoice):
                 return render(request, tr_html, {"invoice": invoice})
             else:
                 return HttpResponseForbidden()
 
         else:
             # Mark full or partial payment
-            if not invoice_s.pay_invoice(invoice, amount_paid, payment_method_code):
+            if not invoice_svc.pay_invoice(invoice, amount_paid, payment_method_code):
                 return HttpResponseForbidden()
 
             # Waive remainder if requested to do so on an Open invoice
             if waive_remainder and invoice.status_code == "O":
-                if not invoice_s.waive_invoice(invoice):
+                if not invoice_svc.waive_invoice(invoice):
                     return HttpResponseForbidden()
 
             return render(request, tr_html,{"invoice": invoice})
@@ -183,7 +185,7 @@ def update_rental_invoice(request, airport_identifier, rental_agreement_id):
 
     elif action == "stripe":
         send_invoice = request.POST.get("send_invoice") == "Y"
-        if invoice_s.convert_to_stripe(invoice, send_invoice=send_invoice):
+        if invoice_svc.convert_to_stripe(invoice, send_invoice=send_invoice):
             return render(request, tr_html, {"invoice": invoice})
         else:
             return HttpResponseForbidden()
@@ -382,3 +384,16 @@ def add_tenant(request, airport_identifier, hangar_id):
     else:
         return redirect("rent:rental_invoices",airport_identifier, rental.id)
 
+
+@report_errors()
+@require_airport_manager()
+def terminate_rental_agreement(request, airport_identifier):
+    airport = request.airport
+    rental_agreement_id = request.POST.get("rental_agreement_id")
+    rental_agreement = RentalAgreement.get(rental_agreement_id) if rental_agreement_id else None
+    if not rental_agreement:
+        message_service.post_error("Unable to locate rental agreement.")
+        return redirect("infrastructure:buildings", airport_identifier)
+
+    agreement_svc.terminate_rental_agreement(rental_agreement)
+    return redirect("infrastructure:hangar", airport_identifier, rental_agreement.hangar.code)

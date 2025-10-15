@@ -1,12 +1,9 @@
-from base.classes.auth.session import Auth
-from base.services import message_service
-from the_hangar_hub.services import stripe_rental_s, invoice_s
+from the_hangar_hub.services.rental import invoice_svc
 from base.models.utility.error import Error, Log, EnvHelper
 from base.classes.util.date_helper import DateHelper
 from datetime import datetime, timezone, timedelta
 from base_stripe.models.payment_models import StripeCheckoutSession
 from the_hangar_hub.services.stripe import stripe_creation_svc
-from the_hangar_hub.models.airport import Airport
 
 log = Log()
 env = EnvHelper()
@@ -93,10 +90,10 @@ class StripeCheckoutSessionHelper:
                 # ToDo: What if there is a completed co session?
 
                 # Cancel any open invoices
-                invoice_s.cancel_open_invoices(rental_agreement)
+                invoice_svc.cancel_open_invoices(rental_agreement)
 
                 # Start subscription after any paid periods (or on agreement start date)
-                collection_start_date = invoice_s.get_next_collection_start_date(rental_agreement)
+                collection_start_date = invoice_svc.get_next_collection_start_date(rental_agreement)
 
                 # Create checkout session in Stripe
                 co.checkout_session = stripe_creation_svc.get_subscription_checkout_session(

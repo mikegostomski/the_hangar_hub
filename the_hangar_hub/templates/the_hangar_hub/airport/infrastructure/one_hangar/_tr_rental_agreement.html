@@ -23,6 +23,12 @@
         {%endif%}
     </td>
     <td>
+        <form method="post" action="{%url 'rent:terminate_rental_agreement' airport.identifier%}">
+            {%csrf_token%}
+            <input type="hidden" name="rental_agreement_id" value="{{rental.id}}" />
+            {%icon bi-slash-circle text-danger title="Terminate Rental Agreement" onclick="terminate_rental_agreement($(this));"%}
+        </form>
+
 
     </td>
 </tr>

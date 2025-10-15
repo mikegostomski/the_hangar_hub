@@ -1,3 +1,4 @@
+{% load base_taglib %}
 
 function update_airport_data(element) {
     // Wait one second for when browser auto-completes after partial value entered
@@ -165,4 +166,11 @@ function delete_hangar(el){
         complete:function(){
         }
     });
+}
+
+
+function terminate_rental_agreement(btn_el){
+    {%js_confirm icon="bi-exclamation-triangle" title="Terminate Rental Agreement"  onconfirm="btn_el.closest('form').submit();"%}
+        Are you sure you want to terminate this rental agreement?
+    {%end_js_confirm%}
 }

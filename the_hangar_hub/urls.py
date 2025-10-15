@@ -156,6 +156,8 @@ rent_paths = [
     # Rent Collection Dashboard
     path(f'{airport}/dashboard', rent_mgmt_v.rent_collection_dashboard,  name='rent_collection_dashboard'),
 
+    path(f'{airport}/agreement/terminate', rent_mgmt_v.terminate_rental_agreement,  name='terminate_rental_agreement'),
+
     # Rental Invoices
     path(f'{airport}/invoices/{rental}/invoices', rent_mgmt_v.rental_invoices,  name='rental_invoices'),
     path(f'{airport}/invoices/{rental}/create', rent_mgmt_v.create_rental_invoice,  name='create_rental_invoice'),
