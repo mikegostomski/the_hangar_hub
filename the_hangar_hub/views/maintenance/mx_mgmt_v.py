@@ -1,26 +1,10 @@
-
-from the_hangar_hub.models.airport import Airport
-
-from base.fixtures.timezones import timezones
-
 from django.shortcuts import render, redirect
-from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden
-from django.db.models import Q
-import the_hangar_hub.models
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from the_hangar_hub.models.maintenance import MaintenanceRequest, MaintenanceComment
-from the_hangar_hub.models.airport import Airport
-from the_hangar_hub.models.infrastructure_models import Building, Hangar
-from the_hangar_hub.models.invitation import Invitation
+from the_hangar_hub.models.maintenance import MaintenanceRequest, MaintenanceComment, ScheduledMaintenance
 from base.services import message_service, utility_service, email_service, date_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service, tenant_s, application_service
-from decimal import Decimal
-from base.classes.breadcrumb import Breadcrumb
-from django.contrib.auth.models import User
-import re
 from datetime import datetime, timezone
 from base.models.utility.error import Error
 from the_hangar_hub.decorators import require_airport, require_airport_manager, require_airport_tenant
@@ -44,6 +28,28 @@ def manager_dashboard(request, airport_identifier):
             "new_requests": new_requests,
             "requests": requests,
         }
+    )
+
+
+@report_errors()
+@require_airport_manager()
+def scheduled_mx_form(request, airport_identifier):
+    scheduled_mx = ScheduledMaintenance()
+
+    # If this scheduled maintenance is in response to a maintenance request...
+    mx_request = request.GET.get("mx_request")
+    if mx_request:
+        mx_request = MaintenanceRequest.get(mx_request)
+        if not mx_request:
+            message_service.post_error("Unable to link scheduled maintenance to specified maintenance request")
+
+
+    return render(
+        request, "the_hangar_hub/airport/maintenance/manager/scheduled/form.html",
+        {
+            "mx_request": mx_request,
+            "scheduled_mx": scheduled_mx,
+         }
     )
 
 

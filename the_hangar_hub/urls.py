@@ -130,6 +130,7 @@ mx_paths = [
     path(f'{airport}/request/priority/{request}', mx_mgmt_v.update_priority,  name='update_priority'),
     path(f'{airport}/request/status/{request}', mx_mgmt_v.update_status,  name='update_status'),
     path(f'{airport}/request/comment/visibility', mx_mgmt_v.update_visibility,  name='comment_visibility'),
+    path(f'{airport}/scheduled/create', mx_mgmt_v.scheduled_mx_form,  name='scheduled_mx_form'),
 ]
 
 rent_paths = [

@@ -1,0 +1,54 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+
+{%block title%}Scheduled Maintenance Form{%endblock%}
+
+{% block main_content %}
+<h1>Scheduled Maintenance</h1>
+<div class="content-1024 content-block">
+
+    {%if mx_request%}
+        <section>
+            <h2>Requested Maintenance</h2>
+            ...<br />
+        </section>
+    {%endif%}
+
+    <section>
+        <h2>Create a Scheduled Maintenance Event</h2>
+        <form method="post" action="">
+            {%csrf_token%}
+            <input type="hidden" name="mx_request" value="{{mx_request|default:''}}">
+
+            <div class="input-group mb-1">
+                <label class="input-group-text" for="start_date">Start Date</label>
+                <input type="date" id="start_date" name="start_date" value="{{prefill.start_date|default:''}}" class="form-control" />
+            </div>
+            <div class="input-group mb-1">
+                <label class="input-group-text" for="end_date">End Date</label>
+                <input type="date" id="end_date" name="end_date" value="{{prefill.end_date|default:''}}" class="form-control" />
+            </div>
+
+            <div class="input-group mb-1">
+                <label class="input-group-text" for="summary">Summary</label>
+                <input type="text" id="summary" name="summary" value="{{prefill.summary|default:''}}" class="form-control" />
+            </div>
+
+            <div class="input-group mb-1">
+                <label class="input-group-text" for="notes">Notes</label>
+                <textarea id="notes" name="notes" class="form-control">{{prefill.notes|default:''}}</textarea>
+            </div>
+
+            <br />
+            ToDo: Affected Buildings and hangars (multiple selections)<br />
+            <br />
+
+
+
+
+
+        </form>
+    </section>
+</div>
+
+{%endblock%}
