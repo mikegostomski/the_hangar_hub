@@ -387,7 +387,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
         return False
 
 
-def stripe_invoice_from_rental_invoice(rental_invoice):
+def stripe_invoice_from_rental_invoice(rental_invoice, send_invoice=False):
     """
     Given a RentalInvoice, generate an invoice in Stripe and create a base_stripe.StripeInvoice
     """
@@ -420,10 +420,17 @@ def stripe_invoice_from_rental_invoice(rental_invoice):
         invoice_amount = int((Decimal(rental_invoice.amount_charged) - Decimal(rental_invoice.amount_paid)) * 100)
         tx_fee = int(invoice_amount * airport.stripe_tx_fee)
 
+        if send_invoice:
+            collection_method = "send_invoice"
+            due_date = rental_invoice.stripe_due_date()
+        else:
+            collection_method = "charge_automatically"
+            due_date = None
+
         # Convert into a Stripe invoice (one-time)
         parameters = {
             "auto_advance": True,
-            "collection_method": "send_invoice",  # "charge_automatically"
+            "collection_method": collection_method,
             "customer": stripe_customer.stripe_id,
             "description": f"Manual Invoice for Hangar {hangar.code}",
             "metadata": {
@@ -436,7 +443,7 @@ def stripe_invoice_from_rental_invoice(rental_invoice):
             "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
             "on_behalf_of": airport.stripe_account.stripe_id,
             "transfer_data": {"destination": airport.stripe_account.stripe_id},
-            "due_date": rental_invoice.stripe_due_date(),
+            "due_date": due_date,
         }
         set_stripe_api_key()
         invoice_data = stripe.Invoice.create(**parameters)

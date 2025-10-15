@@ -182,7 +182,8 @@ def update_rental_invoice(request, airport_identifier, rental_agreement_id):
 
 
     elif action == "stripe":
-        if invoice_s.convert_to_stripe(invoice):
+        send_invoice = request.POST.get("send_invoice") == "Y"
+        if invoice_s.convert_to_stripe(invoice, send_invoice=send_invoice):
             return render(request, tr_html, {"invoice": invoice})
         else:
             return HttpResponseForbidden()

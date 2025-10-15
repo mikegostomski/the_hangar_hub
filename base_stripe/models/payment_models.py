@@ -616,7 +616,7 @@ class StripeCheckoutSession(models.Model):
 
     # open, complete, or expired
     status = models.CharField(max_length=20, db_index=True)
-    url = models.CharField(max_length=500)
+    url = models.CharField(max_length=500, null=True, blank=True)
     metadata = models.JSONField(default=dict, null=True, blank=True)
     expiration_date = models.DateTimeField(null=True, blank=True)
 
@@ -660,7 +660,6 @@ class StripeCheckoutSession(models.Model):
                 self.url = co.url
                 self.expiration_date = date_service.string_to_date(co.expires_at) if co.expires_at else None
                 self.customer = StripeCustomer.from_stripe_id(co.customer)
-
                 self.save()
             return True
         except Exception as ee:

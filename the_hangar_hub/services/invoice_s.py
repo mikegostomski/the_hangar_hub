@@ -59,7 +59,7 @@ def get_tenant_invoices(tenant):
 
 
 def create_rental_invoice(
-        rental_agreement, period_start, period_end, amount_charged, collection=None, invoice_number=None
+        rental_agreement, period_start, period_end, amount_charged, collection=None, invoice_number=None, send_invoice=False
 ):
     """
     All rent invoices should have a RentalInvoice representation - even if they are automatically created in Stripe
@@ -104,7 +104,7 @@ def create_rental_invoice(
 
     if collection == "stripe_invoice":
         # Create a one-time Stripe invoice
-        if not convert_to_stripe(rental_invoice):
+        if not convert_to_stripe(rental_invoice, send_invoice=send_invoice):
             log.warning("Invoice left in manual collection state")
         return rental_invoice
 
@@ -127,15 +127,15 @@ def cancel_invoice(invoice):
         rental_invoice.stripe_invoice.sync()
 
         # Draft invoices get deleted rather than cancelled
-        if rental_invoice.stripe_status() == "draft":
+        if rental_invoice.stripe_invoice.status == "draft":
             if not invoice_service.delete_draft_invoice(rental_invoice.stripe_invoice.stripe_id):
                 stripe_issue = True
 
-        elif rental_invoice.stripe_status() == "open":
+        elif rental_invoice.stripe_invoice.status == "open":
             if not invoice_service.void_invoice(rental_invoice.stripe_invoice.stripe_id):
                 stripe_issue = True
 
-        elif rental_invoice.stripe_status() == "paid":
+        elif rental_invoice.stripe_invoice.status == "paid":
             message_service.post_error("Cannot void a paid invoice.")
             stripe_issue = True
 
@@ -267,7 +267,7 @@ def cancel_open_invoices(rental_agreement):
             message_service.post_error(f"Unable to cancel existing invoice: {invoice.period_description}")
 
 
-def convert_to_stripe(invoice):
-    return stripe_creation_svc.stripe_invoice_from_rental_invoice(get_rental_invoice(invoice))
+def convert_to_stripe(invoice, send_invoice=False):
+    return stripe_creation_svc.stripe_invoice_from_rental_invoice(get_rental_invoice(invoice), send_invoice)
 
 

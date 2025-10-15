@@ -197,13 +197,19 @@ class RentalAgreement(models.Model):
         if rims:
             payment_dates = []
             paid_periods = []
+            unpaid_periods = []
             for inv in rims:
                 if inv.date_paid:
                     payment_dates.append(inv.date_paid)
+                # Paid or Waived
                 if inv.status_code in ["P", "W"]:
                     paid_periods.append(inv.period_end_date)
+                elif inv.status_code in ["O", "U"]:
+                    unpaid_periods.append(inv.period_start_date)
             self._last_payment_date = max(payment_dates) if payment_dates else None
             self._paid_through_date = max(paid_periods) if paid_periods else None
+            if unpaid_periods:
+                self._paid_through_date = min(unpaid_periods)
         if not self._paid_through_date:
             self._paid_through_date = self.start_date
         self._pay_stats = True

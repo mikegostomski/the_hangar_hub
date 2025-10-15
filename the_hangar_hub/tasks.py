@@ -7,10 +7,12 @@ from base_stripe.models.payment_models import StripeCustomer
 from base_stripe.models.payment_models import StripeInvoice
 from base_stripe.models.payment_models import StripeSubscription
 from base_stripe.models.payment_models import StripeCheckoutSession
+import stripe
 
 from the_hangar_hub.models.rental_models import Tenant, RentalInvoice, RentalAgreement
 
 from base_stripe.services import webhook_service
+from base_stripe.services.config_service import set_stripe_api_key
 from the_hangar_hub.models import Tenant, Airport
 
 log = Log()
@@ -34,6 +36,13 @@ def process_stripe_event(self, webhook_record_id):
     """
     event = None
     log.debug(f"\n{'='*80}\nwebhook_record_id: {webhook_record_id}\n{'='*80}")
+
+    # Objects that must be refreshed (sync) before being processed
+    refresh_required = [
+        "customer", "invoice", "subscription",
+        "checkout.session", "account",
+    ]
+
     try:
         event = StripeWebhookEvent.objects.select_for_update().get(id=webhook_record_id)
 
@@ -54,7 +63,7 @@ def process_stripe_event(self, webhook_record_id):
         if event.object_type in ignore:
             processed = True  # Mark as processed so it can be ignored/deleted from the table
 
-        elif not refreshed:
+        elif (not refreshed) and event.object_type in refresh_required:
             # Likely not a known object type yet.
             # If is known type, cannot process with old data.
             log.info(f"Not processing un-refreshed object: {event.object_type}")
@@ -73,6 +82,8 @@ def process_stripe_event(self, webhook_record_id):
                 processed = handle_subscription_event(event)
             elif event.object_type == 'checkout.session':
                 processed = handle_checkout_session_event(event)
+            elif event.object_type == 'invoice_payment':
+                processed = handle_invoice_payment_event(event)
 
             # Add more event types as needed
 
@@ -141,7 +152,7 @@ def handle_invoice_event(event):
                     # Period start and end are required to track invoice in HangarHub model
                     if invoice.period_start and invoice.period_end:
                         # Create a RentalInvoice
-                        ri = RentalInvoice.objects.create(
+                        existing = RentalInvoice.objects.create(
                             agreement=rental_agreement,
                             stripe_invoice=invoice,
                             stripe_subscription=invoice.subscription,
@@ -150,8 +161,12 @@ def handle_invoice_event(event):
                             amount_charged=invoice.amount_charged,
                             status_code="I",  # sync() will map to the correct status code
                         )
-                        ri.sync()
-                # ToDo: Make sure invoice exists for rental_agreement
+                        existing.sync()
+                # Make sure stripe invoice is linked to rental invoice
+                if existing and not existing.stripe_invoice:
+                    existing.stripe_invoice = existing
+                    existing.save()
+
 
             else:
                 # ToDo: Maybe a HangarHub subscription?
@@ -250,4 +265,18 @@ def handle_subscription_event(event):
 def handle_checkout_session_event(event):
     # Would result in a new subscription, so probably nothing needed???
     return True
+
+
+def handle_invoice_payment_event(event):
+    # Get the invoice data
+    try:
+        set_stripe_api_key()
+        in_pay = stripe.InvoicePayment.retrieve(event.object_id)
+        invoice_stripe_id = in_pay.invoice
+        invoice = StripeInvoice.from_stripe_id(invoice_stripe_id)
+        invoice.sync()
+        # ToDo: Send an email???
+        return True
+    except Exception as ee:
+        Error.record(ee, event)
 
