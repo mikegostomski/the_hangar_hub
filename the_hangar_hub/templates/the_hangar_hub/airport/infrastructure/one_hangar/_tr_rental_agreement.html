@@ -9,6 +9,20 @@
     <td>{{rental.deposit}}</td>
     <td>{{rental.notes}}</td>
     <td>
+        {%if rental.is_current%}
+            {%icon bi-cash-coin text-success title="Is Current"%}
+        {%elif rental.is_due_today%}
+            {%icon bi-cash-coin text-warning title="Payment Due"%}
+        {%else%}
+            {%icon bi-cash-coin text-danger title="Delinquent"%}
+        {%endif%}
+        {%if rental.active_subscription%}
+            {%icon bi-arrow-repeat text-success title="Active Auto-Pay"%}
+        {%else%}
+            {%icon bi-arrow-repeat text-danger title="No Auto-Pay"%}
+        {%endif%}
+    </td>
+    <td>
 
     </td>
 </tr>

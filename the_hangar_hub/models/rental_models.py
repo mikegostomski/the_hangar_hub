@@ -169,7 +169,11 @@ class RentalAgreement(models.Model):
 
     @property
     def active_subscription(self):
-        return self.stripe_subscription.is_active if self.stripe_subscription else None
+        if self.stripe_subscription and self.stripe_subscription.is_active:
+            return self.stripe_subscription
+        if self.future_stripe_subscription and self.future_stripe_subscription.is_active:
+            return self.future_stripe_subscription
+        return None
 
     def set_new_series(self):
         new = utility_service.generate_verification_code(length=6)
@@ -224,6 +228,23 @@ class RentalAgreement(models.Model):
         if not self._pay_stats:
             self.relevant_invoice_models()
         return self._paid_through_date
+
+    # Payment status (current/delinquent/dueToday)
+    def is_current(self):
+        if not self._pay_stats:
+            self.relevant_invoice_models()
+        now = datetime.now(timezone.utc)
+        return self._paid_through_date >= now
+
+    def is_due_today(self):
+        if not self.is_current():
+            if self._paid_through_date >= self.airport.today():
+                return True
+        return False
+
+    def is_delinquent(self):
+        return not (self.is_current() or self.is_due_today())
+
 
     # Past/Present/Future Rental Agreement?
     def is_present(self):
