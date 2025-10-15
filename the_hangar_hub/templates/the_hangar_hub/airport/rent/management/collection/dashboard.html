@@ -27,6 +27,8 @@
             <td>
                 {%if rental.paid_through_date >= now%}
                     {%icon bi-check2-circle text-success title="Current"%}
+                {%elif rental.paid_through_date >= airport.today%}
+                    {%icon bi-bell-fill text-warning title="Due Today"%}
                 {%else%}
                     {%icon bi-exclamation-triangle text-danger title="Delinquent"%}
                 {%endif%}

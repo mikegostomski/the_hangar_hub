@@ -204,6 +204,8 @@ class RentalAgreement(models.Model):
                     paid_periods.append(inv.period_end_date)
             self._last_payment_date = max(payment_dates) if payment_dates else None
             self._paid_through_date = max(paid_periods) if paid_periods else None
+        if not self._paid_through_date:
+            self._paid_through_date = self.start_date
         self._pay_stats = True
         return rims
 

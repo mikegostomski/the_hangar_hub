@@ -10,6 +10,7 @@ from base_upload.services import retrieval_service
 from the_hangar_hub.services import stripe_service
 from base.models.utility.error import Error, Log, EnvHelper
 from decimal import Decimal
+from datetime import datetime, timezone
 from base.services import date_service
 
 log = Log()
@@ -163,6 +164,18 @@ class Airport(models.Model):
     @property
     def tz(self):
         return ZoneInfo(self.timezone or "UTC")
+
+    def today(self):
+        """Get today based on airport's local time"""
+        now = datetime.now(timezone.utc)
+        local_now = now.astimezone(self.tz)
+        return (local_now.replace(hour=0, minute=0, second=0, microsecond=0)).astimezone(ZoneInfo("UTC"))
+
+    def end_of_today(self):
+        """Get end-of-today based on airport's local time"""
+        now = datetime.now(timezone.utc)
+        local_now = now.astimezone(self.tz)
+        return local_now.replace(hour=23, minute=59, second=59).astimezone(ZoneInfo("UTC"))
 
     def get_building(self, building_identifier):
         if str(building_identifier).isnumeric():
