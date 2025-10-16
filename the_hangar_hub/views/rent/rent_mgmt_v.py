@@ -6,6 +6,7 @@ from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from base_stripe.models.payment_models import StripeSubscription
 from the_hangar_hub.models.rental_models import Tenant, RentalAgreement, RentalInvoice
+from the_hangar_hub.models.airport_customer import AirportCustomer
 from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
@@ -66,8 +67,8 @@ def rental_invoices(request, airport_identifier, rental_agreement_id):
         message_service.post_error("Specified rental agreement is for a different airport.")
         return redirect("rent:rent_collection_dashboard", airport.identifier)
 
-    if rental_agreement.tenant.customer:
-        rental_agreement.tenant.customer.sync()
+    if rental_agreement.customer:
+        rental_agreement.customer.sync()
 
     return render(
         request, "the_hangar_hub/airport/rent/management/invoices/invoices.html",
@@ -330,12 +331,6 @@ def add_tenant(request, airport_identifier, hangar_id):
             tenant = Tenant()
             tenant.contact = contact
             tenant.user = user
-
-            # Create (or locate) Stripe customer for this Tenant
-            tenant.customer = StripeCustomer.get_or_create(
-                full_name=tenant.display_name, email=tenant.email, user=tenant.user
-            )
-
             tenant.save()
         except Exception as ee:
             log.error(f"Error creating tenant: {ee}")
@@ -345,6 +340,13 @@ def add_tenant(request, airport_identifier, hangar_id):
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
         return redirect("infrastructure:hangar", airport.identifier, hangar_id)
+
+    # Get or create a Stripe customer for this RentalAgreement
+    customer = AirportCustomer.get(airport, contact)
+    if not customer:
+        customer = StripeCustomer.get_or_create(
+            full_name=tenant.display_name, email=tenant.email, user=tenant.user
+        )
 
     # Create the rental record
     rental = None
@@ -359,13 +361,16 @@ def add_tenant(request, airport_identifier, hangar_id):
         rental.deposit = deposit
         rental.notes = notes
         rental.set_new_series()
+        rental.customer = customer
         rental.save()
-
         message_service.post_success("New tenant has been added")
+
+        # If added via application, mark application as accepted
         if application:
             application.deselect()
             application.status_code = "A"
             application.save()
+
     except Exception as ee:
         log.error(f"Error creating rental: {ee}")
         issues.append("Unable to create rental record.")

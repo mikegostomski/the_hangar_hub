@@ -127,7 +127,7 @@ def handle_invoice_event(event):
     try:
         invoice = StripeInvoice.from_stripe_id(event.object_id)
         log.debug(f"CELERY::: Invoice Model: {invoice}")
-        if invoice:
+        if invoice and not invoice.deleted:
             # Is invoice tied to a RentalAgreement?
             if invoice.related_type == "RentalAgreement":
                 rental_agreement_id = invoice.related_id
@@ -192,6 +192,10 @@ def handle_invoice_event(event):
 
             return True
 
+        elif invoice and invoice.deleted:
+            # No action needed?
+            return True
+
         else:  # No invoice record
             return False
     except Exception as ee:
@@ -204,7 +208,7 @@ def handle_subscription_event(event):
     change_handled = False
     try:
         subscription = StripeSubscription.get(event.object_id)
-        if subscription:
+        if subscription and not subscription.deleted:
             if has_relation:
                 pass
 
@@ -268,6 +272,8 @@ def handle_subscription_event(event):
                     # Otherwise, I don't think there's anything else to do atthis time
                     return True
 
+        elif subscription and subscription.deleted:
+            return True
         else:
             log.error(f"Unknown subscription: {subscription}")
     except Exception as ee:

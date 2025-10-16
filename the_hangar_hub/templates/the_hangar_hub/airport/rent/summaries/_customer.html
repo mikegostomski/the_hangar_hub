@@ -3,7 +3,7 @@
 
 {## Parameter: rental_agreement ##}
 
-{%with customer=rental_agreement.tenant.customer%}
+{%with customer=rental_agreement.customer%}
     {%if customer%}
 
         {%if customer.user and customer.user == current_user.user%}

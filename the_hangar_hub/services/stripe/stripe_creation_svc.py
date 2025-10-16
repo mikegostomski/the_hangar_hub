@@ -5,6 +5,7 @@ from base.classes.util.date_helper import DateHelper
 from base.models.utility.error import EnvHelper, Log, Error
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.models.payment_models import StripeCheckoutSession, StripeSubscription, StripeCustomer, StripeInvoice
+from the_hangar_hub.models.airport_customer import AirportCustomer
 from base.models.utility.variable import Variable
 from base_stripe.services import accounts_service
 from base.services import message_service, utility_service
@@ -165,17 +166,20 @@ def get_checkout_session_application_fee(application):
     try:
         airport = application.airport
 
+        # Get or create a Stripe customer for this Application Fee
+        airport_customer = AirportCustomer.get(airport, application)
+        stripe_customer = airport_customer.stripe_customer if airport_customer else None
+        stripe_customer_id = stripe_customer.stripe_id if stripe_customer else None
+        log.debug(f"Stripe Customer: {stripe_customer_id}")
+
         set_stripe_api_key()
-        stripe_customer = StripeCustomer.get_or_create(user=application.user)
-        log.debug(f"Stripe Customer: {stripe_customer.stripe_id}")
         checkout_session = stripe.checkout.Session.create(
-            customer=stripe_customer.stripe_id,
+            customer=stripe_customer_id,
             mode="payment",
             line_items=[
                 {
                     'price_data': {
                         "unit_amount": airport.application_fee_stripe,
-                        # "product": "prod_Slrtn5xjteLKes",
                         "product_data": {"name": "Application Fee", "description": f"Hangar application at {airport.identifier}"},
                         "currency": "usd",
                     },
@@ -193,10 +197,10 @@ def get_checkout_session_application_fee(application):
             # stripe_account= airport.stripe_account.stripe_id,
             # application_fee_amount=airport.application_fee_stripe * airport.stripe_tx_fee,
             payment_intent_data={
-                "on_behalf_of": airport.stripe_account.stripe_id,
-                "transfer_data": {"destination": airport.stripe_account.stripe_id},
+                # "setup_future_usage": "off_session",
                 "application_fee_amount": int(airport.application_fee_stripe * airport.stripe_tx_fee),
             },
+            stripe_account=airport.stripe_account.stripe_id,
         )
         co_session_id = checkout_session.id
         co_model = StripeCheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
@@ -217,15 +221,18 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
         tenant = rental_agreement.tenant
         airport = rental_agreement.airport
 
-        # Get customer's Stripe ID (required)
-        customer = stripe_lookup_svc.get_stripe_customer(tenant)
-        if not customer:
+        # Get or create a Stripe customer for this Application Fee
+        airport_customer = AirportCustomer.get(airport, tenant.contact)
+        stripe_customer = airport_customer.stripe_customer if airport_customer else None
+        stripe_customer_id = stripe_customer.stripe_id if stripe_customer else None
+        log.debug(f"Stripe Customer: {stripe_customer_id}")
+        if not stripe_customer_id:
             message_service.post_error("Unable to obtain Stripe customer ID for tenant.")
             return False
 
         # Look for existing subscriptions
         existing = StripeSubscription.objects.filter(
-            customer=customer,
+            customer=stripe_customer,
             status__in=StripeSubscription.active_statuses(),
             metadata__RentalAgreement=rental_agreement.id,
         )
@@ -326,8 +333,8 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             "invoice_settings": {
                 "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
             },
-            "on_behalf_of": airport.stripe_account.stripe_id,
-            "transfer_data": {"destination": airport.stripe_account.stripe_id},
+            # "on_behalf_of": airport.stripe_account.stripe_id,
+            # "transfer_data": {"destination": airport.stripe_account.stripe_id},
             "application_fee_percent": application_fee_percent,
         }
 
@@ -352,7 +359,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             metadata["backdate_days"] = str(backdate_days)
 
         checkout_session = stripe.checkout.Session.create(
-            customer=customer.stripe_id,
+            customer=stripe_customer_id,
             line_items=[{
                 "price_data": {
                     "unit_amount": amount_due,
@@ -367,6 +374,11 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             mode='subscription',
             subscription_data=subscription_data,
             metadata=metadata,
+            payment_intent_data={
+                "setup_future_usage": "off_session",
+                "application_fee_amount": application_fee_percent,
+            },
+            stripe_account=airport.stripe_account.stripe_id,
             success_url=f"{env.absolute_root_url}{return_url}",
             cancel_url=f"{env.absolute_root_url}{return_url}",
         )
@@ -406,12 +418,12 @@ def stripe_invoice_from_rental_invoice(rental_invoice, send_invoice=False):
         airport = rental_agreement.airport
 
         # Get customer's Stripe ID (required)
-        if tenant.stripe_customer_id:
-            stripe_customer = StripeCustomer.get(tenant.stripe_customer_id)
+        if rental_agreement.stripe_customer_id:
+            stripe_customer = StripeCustomer.get(rental_agreement.stripe_customer_id)
         else:
             stripe_customer = StripeCustomer.get_or_create(tenant.display_name, tenant.email, tenant.user)
-            tenant.customer = stripe_customer
-            tenant.save()
+            rental_agreement.customer = stripe_customer
+            rental_agreement.save()
         if not stripe_customer:
             message_service.post_error("Unable to obtain Stripe customer ID for tenant.")
             return False
@@ -440,9 +452,10 @@ def stripe_invoice_from_rental_invoice(rental_invoice, send_invoice=False):
                 "type": "manual"
             },
             "application_fee_amount": tx_fee,
+            "stripe_account": airport.stripe_account.stripe_id,
             "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
-            "on_behalf_of": airport.stripe_account.stripe_id,
-            "transfer_data": {"destination": airport.stripe_account.stripe_id},
+            # "on_behalf_of": airport.stripe_account.stripe_id,
+            # "transfer_data": {"destination": airport.stripe_account.stripe_id},
             "due_date": due_date,
         }
         set_stripe_api_key()

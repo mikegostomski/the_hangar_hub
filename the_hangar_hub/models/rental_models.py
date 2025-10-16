@@ -24,13 +24,13 @@ class Tenant(models.Model):
 
     # There may not be a user at time of creation (or potentially ever)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
-    customer = models.ForeignKey("base_stripe.StripeCustomer", on_delete=models.CASCADE, related_name="tenants", null=True, blank=True)
 
     def get_rental_agreement_series_list(self):
         return list(set([rr.series for rr in self.rentals.all()]))
 
     @property
     def stripe_customer_id(self):
+        # ToDo: Remove this!
         return self.customer.stripe_id if self.customer else None
 
     @property
@@ -77,9 +77,6 @@ class Tenant(models.Model):
                                 if tenant:
                                     tenant.user = user
                                     tenant.save()
-                                    if tenant.customer and not tenant.customer.user:
-                                        tenant.customer.user = user
-                                        tenant.customer.save()
                                     return tenant
                             except:
                                 pass  # Not found via this email
@@ -102,9 +99,13 @@ class Tenant(models.Model):
             # If given a Stripe customer ID
             if str(tenant_data).startswith("cus_"):
                 try:
-                    return Tenant.objects.get(customer__stripe_id=tenant_data)
-                except Tenant.DoesNotExist:
-                    return None
+                    agreements = RentalAgreement.objects.filter(customer__stripe_id=tenant_data)
+                    if agreements:
+                        customers = list(set([x.customer for x in agreements]))
+                        if len(customers) == 1:
+                            return customers[0]
+                except Exception as ee:
+                    Error.record(ee)
 
             # Not sure what other type of data could point to a tenant
             else:
@@ -123,6 +124,7 @@ class RentalAgreement(models.Model):
     tenant = models.ForeignKey("the_hangar_hub.Tenant", on_delete=models.CASCADE, related_name="rentals")
     hangar = models.ForeignKey('the_hangar_hub.Hangar', on_delete=models.CASCADE, related_name="rentals")
     airport = models.ForeignKey('the_hangar_hub.Airport', on_delete=models.CASCADE, related_name="rentals")
+    customer = models.ForeignKey("base_stripe.StripeCustomer", on_delete=models.CASCADE, related_name="rentals", null=True, blank=True)
 
     # For changes to rental agreement, new agreements will be created and grouped into a series
     series = models.CharField(max_length=6, db_index=True)
@@ -153,7 +155,7 @@ class RentalAgreement(models.Model):
 
     @property
     def stripe_customer_id(self):
-        return self.tenant.stripe_customer_id if self.tenant else None
+        return self.customer.stripe_id if self.customer else None
 
     @property
     def stripe_subscription_id(self):

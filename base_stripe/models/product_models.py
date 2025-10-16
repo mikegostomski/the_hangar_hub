@@ -20,6 +20,7 @@ env = EnvHelper()
 class StripeProduct(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
 
     active = models.BooleanField(db_index=True)
@@ -34,13 +35,15 @@ class StripeProduct(models.Model):
         """
         Update data from Stripe API
         """
+        if self.deleted:
+            return False
         try:
             log.info(f"Sync {self} ({self.stripe_id})")
             stripe_data = self.api_data()
-            self.active = stripe_data.active
-            self.name = stripe_data.name
-            self.description = stripe_data.description
-            self.metadata = stripe_data.metadata
+            self.active = stripe_data.get("active")
+            self.name = stripe_data.get("name")
+            self.description = stripe_data.get("description")
+            self.metadata = stripe_data.get("metadata")
             self.save()
             return True
         except Exception as ee:
@@ -111,6 +114,7 @@ class StripeProduct(models.Model):
 class StripePrice(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
 
     # A price may be active, but not want to be displayed on the subscription form
@@ -159,16 +163,18 @@ class StripePrice(models.Model):
         """
         Update data from Stripe API
         """
+        if self.deleted:
+            return False
         try:
             log.info(f"Sync {self} ({self.stripe_id})")
             stripe_data = self.api_data()
-            self.product = StripeProduct.from_stripe_id(stripe_data.product)
-            self.active = stripe_data.active
-            self.nickname = stripe_data.nickname
-            self.recurring = stripe_data.recurring
-            self.metadata = stripe_data.metadata
-            self.unit_amount = stripe_data.unit_amount
-            self.type = stripe_data.type
+            self.product = StripeProduct.from_stripe_id(stripe_data.get("product"))
+            self.active = stripe_data.get("active")
+            self.nickname = stripe_data.get("nickname")
+            self.recurring = stripe_data.get("recurring")
+            self.metadata = stripe_data.get("metadata")
+            self.unit_amount = stripe_data.get("unit_amount")
+            self.type = stripe_data.get("type")
             self.save()
             return True
         except Exception as ee:

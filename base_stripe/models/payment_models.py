@@ -24,9 +24,10 @@ env = EnvHelper()
 class StripeCustomer(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
-    email = models.CharField(max_length=180, unique=True, db_index=True)
+    email = models.CharField(max_length=180, db_index=True)
     user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customer", null=True, blank=True, db_index=True)
     full_name = models.CharField(max_length=150)
 
@@ -138,14 +139,15 @@ class StripeCustomer(models.Model):
         try:
             if str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
-            elif type(xx) in [User, SimpleLazyObject]:
-                return cls.objects.get(user=xx)
             elif type(xx) is cls:
                 return xx
-            elif "@" in str(xx):
-                return cls.objects.get(email__iexact=xx)
-            else:
+            elif str(xx).startswith("cus_"):
                 return cls.objects.get(stripe_id=xx)
+            else:
+                Error.record(f"{xx} is not a valid way to look up a Stripe Customer")
+                return None
+
+            # Cannot get by user or email because there will be multiple when customers exist on multiple connected accounts
         except cls.DoesNotExist:
             return None
         except Exception as ee:
@@ -211,41 +213,45 @@ class StripeCustomer(models.Model):
                 if user_profile.is_user:
                     user = user_profile.user
 
-            # Gather all known (verified) email addresses
-            verified_emails = [email]
-            user_profile = Auth.lookup_user_profile(user) if user else None
-            if user_profile:
-                verified_emails.extend(user_profile.emails)
-            verified_emails = list(set(verified_emails))
+            # Email address will be reused on customers for different connected accounts
+            # Therefore email lookup is not necessary
 
-            # Look for existing customer model based on all known (verified) email addresses
-            existing = None
-            for email_address in verified_emails:
-                existing = StripeCustomer.get(email_address)
-                if existing:
-                    break
+            # # Gather all known (verified) email addresses
+            # verified_emails = [email]
+            # user_profile = Auth.lookup_user_profile(user) if user else None
+            # if user_profile:
+            #     verified_emails.extend(user_profile.emails)
+            # verified_emails = list(set(verified_emails))
 
-            if existing:
-                log.info(f"Found existing customer: {existing.stripe_id}")
-                existing.sync()
-                return existing
 
-            # Look for existing customer record in Stripe based on all known (verified) email addresses
-            existing_id = None
-            for email_address in verified_emails:
-                try:
-                    config_service.set_stripe_api_key()
-                    result = stripe.Customer.list(email=email_address)
-                    if result.data:
-                        existing_id = result.data[0].get("id")
-                        break
-                except Exception as ee:
-                    Error.record(ee, email_address)
-            if existing_id:
-                existing = StripeCustomer.from_stripe_id(existing_id)
-                if existing:
-                    log.info(f"Found existing customer: {existing.stripe_id}")
-                    return existing
+            # # Look for existing customer model based on all known (verified) email addresses
+            # existing = None
+            # for email_address in verified_emails:
+            #     existing = StripeCustomer.get(email_address)
+            #     if existing:
+            #         break
+            #
+            # if existing:
+            #     log.info(f"Found existing customer: {existing.stripe_id}")
+            #     existing.sync()
+            #     return existing
+
+            # # Look for existing customer record in Stripe based on all known (verified) email addresses
+            # existing_id = None
+            # for email_address in verified_emails:
+            #     try:
+            #         config_service.set_stripe_api_key()
+            #         result = stripe.Customer.list(email=email_address)
+            #         if result.data:
+            #             existing_id = result.data[0].get("id")
+            #             break
+            #     except Exception as ee:
+            #         Error.record(ee, email_address)
+            # if existing_id:
+            #     existing = StripeCustomer.from_stripe_id(existing_id)
+            #     if existing:
+            #         log.info(f"Found existing customer: {existing.stripe_id}")
+            #         return existing
 
             # Create a new Stripe Customer
             try:
@@ -278,6 +284,7 @@ class StripeCustomer(models.Model):
 class StripeInvoice(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
     customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="customer_invoices", db_index=True)
@@ -425,6 +432,7 @@ class StripeInvoice(models.Model):
 class StripeSubscription(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="invoices", db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
@@ -623,6 +631,7 @@ class StripeSubscription(models.Model):
 class StripeCheckoutSession(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="checkout_sessions", db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)

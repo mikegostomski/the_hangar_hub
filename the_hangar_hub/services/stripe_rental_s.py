@@ -22,7 +22,7 @@ def sync_rental_agreement_invoices(rental_agreement):
         - This only looks at a couple of invoices, and runs quickly
     """
     log.trace([rental_agreement])
-    customer = rental_agreement.tenant.customer
+    customer = rental_agreement.customer
     if not customer:
         # If no customer record, tenant has nothing in Stripe to sync with
         return
@@ -79,7 +79,7 @@ def sync_rental_agreement_subscriptions(rental_agreement):
 
     # Look for other active subscriptions
     must_save = False
-    customer_id = rental_agreement.tenant.stripe_customer_id
+    customer_id = rental_agreement.stripe_customer_id
     for sub in StripeSubscription.objects.filter(
         status__in=["trialing", "active", "past_due", "unpaid", "paused"],  # Active subscriptions (indexed)
         customer__stripe_id=customer_id,                                    # For this customer (indexed)

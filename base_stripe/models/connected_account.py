@@ -10,6 +10,7 @@ env = EnvHelper()
 class StripeConnectedAccount(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     stripe_id = models.CharField(max_length=60, db_index=True)
     name = models.CharField(max_length=80)

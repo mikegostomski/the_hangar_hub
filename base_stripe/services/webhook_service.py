@@ -66,11 +66,11 @@ def _handle_customer_event(event):
 
 def _handle_invoice_event(event):
     if event.event_type == "deleted":
-        del_inv = StripeInvoice.get(event.object_id)
-        if del_inv:
-            log.info(f"Invoice #{del_inv.id} was deleted in Stripe: {event.object_id}")
-            del_inv.status = "deleted"
-            del_inv.save()
+        del_obj = StripeInvoice.get(event.object_id)
+        if del_obj:
+            log.info(f"{del_obj} was deleted in Stripe: {event.object_id}")
+            del_obj.deleted = True
+            del_obj.save()
         return True
 
     # Refresh invoice with latest data
@@ -80,6 +80,13 @@ def _handle_invoice_event(event):
 
 
 def _handle_subscription_event(event):
+    if event.event_type == "deleted":
+        del_obj = StripeSubscription.get(event.object_id)
+        if del_obj:
+            log.info(f"{del_obj} was deleted in Stripe: {event.object_id}")
+            del_obj.deleted = True
+            del_obj.save()
+        return True
     log.info(f"handle_subscription_event({event.object_id})")
     sub = StripeSubscription.from_stripe_id(event.object_id)
     log.info(f"sub: {sub}")
@@ -87,18 +94,46 @@ def _handle_subscription_event(event):
 
 
 def _handle_checkout_session_event(event):
+    if event.event_type == "deleted":
+        del_obj = StripeCheckoutSession.get(event.object_id)
+        if del_obj:
+            log.info(f"{del_obj} was deleted in Stripe: {event.object_id}")
+            del_obj.deleted = True
+            del_obj.save()
+        return True
     co = StripeCheckoutSession.from_stripe_id(event.object_id)
     return co.sync()
 
 def _handle_product_event(event):
+    if event.event_type == "product.deleted":
+        del_obj = StripeProduct.get(event.object_id)
+        if del_obj:
+            log.info(f"{del_obj} was deleted in Stripe: {event.object_id}")
+            del_obj.deleted = True
+            del_obj.save()
+        return True
     co = StripeProduct.from_stripe_id(event.object_id)
     return co.sync()
 
 def _handle_price_event(event):
+    if event.event_type == "price.deleted":
+        del_obj = StripePrice.get(event.object_id)
+        if del_obj:
+            log.info(f"{del_obj} was deleted in Stripe: {event.object_id}")
+            del_obj.deleted = True
+            del_obj.save()
+        return True
     co = StripePrice.from_stripe_id(event.object_id)
     return co.sync()
 
 def _handle_account_event(event):
+    if event.event_type == "account.deleted":
+        del_obj = StripeConnectedAccount.get(event.object_id)
+        if del_obj:
+            log.info(f"{del_obj} was deleted in Stripe: {event.object_id}")
+            del_obj.deleted = True
+            del_obj.save()
+        return True
     co = StripeConnectedAccount.from_stripe_id(event.object_id)
     return co.sync()
 
