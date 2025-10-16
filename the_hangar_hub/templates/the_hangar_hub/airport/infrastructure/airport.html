@@ -93,12 +93,16 @@
                                 {%endif%}
                             </td>
                         </tr>
-                        <tr>
+                        <tr valign="top">
                             <th scope="row" style="padding-right: 30px;">Onboarding Complete:</th>
                             <td>
                                 {%if acct_data.onboarding_complete%}
                                     {%icon bi-check2-square text-success title="Yes"%}
                                     You have provided all required information
+                                    {%if not acct_data.charges_enabled%}
+                                        <br />
+                                        <i><b>It may take a few minutes for account data to refresh.</b></i>
+                                    {%endif%}
                                 {%else%}
                                     {%icon bi-exclamation-square text-danger title="No"%}
                                     You must provide more information to Stripe for payment processing
