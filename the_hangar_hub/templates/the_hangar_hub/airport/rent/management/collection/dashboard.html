@@ -15,7 +15,7 @@
             <th scope="row">Tenant</th>
             <th scope="row">Rent</th>
             <th scope="row">Paid Through</th>
-            <th scope="row">Status</th>
+            <th scope="row">Balance</th>
         </tr>
         {%for rental in rentals%}
         {%with subscription=rental.get_stripe_subscription_model%}
@@ -25,12 +25,13 @@
             <td>{%format_currency rental.rent%}</td>
             <td>{%humanized_date rental.paid_through_date%}</td>
             <td>
+                <i class="hidden">{{rental.unpaid_balance}}</i>
                 {%if rental.paid_through_date >= now%}
-                    {%icon bi-check2-circle text-success title="Current"%}
+                    <span class="badge balance text-bg-success">{%format_currency rental.unpaid_balance%}</span>
                 {%elif rental.paid_through_date >= airport.today%}
-                    {%icon bi-bell-fill text-warning title="Due Today"%}
+                    <span class="badge balance text-bg-warning">{%format_currency rental.unpaid_balance%}</span>
                 {%else%}
-                    {%icon bi-exclamation-triangle text-danger title="Delinquent"%}
+                    <span class="badge balance text-bg-danger">{%format_currency rental.unpaid_balance%}</span>
                 {%endif%}
             </td>
         </tr>
@@ -42,5 +43,14 @@
 <script type="text/javascript">
     {%include "the_hangar_hub/airport/rent/management/collection/script.js"%}
 </script>
-
+<style>
+    span.balance{
+        display: inline-block;
+        width: 100px;
+        text-align: right;
+        font-family: monospace;
+        font-size: 1em;
+        font-weight: normal;
+    }
+</style>
 {%endblock%}

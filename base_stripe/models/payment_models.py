@@ -41,6 +41,10 @@ class StripeCustomer(models.Model):
     default_source = models.CharField(max_length=50, null=True, blank=True)
 
     @property
+    def credit_balance(self):
+        return self.balance_cents/100
+
+    @property
     def default_payment(self):
         return self.default_payment_method or self.default_source
 
@@ -55,6 +59,7 @@ class StripeCustomer(models.Model):
             log.info(f"Sync {self} ({self.stripe_id})")
             config_service.set_stripe_api_key()
             customer = stripe.Customer.retrieve(self.stripe_id, expand=["invoice_settings.default_payment_method"])
+            log.debug(customer)
             if customer:
                 self.full_name = customer.name
                 self.email = customer.email
@@ -450,6 +455,14 @@ class StripeSubscription(models.Model):
     @property
     def is_active(self):
         return self.status in self.active_statuses()
+
+    @property
+    def danger(self):
+        return self.status in [
+            "incomplete", "incomplete_expired",
+            "past_due", "unpaid",
+            "paused", "canceled"
+        ]
 
     @property
     def status_display(self):

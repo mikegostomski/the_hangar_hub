@@ -123,8 +123,10 @@ def handle_customer_event(event):
 
 
 def handle_invoice_event(event):
+    log.debug(f"CELERY::: Handle Invoice: {event.object_id}")
     try:
         invoice = StripeInvoice.from_stripe_id(event.object_id)
+        log.debug(f"CELERY::: Invoice Model: {invoice}")
         if invoice:
             # Is invoice tied to a RentalAgreement?
             if invoice.related_type == "RentalAgreement":
@@ -138,8 +140,10 @@ def handle_invoice_event(event):
             else:
                 rental_agreement_id = None
 
+            log.debug(f"CELERY::: Rental Agreement ID: {rental_agreement_id}")
             if rental_agreement_id:
                 rental_agreement = RentalAgreement.get(rental_agreement_id)
+                log.debug(f"CELERY::: Rental Agreement: {rental_agreement}")
                 if invoice.related_id != rental_agreement_id:
                     invoice.related_type = "RentalAgreement"
                     invoice.related_id = rental_agreement.id
@@ -147,8 +151,10 @@ def handle_invoice_event(event):
 
                 # Make sure a Rental Invoice exists
                 existing = RentalInvoice.get(invoice.stripe_id)
+                log.debug(f"CELERY::: Existing Rental Invoice: {existing}")
+
                 if not existing:
-                    log.info(f"Linking StripeInvoice to new RentalInvoice")
+                    log.info(f"CELERY::: Creating RentalInvoice from StripeInvoice")
                     # Period start and end are required to track invoice in HangarHub model
                     if invoice.period_start and invoice.period_end:
                         # Create a RentalInvoice
@@ -161,11 +167,18 @@ def handle_invoice_event(event):
                             amount_charged=invoice.amount_charged,
                             status_code="I",  # sync() will map to the correct status code
                         )
-                        existing.sync()
+
+                    else:
+                        log.info(f"CELERY::: MISSING PERIOD START/END")
+
+                log.debug(f"CELERY::: Rental Invoice: {existing}")
+
                 # Make sure stripe invoice is linked to rental invoice
                 if existing and not existing.stripe_invoice:
+                    log.debug(f"CELERY::: Linking Stripe invoice to Rental invoice")
                     existing.stripe_invoice = existing
                     existing.save()
+                existing.sync()
 
 
             else:

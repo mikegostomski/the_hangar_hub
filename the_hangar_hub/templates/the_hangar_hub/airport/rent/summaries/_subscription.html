@@ -8,8 +8,14 @@
             {%icon bi-code title="ID"%} {{subscription.id}}: {{subscription.stripe_id}}<br />
         {%endif%}
 
-        {%icon bi-heart-pulse title="Subscription Status"%}
-        {{subscription.status_display}}<br />
+
+
+        {%if subscription.danger%}
+            {%icon bi-heart-pulse text-danger title="Subscription Status"%}
+            <span class="badge text-bg-danger">{{subscription.status_display}}</span>
+        {%else%}
+            {%icon bi-heart-pulse title="Subscription Status"%} {{subscription.status_display}}
+        {%endif%}<br />
 
         {%icon bi-calendar4-week title="Current Period"%}
         {%if subscription.status == "trialing"%}

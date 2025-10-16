@@ -195,6 +195,7 @@ class RentalAgreement(models.Model):
     _pay_stats = None
     _last_payment_date = None
     _paid_through_date = None
+    _unpaid_balance = None
     def relevant_invoice_models(self):
         recent = datetime.now(timezone.utc) - timedelta(hours=1)
         rims = self.invoices.filter(Q(status_code__in=["O", "P", "W"]) | Q(last_updated__gt=recent)).order_by("-period_start_date", "-date_created")
@@ -202,6 +203,7 @@ class RentalAgreement(models.Model):
             payment_dates = []
             paid_periods = []
             unpaid_periods = []
+            unpaid_balance = 0
             for inv in rims:
                 if inv.date_paid:
                     payment_dates.append(inv.date_paid)
@@ -210,8 +212,10 @@ class RentalAgreement(models.Model):
                     paid_periods.append(inv.period_end_date)
                 elif inv.status_code in ["O", "U"]:
                     unpaid_periods.append(inv.period_start_date)
+                    unpaid_balance += inv.amount_remaining
             self._last_payment_date = max(payment_dates) if payment_dates else None
             self._paid_through_date = max(paid_periods) if paid_periods else None
+            self._unpaid_balance = unpaid_balance
             if unpaid_periods:
                 self._paid_through_date = min(unpaid_periods)
         if not self._paid_through_date:
@@ -228,6 +232,11 @@ class RentalAgreement(models.Model):
         if not self._pay_stats:
             self.relevant_invoice_models()
         return self._paid_through_date
+
+    def unpaid_balance(self):
+        if not self._pay_stats:
+            self.relevant_invoice_models()
+        return self._unpaid_balance
 
     # Payment status (current/delinquent/dueToday)
     def is_current(self):
@@ -363,6 +372,10 @@ class RentalInvoice(models.Model):
     status_code = models.CharField(max_length=1, default="I", db_index=True)
     payment_method_code = models.CharField(max_length=2, null=True, blank=True)
     date_paid = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def amount_remaining(self):
+        return self.amount_charged - self.amount_paid
 
     @property
     def period_description(self):

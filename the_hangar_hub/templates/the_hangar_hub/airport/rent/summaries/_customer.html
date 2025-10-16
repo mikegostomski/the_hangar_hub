@@ -25,12 +25,15 @@
 
             {%if customer.delinquent%}
                 {%icon bi-heart-pulse text-danger%}
-                Delinquent<br />
-                {%icon bi-cash-coin text-danger title="Balance"%}
-                {%format_currency customer.balance_cents%}<br />
+                <span class="badge text-bg-danger">Delinquent</span><br />
             {%else%}
                 {%icon bi-heart-pulse%}
                 Active<br />
+            {%endif%}
+
+            {%if customer.balance_cents%}
+                {%icon bi-cash-coin text-success title="Credit Balance"%}
+                {%format_currency customer.credit_balance%}
             {%endif%}
 
             {%icon bi-credit-card title="Payment Method"%}
