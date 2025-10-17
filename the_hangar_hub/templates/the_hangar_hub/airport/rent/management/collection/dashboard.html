@@ -2,6 +2,7 @@
 {% load base_taglib %}
 
 {%block title%}Rental Payment Dashboard{%endblock%}
+{%block scripts%}{%datatables%}{%endblock%}
 
 {% block main_content %}
 <h1>Rental Payment Dashboard</h1>
@@ -9,7 +10,8 @@
 
 <h2>Current Rental Agreements</h2>
 <section>
-    <table class="table">
+    <table class="table" id="current_rental_agreements_table">
+        <thead>
         <tr>
             <th scope="row">Hangar</th>
             <th scope="row">Tenant</th>
@@ -17,6 +19,8 @@
             <th scope="row">Paid Through</th>
             <th scope="row">Balance</th>
         </tr>
+        </thead>
+        <tbody>
         {%for rental in rentals%}
         {%with subscription=rental.get_stripe_subscription_model%}
         <tr>
@@ -37,6 +41,7 @@
         </tr>
         {%endwith%}
         {%endfor%}
+        </tbody>
     </table>
 </section>
 

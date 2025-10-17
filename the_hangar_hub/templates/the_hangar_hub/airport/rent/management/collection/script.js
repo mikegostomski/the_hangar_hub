@@ -23,3 +23,16 @@ function refresh_rental_status(el, rental_id){
     });
 
 }
+
+$(document).ready(function(){
+    $("#current_rental_agreements_table").DataTable( {
+        "order": [[ 1, "asc" ], ],
+        "pageLength": 100,
+        "lengthChange": false,
+        "pagingType": "full_numbers",
+        "oLanguage": {
+            "sEmptyTable": "No Current Rental Agreements"
+        }
+    } );
+
+});
