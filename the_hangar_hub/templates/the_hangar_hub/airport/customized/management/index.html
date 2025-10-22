@@ -14,7 +14,7 @@
     </button>
   </div>
 
-  <form id="airport-customize-form" method="post" novalidate>
+  <form id="airport-customize-form" method="post">
     {% csrf_token %}
 
     <div class="row g-4">
@@ -183,13 +183,13 @@
                 <em id="gasHelp" class="form-text text-muted">Enter price, or leave blank if not available</em>
             </legend>
           </div>
-          <div class="card-body">
+          <div class="card-body fuel-prices">
                 <div class="input-group mb-3">
                   <span class="input-group-text"><label for="avgas">100LL</label></span>
                   <input type="text" id="avgas" name="avgas" maxlength="6"
-                         value="{{ custom_content.avgas|default:'' }}"
+                         value="{{ custom_content.avgas_price|default:'' }}"
                          class="form-control" inputmode="decimal"
-                         pattern="^\d{1,2}(\.\d{1,2})?$"
+                         pattern="^\$?\d{1,2}(\.\d{1,2})?$"
                          placeholder="Not Available" aria-describedby="gasHelp" />
                   <span class="input-group-text">/gal</span>
                 </div>
@@ -197,9 +197,9 @@
                 <div class="input-group mb-3">
                   <span class="input-group-text"><label for="jeta">Jet A</label></span>
                   <input type="text" id="jeta" name="jeta" maxlength="6"
-                         value="{{ custom_content.jeta|default:'' }}"
+                         value="{{ custom_content.jeta_price|default:'' }}"
                          class="form-control" inputmode="decimal"
-                         pattern="^\d{1,2}(\.\d{1,2})?$"
+                         pattern="^\$?\d{1,2}(\.\d{1,2})?$"
                          placeholder="Not Available" aria-describedby="gasHelp" />
                   <span class="input-group-text">/gal</span>
                 </div>
@@ -207,9 +207,9 @@
                 <div class="input-group mb-3">
                   <span class="input-group-text"><label for="mogas">Mogas</label></span>
                   <input type="text" id="mogas" name="mogas" maxlength="6"
-                         value="{{ custom_content.mogas|default:'' }}"
+                         value="{{ custom_content.mogas_price|default:'' }}"
                          class="form-control" inputmode="decimal"
-                         pattern="^\d{1,2}(\.\d{1,2})?$"
+                         pattern="^\$?\d{1,2}(\.\d{1,2})?$"
                          placeholder="Not Available" aria-describedby="gasHelp" />
                   <span class="input-group-text">/gal</span>
                 </div>
@@ -253,6 +253,9 @@
 <style>
     .office-hours .input-group-text{
         width: 60px;
+    }
+    .fuel-prices .input-group-text{
+        width: 80px;
     }
     label{
         font-weight: bold;

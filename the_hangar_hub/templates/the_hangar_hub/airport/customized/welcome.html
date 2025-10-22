@@ -5,9 +5,154 @@
 {%block title%}Welcome to {{airport.display_name}}{%endblock%}
 
 {% block main_content %}
-<div class="content-1024 content-center">
+<div class="container-xxl py-4  content-center">
+
+  <header class="mb-4">
+    <h1 class="h2 mb-1">{{ airport.display_name }}</h1>
+    {% if custom_content.url %}
+      <a href="{{ custom_content.url }}" target="_blank" rel="noopener" class="link-primary">
+        Visit website
+      </a>
+    {% endif %}
+  </header>
+
+  <div class="row g-4">
+
+    {# CONTACT #}
+    {% if custom_content.contact_phone or custom_content.contact_email or custom_content.contact_address or custom_content.frequencies %}
+      <div class="col-12 col-lg-8">
+          ???
+      </div>
+    <div class="col-12 col-lg-4">
 
 
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="h5 mb-0">Contact Info</h2>
+        </div>
+        <div class="card-body">
+          {% if custom_content.contact_phone %}
+            <div class="mb-2">
+              <div class="text-muted mb-1 small">Phone</div>
+              <a href="tel:{{ custom_content.contact_phone }}" class="fw-semibold">{{ custom_content.contact_phone }}</a>
+            </div>
+          {% endif %}
+
+          {% if custom_content.contact_email %}
+            <div class="mb-2">
+              <div class="text-muted mb-1 small">Email</div>
+              <a href="mailto:{{ custom_content.contact_email }}" class="fw-semibold">{{ custom_content.contact_email }}</a>
+            </div>
+          {% endif %}
+
+          {% if custom_content.contact_address %}
+            <div class="mb-2">
+              <div class="text-muted mb-1 small">Address</div>
+              <div>{{ custom_content.contact_address|linebreaksbr }}</div>
+            </div>
+          {% endif %}
+
+        {# FREQUENCIES #}
+        {% if custom_content.frequencies %}
+            <div class="mb-2">
+                <div class="text-muted mb-1 small">Frequencies</div>
+                    <div>
+                        <div class="mb-0">{{ custom_content.frequencies|linebreaksbr }}</div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+
+
+        </div><br />
+
+{# OFFICE HOURS #}
+    {% with hm=custom_content.hours_m ht=custom_content.hours_t hw=custom_content.hours_w hr=custom_content.hours_r hf=custom_content.hours_f hs=custom_content.hours_s hu=custom_content.hours_u %}
+    {% if hm or ht or hw or hr or hf or hs or hu %}
+        <div class="card mb-10">
+        <div class="card-header">
+          <h2 class="h5 mb-0">Office Hours</h2>
+        </div>
+        <div class="card-body">
+          <table class="table table-sm mb-0">
+            <tbody>
+              {% if hm %}<tr><th scope="row" class="w-25">Mon</th><td>{{ hm }}</td></tr>{% endif %}
+              {% if ht %}<tr><th scope="row" class="w-25">Tue</th><td>{{ ht }}</td></tr>{% endif %}
+              {% if hw %}<tr><th scope="row" class="w-25">Wed</th><td>{{ hw }}</td></tr>{% endif %}
+              {% if hr %}<tr><th scope="row" class="w-25">Thu</th><td>{{ hr }}</td></tr>{% endif %}
+              {% if hf %}<tr><th scope="row" class="w-25">Fri</th><td>{{ hf }}</td></tr>{% endif %}
+              {% if hs %}<tr><th scope="row" class="w-25">Sat</th><td>{{ hs }}</td></tr>{% endif %}
+              {% if hu %}<tr><th scope="row" class="w-25">Sun</th><td>{{ hu }}</td></tr>{% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    {% endif %}
+    {% endwith %}
+
+      </div>
+    </div>
+    {% endif %}
+
+
+
+
+    <div class="col-12 col-lg-6">
+
+    </div>
+
+    {# FUEL PRICES #}
+    {% if custom_content.avgas or custom_content.jeta or custom_content.mogas %}
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h2 class="h5 mb-0">Fuel Prices</h2>
+          <small class="text-muted">Per gallon</small>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            {% if custom_content.avgas %}
+              <div class="col-6">
+                <div class="border rounded p-3 h-100">
+                  <div class="small text-muted">100LL</div>
+                  <div class="fs-4 fw-bold">${{ custom_content.avgas }}</div>
+                </div>
+              </div>
+            {% endif %}
+            {% if custom_content.jeta %}
+              <div class="col-6">
+                <div class="border rounded p-3 h-100">
+                  <div class="small text-muted">Jet A</div>
+                  <div class="fs-4 fw-bold">${{ custom_content.jeta }}</div>
+                </div>
+              </div>
+            {% endif %}
+            {% if custom_content.mogas %}
+              <div class="col-6">
+                <div class="border rounded p-3 h-100">
+                  <div class="small text-muted">Mogas</div>
+                  <div class="fs-4 fw-bold">${{ custom_content.mogas }}</div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+          <div class="form-text mt-2">Prices may change; call to confirm.</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# FALLBACK when nothing set #}
+  {% if not custom_content.contact_phone and not custom_content.contact_email and not custom_content.contact_address and not custom_content.frequencies and not custom_content.hours_m and not custom_content.avgas and not custom_content.jeta %}
+    <div class="alert alert-info mt-4">
+      Airport details haven’t been published yet. Please check back soon.
+    </div>
+  {% endif %}
 
 </div>
 {%endblock%}

@@ -71,16 +71,23 @@ def welcome(request, airport_identifier):
     on_waitlist = airport.get_waitlist().current_user_position()
     active_applications = application_service.get_active_applications(airport=airport)
 
-    if is_manager and not has_hangars:
-        return redirect("airport:manage", airport_identifier)
+    # if is_manager and not has_hangars:
+    #     return redirect("airport:manage", airport_identifier)
+
+    airport = request.airport
+    customized_content = airport.customized_content
+
 
     return render(
-        request, "the_hangar_hub/airport/welcome.html",
+        request, "the_hangar_hub/airport/customized/welcome.html",
         {
-            "is_manager": is_manager,
-            "is_tenant": is_tenant,
-            "on_waitlist": on_waitlist,
-            "active_applications": active_applications,
+            # "is_manager": is_manager,
+            # "is_tenant": is_tenant,
+            # "on_waitlist": on_waitlist,
+            # "active_applications": active_applications,
+
+            "custom_content": customized_content
+
         }
     )
 
@@ -94,12 +101,90 @@ def customize_content(request, airport_identifier):
         customized_content = CustomizedContent.objects.create(airport=airport)
 
     if request.method == 'POST':
-        pass
+        log.info(f"Customizing airport content ({customized_content})")
+        has_issues = False
 
+        # Display name is on the airport model
+        display_name = request.POST.get("display_name")
+        if display_name:
+            try:
+                airport.display_name = display_name
+                airport.save()
+            except Exception as ee:
+                Error.unexpected("Unable to save airport name", ee, display_name)
+                has_issues = True
 
+        try:
+            contact_phone = request.POST.get("contact_phone")
+            contact_email = request.POST.get("contact_email")
+            url = request.POST.get("url")
+            contact_address = request.POST.get("contact_address")
+            frequencies = request.POST.get("frequencies")
+            hours_m = request.POST.get("hours_m")
+            hours_t = request.POST.get("hours_t")
+            hours_w = request.POST.get("hours_w")
+            hours_r = request.POST.get("hours_r")
+            hours_f = request.POST.get("hours_f")
+            hours_s = request.POST.get("hours_s")
+            hours_u = request.POST.get("hours_u")
+            avgas = request.POST.get("avgas")
+            jeta = request.POST.get("jeta")
+            mogas = request.POST.get("mogas")
+
+            if url and not url.startswith("http"):
+                url = f"https://{url}"
+
+            if avgas:
+                avgas = utility_service.convert_to_decimal(avgas)
+                if not avgas:
+                    message_service.post_error("Invalid dollar amount for Avgas")
+                    avgas = customized_content.avgas_price
+                    has_issues = True
+
+            if jeta:
+                jeta = utility_service.convert_to_decimal(jeta)
+                if not jeta:
+                    message_service.post_error("Invalid dollar amount for Jet A")
+                    jeta = customized_content.jeta_price
+                    has_issues = True
+
+            if mogas:
+                mogas = utility_service.convert_to_decimal(mogas)
+                if not mogas:
+                    message_service.post_error("Invalid dollar amount for Mogas")
+                    mogas = customized_content.mogas_price
+                    has_issues = True
+
+            try:
+                customized_content.contact_phone = contact_phone
+                customized_content.contact_email = contact_email
+                customized_content.url = url
+                customized_content.contact_address = contact_address
+                customized_content.frequencies = frequencies
+                customized_content.hours_m = hours_m
+                customized_content.hours_t = hours_t
+                customized_content.hours_w = hours_w
+                customized_content.hours_r = hours_r
+                customized_content.hours_f = hours_f
+                customized_content.hours_s = hours_s
+                customized_content.hours_u = hours_u
+                customized_content.avgas_price = avgas or None
+                customized_content.jeta_price = jeta or None
+                customized_content.mogas_price = mogas or None
+                customized_content.save()
+            except Exception as ee:
+                Error.unexpected("Unable to save custom airport content", ee)
+                has_issues = True
+
+        except Exception as ee:
+            Error.unexpected("Unable to process submitted input", ee)
+            has_issues = True
+
+        if not has_issues:
+            return redirect("airport:welcome", airport_identifier)
 
     return render(request, "the_hangar_hub/airport/customized/management/index.html", {
-        'customized_content': customized_content,
+        'custom_content': customized_content,
         'airport': airport
     })
 
