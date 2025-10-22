@@ -56,6 +56,7 @@ developer_paths = [
 airport_paths = [
     path(f'{airport}', ap_welcome_v.welcome,                                  name='welcome'),
     path(f'{airport}/customize', ap_welcome_v.customize_content,                                  name='customize'),
+    path(f'{airport}/amenities', ap_welcome_v.manage_amenities,                                  name='manage_amenity'),
     path(f'{airport}/logo', ap_welcome_v.logo,                                  name='logo'),
     path(f'{airport}/upload/logo', ap_welcome_v.upload_logo, name='upload_logo'),
 

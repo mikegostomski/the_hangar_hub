@@ -18,16 +18,86 @@
 
   <div class="row g-4">
 
-    {# CONTACT #}
-    {% if custom_content.contact_phone or custom_content.contact_email or custom_content.contact_address or custom_content.frequencies %}
-      <div class="col-12 col-lg-8">
+            <div class="col-12 col-lg-8">
           ???
       </div>
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-md-4">
 
 
 
-      <div class="card">
+      {# FUEL PRICES #}
+    {% if custom_content.avgas_price or custom_content.jeta_price or custom_content.mogas_price %}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h2 class="h5 mb-0">Fuel Prices</h2>
+          <small class="text-muted">Per gallon</small>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 text-center">
+            {% if custom_content.avgas_price %}
+              <div class="col-6">
+                <div class="border rounded p-3 h-100 ">
+                  <b class="badge fs-5" style="background-color:red;">100LL</b>
+                  <div class="fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.avgas_price }}</div>
+                </div>
+              </div>
+            {% endif %}
+            {% if custom_content.jeta_price %}
+              <div class="col-6">
+                <div class="border rounded p-3 h-100">
+                  <b class="badge fs-5" style="background-color:black;">Jet A</b>
+                  <div class="fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.jeta_price }}</div>
+                </div>
+              </div>
+            {% endif %}
+            {% if custom_content.mogas_price %}
+              <div class="col-6">
+                <div class="border rounded p-3 h-100">
+                  <b class="badge fs-5" style="background-color:#C2B280;color:black;">Mogas</b>
+                  <div class="fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.mogas_price }}</div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+
+
+      {# OFFICE HOURS #}
+    {% with hm=custom_content.hours_m ht=custom_content.hours_t hw=custom_content.hours_w hr=custom_content.hours_r hf=custom_content.hours_f hs=custom_content.hours_s hu=custom_content.hours_u %}
+    {% if hm or ht or hw or hr or hf or hs or hu %}
+        <div class="card mb-3">
+            <div class="card-header">
+              <h2 class="h5 mb-0">Office Hours</h2>
+            </div>
+            <div class="card-body">
+              <table class="table table-sm mb-1">
+                <tbody>
+                  {% if hm %}<tr><th scope="row" class="w-25">Mon</th><td>{{ hm }}</td></tr>{% endif %}
+                  {% if ht %}<tr><th scope="row" class="w-25">Tue</th><td>{{ ht }}</td></tr>{% endif %}
+                  {% if hw %}<tr><th scope="row" class="w-25">Wed</th><td>{{ hw }}</td></tr>{% endif %}
+                  {% if hr %}<tr><th scope="row" class="w-25">Thu</th><td>{{ hr }}</td></tr>{% endif %}
+                  {% if hf %}<tr><th scope="row" class="w-25">Fri</th><td>{{ hf }}</td></tr>{% endif %}
+                  {% if hs %}<tr><th scope="row" class="w-25">Sat</th><td>{{ hs }}</td></tr>{% endif %}
+                  {% if hu %}<tr><th scope="row" class="w-25">Sun</th><td>{{ hu }}</td></tr>{% endif %}
+                </tbody>
+              </table>
+                {%if custom_content.after_hours%}
+                <b>After-Hours</b>
+                <div class="indent">{{custom_content.after_hours|linebreaksbr}}</div>
+                {%endif%}
+            </div>
+      </div>
+
+    {% endif %}
+    {% endwith %}
+
+
+    {# CONTACT #}
+    {% if custom_content.contact_phone or custom_content.contact_email or custom_content.contact_address or custom_content.frequencies %}
+
+      <div class="card mb-3">
         <div class="card-header">
           <h2 class="h5 mb-0">Contact Info</h2>
         </div>
@@ -63,87 +133,43 @@
                 </div>
             </div>
         {% endif %}
+        </div>
 
-
-
-        </div><br />
-
-{# OFFICE HOURS #}
-    {% with hm=custom_content.hours_m ht=custom_content.hours_t hw=custom_content.hours_w hr=custom_content.hours_r hf=custom_content.hours_f hs=custom_content.hours_s hu=custom_content.hours_u %}
-    {% if hm or ht or hw or hr or hf or hs or hu %}
-        <div class="card mb-10">
+      {# AMENITIES #}
+        {%if custom_content.amenities%}
+      <div class="card mb-3">
         <div class="card-header">
-          <h2 class="h5 mb-0">Office Hours</h2>
+          <h2 class="h5 mb-0">Amenities</h2>
         </div>
         <div class="card-body">
-          <table class="table table-sm mb-0">
-            <tbody>
-              {% if hm %}<tr><th scope="row" class="w-25">Mon</th><td>{{ hm }}</td></tr>{% endif %}
-              {% if ht %}<tr><th scope="row" class="w-25">Tue</th><td>{{ ht }}</td></tr>{% endif %}
-              {% if hw %}<tr><th scope="row" class="w-25">Wed</th><td>{{ hw }}</td></tr>{% endif %}
-              {% if hr %}<tr><th scope="row" class="w-25">Thu</th><td>{{ hr }}</td></tr>{% endif %}
-              {% if hf %}<tr><th scope="row" class="w-25">Fri</th><td>{{ hf }}</td></tr>{% endif %}
-              {% if hs %}<tr><th scope="row" class="w-25">Sat</th><td>{{ hs }}</td></tr>{% endif %}
-              {% if hu %}<tr><th scope="row" class="w-25">Sun</th><td>{{ hu }}</td></tr>{% endif %}
-            </tbody>
-          </table>
+            <div class="list-group">
+            {%for amenity in custom_content.amenities%}
+                <div class="list-group-item">
+                {%if amenity.icon%}
+                    {%icon icon_class=amenity.icon%}
+                {%else%}
+                    {%icon icon_class="bi-trash"%}
+                {%endif%}
+            {{amenity.title}}
+                </div>
+
+            {%endfor%}
+            </div>
         </div>
       </div>
-
-    {% endif %}
-    {% endwith %}
+        {%endif%}
 
       </div>
+    {% endif %}
+
+
     </div>
     {% endif %}
 
 
 
 
-    <div class="col-12 col-lg-6">
 
-    </div>
-
-    {# FUEL PRICES #}
-    {% if custom_content.avgas or custom_content.jeta or custom_content.mogas %}
-    <div class="col-12 col-lg-6">
-      <div class="card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <h2 class="h5 mb-0">Fuel Prices</h2>
-          <small class="text-muted">Per gallon</small>
-        </div>
-        <div class="card-body">
-          <div class="row g-3">
-            {% if custom_content.avgas %}
-              <div class="col-6">
-                <div class="border rounded p-3 h-100">
-                  <div class="small text-muted">100LL</div>
-                  <div class="fs-4 fw-bold">${{ custom_content.avgas }}</div>
-                </div>
-              </div>
-            {% endif %}
-            {% if custom_content.jeta %}
-              <div class="col-6">
-                <div class="border rounded p-3 h-100">
-                  <div class="small text-muted">Jet A</div>
-                  <div class="fs-4 fw-bold">${{ custom_content.jeta }}</div>
-                </div>
-              </div>
-            {% endif %}
-            {% if custom_content.mogas %}
-              <div class="col-6">
-                <div class="border rounded p-3 h-100">
-                  <div class="small text-muted">Mogas</div>
-                  <div class="fs-4 fw-bold">${{ custom_content.mogas }}</div>
-                </div>
-              </div>
-            {% endif %}
-          </div>
-          <div class="form-text mt-2">Prices may change; call to confirm.</div>
-        </div>
-      </div>
-    </div>
-    {% endif %}
 
   </div>
 

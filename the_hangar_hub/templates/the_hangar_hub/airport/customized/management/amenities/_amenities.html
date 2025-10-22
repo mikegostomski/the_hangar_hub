@@ -1,0 +1,43 @@
+{% load base_taglib %}
+
+{## Requires: amenity_options ##}
+
+<div class="amenities" id="amenities-container">
+    {% for amenity in amenity_options %}
+        <label>
+            <input type="checkbox" name="amenities" value="{{ amenity.id }}"
+                   onchange="manage_amenity($(this));"
+                   {%if amenity.id in airport.customized_content.amenity_ids%}checked{%endif%}
+            />
+            {{ amenity.title }}
+            {%if not amenity.approved%}
+            <em class="text-muted">{%icon bi-gear bi-spin title="Awaiting Review"%}</em>
+            {%endif%}
+        </label>
+    {% endfor %}
+
+    <label class="visually-hidden" for="new_amenity">Other</label>
+    <div class="input-group mb-1">
+        <input type="text" id="new_amenity" name="new_amenity" class="form-control" maxlength="80" placeholder="Create a new amenity" />
+        <button class="btn btn-success" type="button" onclick="manage_amenity($(this));">Add</button>
+    </div>
+</div>
+
+<style>
+    .amenities{
+        column-width: 250px;
+    }
+    .amenities .input-group-text{
+        width: 70px;
+    }
+    .amenities label{
+        break-inside: avoid;
+        display: inline-block;
+        width: 100%;
+        font-weight: normal;
+    }
+</style>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/customized/management/amenities/amenities.js"%}
+</script>

@@ -161,7 +161,7 @@
 
             <!-- Sunday -->
 
-              <div class="input-group mb-1">
+              <div class="input-group mb-3">
                 <span class="input-group-text"><label for="hours_u">Sun</label></span>
                 <input type="text" id="hours_u" name="hours_u"
                        maxlength="25"
@@ -170,8 +170,25 @@
                        placeholder="e.g., Closed" />
               </div>
 
+            <div>
+                <label for="after_hours" class="form-label">After-Hours Access Instructions</label>
+                <textarea id="after_hours" name="after_hours" rows="3"
+                          class="form-control"
+                          placeholder="ex. Entry code is airport elevation">{{ custom_content.after_hours|default:'' }}</textarea>
+              </div>
+
+
+
         </div>
       </fieldset>
+
+
+
+
+
+
+
+
     </div>
 
       <!-- Fuel Prices -->
@@ -247,6 +264,21 @@
 
     </div>
   </form>
+</div>
+
+
+
+
+<div class="container-xxl py-4 content-center">
+      <div class="card">
+        <div class="card-header">
+            <h2>Manage Amenities</h2>
+            <em>Amenities auto-save when selected</em>
+        </div>
+        <div class="card-body">
+            {%include "the_hangar_hub/airport/customized/management/amenities/_amenities.html" with amenity_options=amenity_options%}
+        </div>
+      </div>
 </div>
 
 

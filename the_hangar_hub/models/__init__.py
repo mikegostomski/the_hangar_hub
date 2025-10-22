@@ -1,4 +1,4 @@
-from the_hangar_hub.models.airport import Airport, HangarApplicationPreferences
+from the_hangar_hub.models.airport import Airport, HangarApplicationPreferences, Amenity, Amenities
 from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.airport_customer import AirportCustomer
 from the_hangar_hub.models.invitation import Invitation

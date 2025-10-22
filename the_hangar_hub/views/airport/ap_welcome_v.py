@@ -38,6 +38,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from the_hangar_hub.models.airport import CustomizedContent
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from the_hangar_hub.models.airport import Airport, Amenities, Amenity
 
 
 
@@ -127,6 +130,7 @@ def customize_content(request, airport_identifier):
             hours_f = request.POST.get("hours_f")
             hours_s = request.POST.get("hours_s")
             hours_u = request.POST.get("hours_u")
+            after_hours = request.POST.get("after_hours")
             avgas = request.POST.get("avgas")
             jeta = request.POST.get("jeta")
             mogas = request.POST.get("mogas")
@@ -168,6 +172,7 @@ def customize_content(request, airport_identifier):
                 customized_content.hours_f = hours_f
                 customized_content.hours_s = hours_s
                 customized_content.hours_u = hours_u
+                customized_content.after_hours = after_hours
                 customized_content.avgas_price = avgas or None
                 customized_content.jeta_price = jeta or None
                 customized_content.mogas_price = mogas or None
@@ -183,19 +188,16 @@ def customize_content(request, airport_identifier):
         if not has_issues:
             return redirect("airport:welcome", airport_identifier)
 
+    amenity_options = sorted(
+        Amenity.objects.filter(Q(approved=True) | Q(proposed_by_airport=airport)),
+        key=lambda x: x.sort_val
+    )
+
     return render(request, "the_hangar_hub/airport/customized/management/index.html", {
         'custom_content': customized_content,
-        'airport': airport
+        'airport': airport,
+        "amenity_options": amenity_options,
     })
-
-
-
-
-
-
-
-
-
 
 
 def logo(request, airport_identifier):
@@ -251,3 +253,49 @@ def upload_logo(request, airport_identifier):
 
     return HttpResponseForbidden()
 
+@require_airport_manager()
+def manage_amenities(request, airport_identifier):
+    airport = request.airport
+    mode = request.POST.get("mode")
+    amenity_id = request.POST.get("amenity_id")
+    amenity_title = request.POST.get("amenity_title")
+    try:
+        if mode == "create" and amenity_title:
+            amenity = Amenity.objects.create(title=amenity_title, proposed_by_user=Auth.current_user(), proposed_by_airport=airport)
+        else:
+            amenity = Amenity.get(amenity_id)
+
+        if not amenity:
+            message_service.post_error("Could not update amenity")
+            return HttpResponseForbidden()
+
+        if mode == "remove":
+            rel = Amenities.get(airport, amenity)
+            if not rel:
+                message_service.post_warning("Specified amenity does not appear to have been selected.")
+                # Consider this a success, despite the warning, since the object to be removed doesn't exist
+            else:
+                rel.delete()
+                message_service.post_success(f'Removed "{amenity.title}"')
+        else:
+            rel = Amenities.get(airport, amenity)
+            if rel:
+                # Already selected
+                message_service.post_warning("Specified amenity appears to have been previously selected.")
+                # Consider this a success
+            else:
+                Amenities.objects.create(airport=airport, amenity=amenity)
+
+    except Exception as ee:
+        Error.unexpected("unable to save amenity", ee, [mode, amenity_id, amenity_title])
+
+    amenity_options = sorted(
+        Amenity.objects.filter(Q(approved=True) | Q(proposed_by_airport=airport)),
+        key=lambda x: x.sort_val
+    )
+    return render(
+        request, "the_hangar_hub/airport/customized/management/amenities/_amenities.html",
+        {
+            "amenity_options": amenity_options
+        }
+    )

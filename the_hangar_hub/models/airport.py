@@ -255,6 +255,7 @@ class CustomizedContent(models.Model):
     hours_f = models.CharField(max_length=25, blank=True, null=True)
     hours_s = models.CharField(max_length=25, blank=True, null=True)
     hours_u = models.CharField(max_length=25, blank=True, null=True)
+    after_hours = models.TextField(blank=True, null=True)
 
     avgas_price = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
     jeta_price = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
@@ -262,6 +263,15 @@ class CustomizedContent(models.Model):
 
     logo = models.ImageField(upload_to='airport_logos/', blank=True, null=True)
     url = models.CharField(max_length=256, blank=True, null=True)
+
+    def amenities(self):
+        return sorted(
+            [x.amenity for x in self.airport.amenities.filter(amenity__approved=True)],
+            key=lambda x: x.sort_val
+        )
+
+    def amenity_ids(self):
+        return [x.amenity.id for x in self.airport.amenities.all()]
 
     # Calculated fields
     # Number of hangars
@@ -271,8 +281,36 @@ class CustomizedContent(models.Model):
 class Amenity(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    title = models.CharField(max_length=80)
-    icon = models.CharField(max_length=30)
+    sort_modifier = models.CharField(max_length=10)  # Allows grouping things like 100LL and JetA as "gas"
+    title = models.CharField(max_length=80, null=True, blank=True)
+    icon = models.CharField(max_length=30, null=True, blank=True)
+    approved = models.BooleanField(default=False)
+    proposed_by_user = models.ForeignKey("auth.User", on_delete=models.SET_NULL, related_name="suggested_amenities", null=True, blank=True)
+    proposed_by_airport = models.ForeignKey("the_hangar_hub.Airport", on_delete=models.SET_NULL, related_name="suggested_amenities", null=True, blank=True)
+
+    @property
+    def sort_val(self):
+        """
+        When displaying on screen, update the sorting to include the sort_modifier
+        """
+        if self.sort_modifier:
+            return f"{self.sort_modifier}{self.title}"
+        return self.title
+
+    class Meta:
+        ordering = ['title']
+
+    @classmethod
+    def get(cls, pk):
+        log.trace([pk])
+        try:
+            return cls.objects.get(pk=pk)
+        except cls.DoesNotExist:
+            return None
+        except Exception as ee:
+            log.error(f"Could not get {cls}: {ee}")
+            return None
+
 
 class Amenities(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
@@ -280,6 +318,20 @@ class Amenities(models.Model):
     airport = models.ForeignKey("the_hangar_hub.Airport", on_delete=models.CASCADE, related_name="amenities")
     amenity = models.ForeignKey("the_hangar_hub.Amenity", on_delete=models.CASCADE, related_name="airports")
 
+
+    class Meta:
+        ordering = ['amenity__title']
+
+    @classmethod
+    def get(cls, airport, amenity):
+        log.trace([airport, amenity])
+        try:
+            return cls.objects.get(airport=airport, amenity=amenity)
+        except cls.DoesNotExist:
+            return None
+        except Exception as ee:
+            log.error(f"Could not get {cls}: {ee}")
+            return None
 
 
 
