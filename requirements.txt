@@ -25,6 +25,7 @@ pyyaml>=6.0
 pandas
 
 stripe>=12.0.0
+pillow
 
 django-storages>=1.9.1
 # boto3>=1.21.38

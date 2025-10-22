@@ -331,6 +331,7 @@ a.tile:hover {
   padding-left: 4px; }
 
 .navbar-content .dropdown-item {
+    font-family: var(--app-font-text);
   background-color: var(--base-color-navbar-bg);
   color: var(--base-color-navbar-fg);
   border: 0;
@@ -346,6 +347,22 @@ a.tile:hover {
   background-color: var(--base-color-navbar-hover-bg);
   color: var(--base-color-navbar-hover-fg);
   font-weight: bold; }
+
+.navbar-content .dropdown-subitem {
+    font-size: .9em;
+  border-bottom: 1px dotted var(--base-color-navbar-separator);
+  padding: 5px;
+  padding-left: 14px; }
+
+.navbar-content .dropdown-subitem::before {
+  content: "\f309";
+  font-size: .7em;
+  padding-left: 14px;
+}
+
+.navbar-content a.dropdown-subitem:hover {
+  font-weight: bold;
+ }
 
 .navbar-content span.dropdown-item, .navbar-content div.dropdown-item {
   display: block;
@@ -558,7 +575,16 @@ span.required {
   margin-left: 3px; }
 
 fieldset .form-control, fieldset .form-select {
-  height: 100%; }
+  height: auto; }
+
+::placeholder {
+  color: var(--app-teal);
+  opacity: .5;
+}
+.form-control::placeholder {
+    color: var(--app-teal) !important;
+    opacity:.5;
+}
 
 /**
   * FOOTER

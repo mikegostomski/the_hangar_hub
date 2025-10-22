@@ -70,6 +70,10 @@ class BaseSocialAdapter(DefaultSocialAccountAdapter):
         """
         log.debug("Base SocialAuth Adapter")
 
+        # Remember social logins longer than password logins
+        # 60 seconds * 60 minutes * 24 hours * 14 days
+        self.request.session.set_expiry(60 * 60 * 24 * 14)
+
 
         # Ignore existing social accounts, just do this stuff for new ones
         if sociallogin.is_existing:

@@ -1,0 +1,12 @@
+{% load base_taglib %}
+
+{% if not user.is_authenticated%}
+    <a href="{%url 'account_login'%}" class="dropdown-item">Log In</a>
+    <a href="{%url 'account_signup'%}" class="dropdown-item">Create Account</a>
+    <li class="dropdown-divider"></li>
+{%endif%}
+
+<li>
+    <a href="{%url 'public:search'%}" class="dropdown-item">Airport Search</a>
+</li>
+<li class="dropdown-divider"></li>

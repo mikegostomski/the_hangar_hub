@@ -83,9 +83,9 @@ class WebhookValidation:
             log.info(f"Successfully validated Stripe webhook event")
 
             if not response.object_id:
-                if "balance" in response.event_type and hasattr(response, "account"):
+                if "balance" in response.event_type and "account" in payload_json:
                     alt_object = "account"
-                    alt_object_id = response.account
+                    alt_object_id = payload_json.get("account")
                 else:
                     log.info(f"No object ID in webhook response:\n{payload_text}")
                     return response

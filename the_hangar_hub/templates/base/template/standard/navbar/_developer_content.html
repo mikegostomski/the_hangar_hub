@@ -1,0 +1,13 @@
+{% load base_taglib %}
+{%if is_developer%}
+    <li class="dropdown-header">
+        Administration
+    </li>
+    <li>
+        <a href="{%url 'dev:products'%}" class="dropdown-item">Products</a>
+    </li>
+    <li>
+        <a href="{%url 'dev:invitation_dashboard'%}" class="dropdown-item">Invitation Dashboard</a>
+    </li>
+    <li class="dropdown-divider"></li>
+{%endif%}

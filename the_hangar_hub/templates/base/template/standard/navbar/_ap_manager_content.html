@@ -1,0 +1,73 @@
+{% load base_taglib %}
+{% if user.is_authenticated and  managed_airports%}
+
+{%for airport in managed_airports%}
+    <li class="dropdown-header">
+        Administration: {{airport.identifier}}
+    </li>
+
+    <li>
+        <a href="{%url 'application:mgmt_dashboard' airport.identifier%}" class="dropdown-item">
+            Applications
+            {%with unreviewed_applications=airport.get_unreviewed_applications%}
+                {%if unreviewed_applications%}
+                    <span class="badge text-bg-danger">{{unreviewed_applications|length}}</span>
+                {%endif%}
+            {%endwith%}
+        </a>
+    </li>
+    <li>
+        <a href="{%url 'application:mgmt_dashboard' airport.identifier%}" class="dropdown-item dropdown-subitem">
+            Application Preferences
+        </a>
+    </li>
+
+    <li>
+        <a href="{%url 'mx:mgmt_dashboard' airport.identifier%}" class="dropdown-item">
+            Maintenance
+            {%with new_mx_requests=airport.get_new_mx_requests%}
+                {%if new_mx_requests%}
+                    <span class="badge text-bg-danger">{{new_mx_requests|length}}</span>
+                {%endif%}
+            {%endwith%}
+        </a>
+    </li>
+
+    <li>
+        <a href="{%url 'rent:rent_collection_dashboard' airport.identifier%}" class="dropdown-item">
+            Rent Collection
+        </a>
+    </li>
+
+    <li>
+        <a href="{%url 'infrastructure:buildings' airport.identifier%}" class="dropdown-item">
+            Hangars
+        </a>
+    </li>
+
+    <li>
+        <a href="{%url 'airport:manage' airport.identifier%}" class="dropdown-item">
+            Manage Airport
+        </a>
+    </li>
+    <li>
+        <a href="{%url 'airport:manage' airport.identifier%}" class="dropdown-item dropdown-subitem">
+            Blog/News
+        </a>
+    </li>
+    <li>
+        <a href="{%url 'airport:customize' airport.identifier%}" class="dropdown-item dropdown-subitem">
+            Welcome Page
+        </a>
+    </li>
+    <li>
+        <a href="{%url 'airport:manage' airport.identifier%}" class="dropdown-item dropdown-subitem">
+            My Account
+        </a>
+    </li>
+    <li class="dropdown-divider"></li>
+{%endfor%}
+
+
+
+{%endif%}

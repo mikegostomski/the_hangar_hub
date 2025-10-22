@@ -1,0 +1,263 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+
+{%block title%}Customize Content for {{airport.display_name}}{%endblock%}
+
+{% block main_content %}
+
+<div class="container-xxl py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h2 mb-0">Customize Your Airport Page</h1>
+    <button type="submit" form="airport-customize-form" class="btn btn-primary">
+      Save Changes
+    </button>
+  </div>
+
+  <form id="airport-customize-form" method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="row g-4">
+
+      <!-- Name & Contact -->
+      <div class="col-12 col-lg-6">
+        <fieldset class="card h-100">
+          <div class="card-header">
+            <legend class="h5 mb-0">Name &amp; Contact Info</legend>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="display_name" class="form-label">Airport Name</label>
+                <input type="text" id="display_name" name="display_name"
+                       value="{{ airport.display_name|default:'' }}"
+                       class="form-control" placeholder="e.g., Lebanon–Springfield Airport" />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label for="contact_phone" class="form-label">Phone Number</label>
+                <input type="tel" id="contact_phone" name="contact_phone"
+                       value="{{ custom_content.contact_phone|default:'' }}"
+                       class="form-control" placeholder="(555) 123-4567" inputmode="tel" />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label for="contact_email" class="form-label">Email Address</label>
+                <input type="email" id="contact_email" name="contact_email"
+                       value="{{ custom_content.contact_email|default:'' }}"
+                       class="form-control" placeholder="info@yourairport.com" />
+              </div>
+
+              <div class="col-12">
+                <label for="url" class="form-label">Website</label>
+                <input type="url" id="url" name="url"
+                       value="{{ custom_content.url|default:'' }}"
+                       class="form-control" placeholder="https://example.com" />
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- Address & Frequencies -->
+      <div class="col-12 col-lg-6">
+        <fieldset class="card h-100">
+          <div class="card-header">
+            <legend class="h5 mb-0">Address &amp; Frequencies</legend>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="contact_address" class="form-label">Physical Address</label>
+                <textarea id="contact_address" name="contact_address" rows="3"
+                          class="form-control"
+                          placeholder="Street&#10;City, State Zip">{{ custom_content.contact_address|default:'' }}</textarea>
+              </div>
+
+              <div class="col-12">
+                <label for="frequencies" class="form-label">Frequencies</label>
+                <textarea id="frequencies" name="frequencies" rows="3"
+                          class="form-control"
+                          placeholder="CTAF 122.8&#10;AWOS 118.025&#10;UNICOM 122.95">{{ custom_content.frequencies|default:'' }}</textarea>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+    <!-- Office Hours -->
+    <div class="col-12 col-lg-6 office-hours">
+      <fieldset class="card h-100">
+        <div class="card-header">
+          <legend class="h5 mb-0">Office Hours</legend>
+        </div>
+        <div class="card-body">
+
+            <!-- Monday -->
+
+              <div class="input-group mb-1">
+                <span class="input-group-text"><label for="hours_m">Mon</label></span>
+                <input type="text" id="hours_m" name="hours_m"
+                       maxlength="25"
+                       value="{{ custom_content.hours_m|default:'' }}"
+                       class="form-control"
+                       placeholder="e.g., 08:00–17:00" />
+              </div>
+
+            <!-- Tuesday -->
+
+              <div class="input-group mb-1">
+                <span class="input-group-text"><label for="hours_t">Tue</label></span>
+                <input type="text" id="hours_t" name="hours_t"
+                       maxlength="25"
+                       value="{{ custom_content.hours_t|default:'' }}"
+                       class="form-control"
+                       placeholder="e.g., 08:00–17:00" />
+              </div>
+
+            <!-- Wednesday -->
+
+              <div class="input-group mb-1">
+                <span class="input-group-text"><label for="hours_w">Wed</label></span>
+                <input type="text" id="hours_w" name="hours_w"
+                       maxlength="25"
+                       value="{{ custom_content.hours_w|default:'' }}"
+                       class="form-control"
+                       placeholder="e.g., 08:00–17:00" />
+              </div>
+
+            <!-- Thursday -->
+
+              <div class="input-group mb-1">
+                <span class="input-group-text"><label for="hours_r">Thu</label></span>
+                <input type="text" id="hours_r" name="hours_r"
+                       maxlength="25"
+                       value="{{ custom_content.hours_r|default:'' }}"
+                       class="form-control"
+                       placeholder="e.g., 08:00–17:00" />
+              </div>
+
+            <!-- Friday -->
+
+              <div class="input-group mb-1">
+                <span class="input-group-text"><label for="hours_f">Fri</label></span>
+                <input type="text" id="hours_f" name="hours_f"
+                       maxlength="25"
+                       value="{{ custom_content.hours_f|default:'' }}"
+                       class="form-control"
+                       placeholder="e.g., 08:00–17:00" />
+              </div>
+
+            <!-- Saturday -->
+
+              <div class="input-group mb-1">
+                <span class="input-group-text"><label for="hours_s">Sat</label></span>
+                <input type="text" id="hours_s" name="hours_s"
+                       maxlength="25"
+                       value="{{ custom_content.hours_s|default:'' }}"
+                       class="form-control"
+                       placeholder="e.g., 09:00–14:00 or Closed" />
+              </div>
+
+            <!-- Sunday -->
+
+              <div class="input-group mb-1">
+                <span class="input-group-text"><label for="hours_u">Sun</label></span>
+                <input type="text" id="hours_u" name="hours_u"
+                       maxlength="25"
+                       value="{{ custom_content.hours_u|default:'' }}"
+                       class="form-control"
+                       placeholder="e.g., Closed" />
+              </div>
+
+        </div>
+      </fieldset>
+    </div>
+
+      <!-- Fuel Prices -->
+      <div class="col-12 col-lg-6">
+        <fieldset class="card h-100">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <legend class="h5 mb-0">
+                Fuel Prices<br />
+                <em id="gasHelp" class="form-text text-muted">Enter price, or leave blank if not available</em>
+            </legend>
+          </div>
+          <div class="card-body">
+                <div class="input-group mb-3">
+                  <span class="input-group-text"><label for="avgas">100LL</label></span>
+                  <input type="text" id="avgas" name="avgas" maxlength="6"
+                         value="{{ custom_content.avgas|default:'' }}"
+                         class="form-control" inputmode="decimal"
+                         pattern="^\d{1,2}(\.\d{1,2})?$"
+                         placeholder="Not Available" aria-describedby="gasHelp" />
+                  <span class="input-group-text">/gal</span>
+                </div>
+
+                <div class="input-group mb-3">
+                  <span class="input-group-text"><label for="jeta">Jet A</label></span>
+                  <input type="text" id="jeta" name="jeta" maxlength="6"
+                         value="{{ custom_content.jeta|default:'' }}"
+                         class="form-control" inputmode="decimal"
+                         pattern="^\d{1,2}(\.\d{1,2})?$"
+                         placeholder="Not Available" aria-describedby="gasHelp" />
+                  <span class="input-group-text">/gal</span>
+                </div>
+
+                <div class="input-group mb-3">
+                  <span class="input-group-text"><label for="mogas">Mogas</label></span>
+                  <input type="text" id="mogas" name="mogas" maxlength="6"
+                         value="{{ custom_content.mogas|default:'' }}"
+                         class="form-control" inputmode="decimal"
+                         pattern="^\d{1,2}(\.\d{1,2})?$"
+                         placeholder="Not Available" aria-describedby="gasHelp" />
+                  <span class="input-group-text">/gal</span>
+                </div>
+          </div>
+        </fieldset>
+      </div>
+
+        <div class="col-12 col-lg-6">
+    <div class="card h-100">
+        <div class="card-header">
+            <b class="h5 mb-0">Logo</b>
+        </div>
+        <div class="card-body">
+            <div class="float-left">
+                {%include 'base/upload/_dnd_input.html' with input_name="logo_file" upload_url="airport:upload_logo" upload_url_arg=airport.identifier %}
+                {%include 'base/upload/_dnd_assets.html'%}
+            </div>
+
+            <div class="float-right">
+                {%include "the_hangar_hub/airport/_logo.html" with class="img-fluid" style="max-width:100px;max-height:100px;"%}
+            </div>
+            <br style="clear:both;" />
+            <div class="ajax-status-container">&nbsp;</div>
+        </div>
+    </div>
+    </div>
+
+
+      <!-- Sticky Save (mobile) -->
+      <div class="col-12 col-lg-6 text-center">
+            <br />
+            <br />
+          <button type="submit" class="btn btn-primary btn-lg">Save Changes</button>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+
+<style>
+    .office-hours .input-group-text{
+        width: 60px;
+    }
+    label{
+        font-weight: bold;
+    }
+</style>
+
+
+{% endblock %}

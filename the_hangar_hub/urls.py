@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from the_hangar_hub.views import public_v, admin_v, airport_v, hh_subscription_v, infrastructure_v
+from the_hangar_hub.views.airport import ap_account_v, ap_welcome_v
 from the_hangar_hub.views.application import app_mgmt_v, app_tenant_v, app_shared_v
 from the_hangar_hub.views.maintenance import mx_mgmt_v, mx_tenant_v, mx_shared_v
 from the_hangar_hub.views.rent import rent_mgmt_v, rent_tenant_v, rent_subscription_v
@@ -53,8 +54,10 @@ developer_paths = [
 
 # Airport-specific content
 airport_paths = [
-    path(f'{airport}', airport_v.welcome,                                  name='welcome'),
-    path(f'{airport}/logo', airport_v.logo,                                  name='logo'),
+    path(f'{airport}', ap_welcome_v.welcome,                                  name='welcome'),
+    path(f'{airport}/customize', ap_welcome_v.customize_content,                                  name='customize'),
+    path(f'{airport}/logo', ap_welcome_v.logo,                                  name='logo'),
+    path(f'{airport}/upload/logo', ap_welcome_v.upload_logo, name='upload_logo'),
 
     # HH SUBSCRIPTIONS
     path(f'{airport}/claim', hh_subscription_v.claim_airport,                       name='claim'),
@@ -64,11 +67,10 @@ airport_paths = [
     path(f'{airport}/subscribe/success',  hh_subscription_v.subscription_success, name='subscription_success'),
 
     path(f'{airport}/manage', airport_v.my_airport, name='manage'),
-    path(f'{airport}/stripe', airport_v.my_subscription, name='subscription'),
+    path(f'{airport}/stripe', ap_account_v.my_subscription, name='subscription'),
     path(f'{airport}/update', airport_v.update_airport, name='update_airport'),
-    path(f'{airport}/upload/logo', airport_v.upload_logo, name='upload_logo'),
-    path(f'{airport}/assign', airport_v.add_manager, name='add_manager'),
-    path(f'{airport}/manager/update', airport_v.update_manager, name='update_manager'),
+    path(f'{airport}/assign', ap_account_v.add_manager, name='add_manager'),
+    path(f'{airport}/manager/update', ap_account_v.update_manager, name='update_manager'),
 ]
 
 

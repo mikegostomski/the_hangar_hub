@@ -29,7 +29,7 @@ class Airport(models.Model):
 
     # Email displayed to users/tenants who need to contact the airport
     info_email = models.CharField(max_length=150, blank=True, null=True)
-    url = models.CharField(max_length=256, blank=True, null=True)
+
 
     application_fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
 
@@ -235,6 +235,54 @@ class Airport(models.Model):
 
     def __repr__(self):
         return f"Airport: {self.identifier} ({self.id})"
+
+
+class CustomizedContent(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    airport = models.OneToOneField("the_hangar_hub.Airport", models.CASCADE, related_name="customized_content", db_index=True, unique=True)
+
+    contact_address = models.TextField(blank=True, null=True)
+    frequencies = models.TextField(blank=True, null=True)
+
+    contact_phone = models.CharField(max_length=200, blank=True, null=True)
+    contact_email = models.CharField(max_length=200, blank=True, null=True)
+
+    hours_m = models.CharField(max_length=25, blank=True, null=True)
+    hours_t = models.CharField(max_length=25, blank=True, null=True)
+    hours_w = models.CharField(max_length=25, blank=True, null=True)
+    hours_r = models.CharField(max_length=25, blank=True, null=True)
+    hours_f = models.CharField(max_length=25, blank=True, null=True)
+    hours_s = models.CharField(max_length=25, blank=True, null=True)
+    hours_u = models.CharField(max_length=25, blank=True, null=True)
+
+    avgas_price = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    jeta_price = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    mogas_price = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+
+    logo = models.ImageField(upload_to='airport_logos/', blank=True, null=True)
+    url = models.CharField(max_length=256, blank=True, null=True)
+
+    # Calculated fields
+    # Number of hangars
+    # Number of tie-downs
+    # Wait List?
+
+class Amenity(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=80)
+    icon = models.CharField(max_length=30)
+
+class Amenities(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    airport = models.ForeignKey("the_hangar_hub.Airport", on_delete=models.CASCADE, related_name="amenities")
+    amenity = models.ForeignKey("the_hangar_hub.Amenity", on_delete=models.CASCADE, related_name="airports")
+
+
+
+
 
 
 class HangarApplicationPreferences(models.Model):
