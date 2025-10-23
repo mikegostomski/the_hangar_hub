@@ -248,6 +248,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+
 # SASS (https://github.com/jrief/django-sass-processor)
 SASS_PROCESSOR_ROOT = os.path.join(BASE_DIR, 'sass_build')
 STATICFILES_FINDERS = [

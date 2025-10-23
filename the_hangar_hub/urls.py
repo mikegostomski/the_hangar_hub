@@ -21,6 +21,8 @@ from the_hangar_hub.views.airport import ap_account_v, ap_welcome_v
 from the_hangar_hub.views.application import app_mgmt_v, app_tenant_v, app_shared_v
 from the_hangar_hub.views.maintenance import mx_mgmt_v, mx_tenant_v, mx_shared_v
 from the_hangar_hub.views.rent import rent_mgmt_v, rent_tenant_v, rent_subscription_v
+from django.conf import settings
+from django.conf.urls.static import static
 
 # To ensure consistent URL parameter names
 airport = "<slug:airport_identifier>"
@@ -193,3 +195,5 @@ urlpatterns = [
     re_path(f'mx/', include((mx_paths, 'the_hangar_hub'), namespace='mx')),
     re_path(f'rent/', include((rent_paths, 'the_hangar_hub'), namespace='rent')),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

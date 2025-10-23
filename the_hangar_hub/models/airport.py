@@ -12,6 +12,7 @@ from base.models.utility.error import Error, Log, EnvHelper
 from decimal import Decimal
 from datetime import datetime, timezone
 from base.services import date_service
+import os
 
 log = Log()
 env = EnvHelper()
@@ -333,7 +334,19 @@ class Amenities(models.Model):
             log.error(f"Could not get {cls}: {ee}")
             return None
 
+def blog_image_upload_to(instance, filename):
+    # Get the file extension
+    base, ext = os.path.splitext(filename)
+    return f'uploads/airports/blog/{instance.airport.identifier}-{instance.id}{ext}'
 
+class BlogEntry(models.Model):
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    airport = models.ForeignKey("the_hangar_hub.Airport", on_delete=models.CASCADE, related_name="blog_entries")
+    title = models.CharField(max_length=250)
+    content = models.TextField()
+    image = models.ImageField(upload_to=blog_image_upload_to)
 
 
 
