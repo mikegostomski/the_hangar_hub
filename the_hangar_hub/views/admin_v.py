@@ -2,7 +2,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, redirect
 from base.classes.util.env_helper import Log, EnvHelper
 from base.models.utility.error import Error
-from the_hangar_hub.models.airport import Airport
+from the_hangar_hub.models.airport import Airport, Amenity, Amenities
 from the_hangar_hub.models.invitation import Invitation
 from base.services import message_service
 from base.decorators import require_authority, require_authentication, report_errors
@@ -103,6 +103,54 @@ def update_price_attr(request):
         return HttpResponseForbidden()
 
 
+def amenity_review(request):
+    if request.method == "POST":
+        amenity_id = request.POST.get("amenity_id")
+        amenity = Amenity.get(amenity_id)
+        if not amenity:
+            message_service.post_error("Could not locate specified amenity")
+            return HttpResponseForbidden()
+        attr = request.POST.get("attr")
+        val = request.POST.get("val")
+
+        if attr == "approved":
+            val = val.lower() == "true"
+
+        if attr == "replacement":
+            try:
+                replacement = Amenity.get(val)
+                if replacement:
+                    for assignments in Amenities.objects.filter(amenity=amenity):
+                        replacement_exists = Amenities.get(assignments.airport, replacement)
+                        if replacement_exists:
+                            assignments.delete()
+                        else:
+                            assignments.amenity = replacement
+                            assignments.save()
+                    amenity.delete()
+                    return HttpResponse('ok')
+            except Exception as ee:
+                Error.unexpected("Unable to replace amenity", ee)
+            return HttpResponseForbidden()
+
+        try:
+            setattr(amenity, attr, val)
+            amenity.save()
+            return HttpResponse("ok")
+        except Exception as ee:
+            Error.unexpected("Unable to update Amenity", ee)
+            return HttpResponseForbidden()
+
+    amenities = Amenity.objects.all()
+    approved = [x for x in amenities if x.approved]
+    unapproved = [x for x in amenities if not x.approved]
+    return render(
+        request, "the_hangar_hub/admin/amenities/index.html",
+        {
+            "approved": approved,
+            "unapproved": unapproved,
+        }
+    )
 
 
 

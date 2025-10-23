@@ -1,6 +1,7 @@
 from base.classes.util.app_data import Log, EnvHelper, AppData
 from base.classes.auth.session import Auth
 from the_hangar_hub.services import airport_service, tenant_s, application_service
+from the_hangar_hub.models.airport import Amenity
 
 
 log = Log()
@@ -17,6 +18,10 @@ def airport_data(request):
     open_applications = application_service.get_active_applications()
     selected_application = application_service.get_selected_application()
     airport = request.airport if hasattr(request, "airport") else None
+
+    amenity_reviews = 0
+    if Auth.current_user_profile().has_authority("developer"):
+        amenity_reviews = Amenity.objects.filter(approved=False).count()
 
     # Airport-specific data when an airport is selected
     is_airport_manager = is_airport_tenant = False
@@ -36,6 +41,7 @@ def airport_data(request):
         "my_rentals": rentals,
         "open_applications": len(open_applications),
         "selected_application": selected_application,
+        "amenity_reviews": amenity_reviews,
     }
     return model
 

@@ -7,6 +7,12 @@
         <a href="{%url 'dev:products'%}" class="dropdown-item">Products</a>
     </li>
     <li>
+        <a href="{%url 'dev:amenity_review'%}" class="dropdown-item">
+            Amenity Review
+            {%if amenity_reviews%}<span class="badge text-bg-danger">{{amenity_reviews}}</span>{%endif%}
+        </a>
+    </li>
+    <li>
         <a href="{%url 'dev:invitation_dashboard'%}" class="dropdown-item">Invitation Dashboard</a>
     </li>
     <li class="dropdown-divider"></li>

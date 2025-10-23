@@ -1,0 +1,97 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load static %}
+{%block scripts%}
+    {%datatables%}
+{%endblock%}
+
+{%block title%}The Hangar Hub: Review Amenities{%endblock%}
+
+{% block main_content %}
+<div class="content-1024">
+<h1 class="mb-4">Amenity Approval</h1>
+    <h2>Amenities Requiring Approval</h2>
+    <table class="table mb-5">
+        <thead>
+        <tr>
+            <th scope="col">Icon</th>
+            <th scope="col">Title</th>
+            <th scope="col">Sort Modifier</th>
+            <th scope="col">Approved</th>
+            <th scope="col">Replacement</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {%for amenity in unapproved%}
+            <tr data-amenity_id="{{amenity.id}}">
+                <td>
+                    <label for="icon-{{amenity.id}}" class="visually-hidden">Amenity Icon Class</label>
+                    <input type="text" name="icon" id="icon-{{amenity.id}}" value="{{amenity.icon|default:''}}" class="form-control" onchange="approve_amenity($(this));" />
+                </td>
+                <td>
+                    <label for="title-{{amenity.id}}" class="visually-hidden">Amenity Title</label>
+                    <input type="text" name="title" id="title-{{amenity.id}}" value="{{amenity.title|default:''}}" class="form-control" onchange="approve_amenity($(this));" />
+                </td>
+                <td>
+                    <label for="sort_modifier-{{amenity.id}}" class="visually-hidden">Sort Modifier</label>
+                    <input type="text" name="sort_modifier" id="sort_modifier-{{amenity.id}}" value="{{amenity.sort_modifier|default:''}}" class="form-control" onchange="approve_amenity($(this));" />
+                </td>
+                <td align="center">
+                    <label for="approved-{{amenity.id}}" class="visually-hidden">Approved</label>
+                    <input type="checkbox" name="approved" id="approved-{{amenity.id}}" value="Y" onchange="approve_amenity($(this));" {%if amenity.approved%}checked{%endif%} />
+                </td>
+                <td>
+                    <label for="replacement-{{amenity.id}}" class="visually-hidden">Replacement</label>
+                    <input type="text" name="replacement" id="replacement-{{amenity.id}}" size="3" maxlength="3" class="form-control" onchange="approve_amenity($(this));" />
+                </td>
+                <td>{{amenity.id}}</td>
+            </tr>
+        {%endfor%}
+        </tbody>
+    </table>
+
+    <h2>Approved Amenities</h2>
+    <table class="table" id="approved-amenities">
+        <thead>
+        <tr>
+            <th scope="col">Icon</th>
+            <th scope="col">Title</th>
+            <th scope="col">Sort Modifier</th>
+            <th scope="col">Approved</th>
+            <th scope="col">ID</th>
+        </tr>
+        </thead>
+        <tbody>
+        {%for amenity in approved%}
+            <tr data-amenity_id="{{amenity.id}}">
+                <td>
+                    <label for="icon-{{amenity.id}}" class="visually-hidden">Amenity Icon Class</label>
+                    <input type="text" name="icon" id="icon-{{amenity.id}}" value="{{amenity.icon|default:''}}" class="form-control" onchange="approve_amenity($(this));" />
+                </td>
+                <td>
+                    <i class="hidden">{{amenity.title}}</i>
+                    <label for="title-{{amenity.id}}" class="visually-hidden">Amenity Title</label>
+                    <input type="text" name="title" id="title-{{amenity.id}}" value="{{amenity.title|default:''}}" class="form-control" onchange="approve_amenity($(this));" />
+                </td>
+                <td>
+                    <i class="hidden">{{amenity.sort_modifier}}</i>
+                    <label for="sort_modifier-{{amenity.id}}" class="visually-hidden">Sort Modifier</label>
+                    <input type="text" name="sort_modifier" id="sort_modifier-{{amenity.id}}" value="{{amenity.sort_modifier|default:''}}" class="form-control" onchange="approve_amenity($(this));" />
+                </td>
+                <td align="center">
+                    <label for="approved-{{amenity.id}}" class="visually-hidden">Approved</label>
+                    <input type="checkbox" name="approved" id="approved-{{amenity.id}}" value="Y" onchange="approve_amenity($(this));" {%if amenity.approved%}checked{%endif%} />
+                </td>
+                <td>{{amenity.id}}</td>
+            </tr>
+        {%endfor%}
+        </tbody>
+    </table>
+
+</div>
+
+<script type="text/javascript">
+    {%include "the_hangar_hub/admin/amenities/amenity.js"%}
+</script>
+{%endblock%}
