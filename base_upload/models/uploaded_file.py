@@ -3,6 +3,8 @@ from base.classes.util.app_data import Log, EnvHelper, AppData
 from base.classes.auth.session import Auth
 from base.models.utility.audit import Audit
 from django.db.models import Q
+from django.db.models.signals import pre_save, post_delete
+from django.dispatch import receiver
 import math
 import os
 
@@ -13,10 +15,10 @@ env = EnvHelper()
 
 def get_upload_path(instance, filename):
     base_path = os.path.join(app.get_app_code().lower(), env.environment_code.lower())
-    if instance.s3_path and instance.s3_path.startswith(base_path):
-        upload_to = instance.s3_path
+    if instance.fs_path and instance.fs_path.startswith(base_path):
+        upload_to = instance.fs_path
     else:
-        upload_to = os.path.join(base_path, instance.s3_path)
+        upload_to = os.path.join(base_path, instance.fs_path)
 
     return upload_to
 
@@ -46,7 +48,7 @@ class UploadedFile(models.Model):
 
     # Although this can be obtained from the file object, having path and basename in the
     # database allows easier searching of the files via DB query
-    s3_path = models.CharField(
+    fs_path = models.CharField(
         max_length=256,
         blank=False,
         null=False,
@@ -155,3 +157,14 @@ class UploadedFile(models.Model):
     def total_views(self):
         """Does not include owner views"""
         return len(Audit.objects.filter(reference_code="UploadedFile", reference_id=self.id))
+
+
+@receiver(post_delete, sender=UploadedFile)
+def delete_file_on_record_delete(sender, instance, **kwargs):
+    """
+    Remove the file from storage when the UploadedFile is deleted.
+    """
+    file = getattr(instance, "file", None)
+    if file and file.name:
+        # This calls storage.delete under the hood; no extra save()
+        file.delete(save=False)

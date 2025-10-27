@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, FileResponse
 from django.db.models import Q
 import the_hangar_hub.models
+from django.core.paginator import Paginator
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
 from the_hangar_hub.models import Tenant
@@ -37,7 +38,7 @@ from the_hangar_hub.services.stripe import stripe_creation_svc
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from the_hangar_hub.models.airport import CustomizedContent
+from the_hangar_hub.models.airport import CustomizedContent, BlogEntry
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from the_hangar_hub.models.airport import Airport, Amenities, Amenity
@@ -253,6 +254,7 @@ def upload_logo(request, airport_identifier):
 
     return HttpResponseForbidden()
 
+
 @require_airport_manager()
 def manage_amenities(request, airport_identifier):
     airport = request.airport
@@ -299,3 +301,121 @@ def manage_amenities(request, airport_identifier):
             "amenity_options": amenity_options
         }
     )
+
+
+@require_airport_manager()
+def manage_blog(request, airport_identifier):
+    airport = request.airport
+
+    # Get 10 entries at a time
+    sort, page = utility_service.pagination_sort_info(request, "date_created", "desc")
+    entries = BlogEntry.objects.filter(airport=airport).order_by(*sort)
+    paginator = Paginator(entries, 10)
+    entries = paginator.get_page(page)
+
+    # Images uploaded prior to blog entry creation will be linked to BlogEntry ID 0
+    pending_images = retrieval_service.get_file_query().filter(tag=f"blog:{airport.id}", foreign_table="BlogEntry", foreign_key=0)
+    # for pi in pending_images:
+    #     pi.delete()
+    # pending_images = []
+
+    return render(
+        request, "the_hangar_hub/airport/customized/management/blog/blog_mgmt.html",
+        {
+            "entries": entries,
+            "pending_images": pending_images,
+        }
+    )
+
+@require_airport_manager()
+def blog_post(request, airport_identifier):
+    airport = request.airport
+    title = request.POST.get("title")
+    content = request.POST.get("content")
+    prefill = {"title": title, "content": content}
+
+    try:
+        blog_entry = BlogEntry.objects.create(airport=airport, title=title, content=content)
+        if blog_entry:
+            # Attach uploaded image (if exists)
+            for img in retrieval_service.get_file_query().filter(
+                    tag=f"blog:{airport.id}", foreign_table="BlogEntry", foreign_key=0
+            ):
+                # Handle multiple files, although each upload currently replaces the previous (limiting to one)
+                img.foreign_key = blog_entry.id
+                img.save()
+
+    except Exception as ee:
+        Error.unexpected("Unable to save blog entry", ee)
+        env.set_flash_scope("prefill", prefill)
+
+    return redirect("airport:manage_blog", airport_identifier)
+
+
+@require_airport_manager()
+def blog_upload(request, airport_identifier):
+    airport = request.airport
+    uploaded_file = None
+    try:
+        if request.method == 'POST':
+            # Delete any previously-uploaded images
+            for img in retrieval_service.get_file_query().filter(
+                    tag=f"blog:{airport.id}", foreign_table="BlogEntry", foreign_key=0
+            ):
+                img.delete()
+
+
+            uploaded_file = upload_service.upload_file(
+                request.FILES['blog_file'],
+                tag=f"blog:{airport.id}",
+                foreign_table="BlogEntry", foreign_key=0,
+                resize_dimensions="800x600",
+                # specified_filename='airport_logo',
+                # parent_directory=f'airports/{airport.identifier}/logo'
+            )
+            log.info(f"Uploaded File: {uploaded_file}")
+
+
+        if uploaded_file:
+            Auth.audit(
+                "C", "AIRPORT",
+                f"Uploaded blog file",
+                reference_code="Airport", reference_id=airport.id
+            )
+
+            return HttpResponse("ok")
+    except Exception as ee:
+        message_service.post_error(f"Could not upload blog file: {ee}")
+
+    return HttpResponseForbidden()
+
+@require_airport_manager()
+def blog_delete(request, airport_identifier):
+    airport = request.airport
+    try:
+        if request.method == 'POST':
+            entry_id = request.POST.get("entry_id")
+            entry = BlogEntry.get(entry_id)
+            if not entry:
+                log.info(f"Entry to be deleted was not found: {entry_id}")
+                # Don't post an error since it was apparently already deleted
+                return HttpResponse("ok")
+
+            # Delete any associated files
+            try:
+                for img in retrieval_service.get_file_query().filter(
+                    tag=f"blog:{airport.id}", foreign_table="BlogEntry", foreign_key=entry.id
+                ):
+                    img.delete()
+            except Exception as ee:
+                log.debug("Error deleting blog files")
+                Error.record(ee, entry)
+
+            entry.delete()
+            message_service.post_success("Blog entry deleted")
+            return HttpResponse("ok")
+
+    except Exception as ee:
+        message_service.post_error(f"Could not delete blog file: {ee}")
+
+    return HttpResponseForbidden()

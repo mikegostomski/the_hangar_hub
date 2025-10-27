@@ -10,11 +10,20 @@ import tempfile
 import base64
 import io
 import hashlib
+from io import BytesIO
+from PIL import Image, ExifTags
+from django.core.files.base import ContentFile
+from django.db import models
+from pathlib import Path
 
 log = Log()
 env = EnvHelper()
 app = AppData()
 
+
+def using_file_system():
+    # Store uploaded files in filesystem (as opposed to database storage)
+    return True
 
 def using_s3():
     if env.is_development:
@@ -55,7 +64,7 @@ def read_uploaded_file(request, input_name, byte_limit=500000, convert_to_string
 
 
 def upload_files(
-    request, input_name, sequenced_filename=None, parent_directory=None, tag=None
+    request, input_name, sequenced_filename=None, parent_directory=None, tag=None, resize_dimensions=None
 ):
     """
     Action for saving one or more uploaded file
@@ -66,6 +75,7 @@ def upload_files(
                             - Retain original filename if not specified
         parent_directory - The directory (within your app directory) the files will live in on AWS/S3
         tag - Any string that will help find the file in DB queries
+        resize_dimensions - i.e. "800x600" if you want to resize image files
     """
     log.trace(request.FILES.items)
     results = []
@@ -81,24 +91,24 @@ def upload_files(
         last_seq = 0
         try:
             app_code = app.get_app_code()
-            if using_s3():
-                s3_path, s3_path_no_ext, s3_extension = build_s3_path(
+            if using_file_system():
+                fs_path, fs_path_no_ext, fs_extension = build_fs_path(
                     "", parent_directory, sequenced_filename
                 )
                 existing_in_seq = UploadedFile.objects.filter(
-                    app_code=app_code, s3_path__startswith=s3_path_no_ext
+                    app_code=app_code, fs_path__startswith=fs_path_no_ext
                 )
             else:
                 existing_in_seq = DatabaseFile.objects.filter(
                     app_code=app_code, basename__startswith=sequenced_filename
                 )
-                s3_path_no_ext = sequenced_filename
+                fs_path_no_ext = sequenced_filename
 
             if existing_in_seq:
                 existing_seqs = []
                 for ff in existing_in_seq:
-                    no_ext, ext = os.path.splitext(ff.s3_path)
-                    remainder = ff.s3_path.replace(s3_path_no_ext, "").replace(ext, "")
+                    no_ext, ext = os.path.splitext(ff.fs_path)
+                    remainder = ff.fs_path.replace(fs_path_no_ext, "").replace(ext, "")
                     if remainder.isdigit():
                         existing_seqs.append(int(remainder))
                 last_seq = max(existing_seqs) if existing_seqs else 0
@@ -125,7 +135,8 @@ def upload_files(
 
 def upload_file(
     file_instance, specified_filename=None, parent_directory=None,
-    tag=None, foreign_table=None, foreign_key=None
+    tag=None, foreign_table=None, foreign_key=None,
+    resize_dimensions=None
 ):
     """
     Action for saving ONE uploaded file
@@ -135,6 +146,7 @@ def upload_file(
                             - Retains the original filename if not specified
         parent_directory - The directory (within your app directory) the file will live in on AWS/S3
         tag - Any string that will help find the file in DB queries
+        resize_dimensions - i.e. "800x600" if you want to resize image files
     """
     log.trace()
     original_file_name = "invalid"
@@ -142,8 +154,6 @@ def upload_file(
         auth = Auth()
         # Only authenticated users may upload files
         if not auth.is_logged_in():
-            # Dual Credit requires students to upload files prior to Odin account creation
-            # (The students have at least confirmed their email addresses though)
             if env.get_setting("ALLOW_UNAUTHENTICATED_UPLOADS"):
                 pass
             else:
@@ -167,14 +177,14 @@ def upload_file(
             original_file_name = f"{original_file_name[:80]}-{token}{ext}"[:128]
 
         # Process file name and path data
-        s3_path, s3_base_no_ext, s3_extension = build_s3_path(
+        fs_path, fs_base_no_ext, fs_extension = build_fs_path(
             original_file_name, parent_directory, specified_filename
         )
 
-        if using_s3():
+        if using_file_system():
             # Upload to the proper path in S3...
-            file_instance.name = s3_path
-            file_instance.file_name = s3_path
+            file_instance.name = fs_path
+            file_instance.file_name = fs_path
 
             # Save the UploadedFile model, which also uploads to S3
             uf = UploadedFile()
@@ -184,13 +194,17 @@ def upload_file(
             uf.content_type = file_instance.content_type
             uf.size = file_instance.size
             uf.file = file_instance
-            uf.file.name = s3_path
-            uf.s3_path = s3_path
-            uf.basename = os.path.basename(s3_path)
+            uf.file.name = fs_path
+            uf.fs_path = fs_path
+            uf.basename = os.path.basename(fs_path)
             uf.original_name = original_file_name
             uf.tag = tag
             uf.foreign_table = foreign_table
             uf.foreign_key = foreign_key
+
+            if resize_dimensions:
+                resize_image(uf, resize_dimensions)
+
             uf.save()
             return uf
 
@@ -204,12 +218,16 @@ def upload_file(
             uf.file = _read_file_content(
                 file_instance, 5000000, convert_to_string=False
             )
-            uf.s3_path = s3_path
-            uf.basename = os.path.basename(s3_path)
+            uf.fs_path = fs_path
+            uf.basename = os.path.basename(fs_path)
             uf.original_name = original_file_name
             uf.tag = tag
             uf.foreign_table = foreign_table
             uf.foreign_key = foreign_key
+
+            if resize_dimensions:
+                resize_image(uf, resize_dimensions)
+
             uf.save()
             return uf
 
@@ -218,7 +236,7 @@ def upload_file(
         return None
 
 
-def build_s3_path(original_file_name, parent_directory, specified_filename):
+def build_fs_path(original_file_name, parent_directory, specified_filename):
     if "." in original_file_name:
         given_filename, given_extension = os.path.splitext(original_file_name)
     else:
@@ -226,9 +244,9 @@ def build_s3_path(original_file_name, parent_directory, specified_filename):
         given_extension = ""
 
     # All file paths must start with the code of the app that they were uploaded for and the env
-    app_code = app.get_app_code()
+    app_code = app.get_app_code().lower()
     path_app = f"{app_code}/"
-    path_env = f"{env.environment_code}/"
+    path_env = f"{env.environment_code.lower()}/"
 
     # If a specified path already contained these, do not duplicate
     if parent_directory:
@@ -486,10 +504,13 @@ def file_is_valid(uploaded_file):
     # Get a file type by reading the actual file contents
     magic_type = None
     try:
-        with tempfile.NamedTemporaryFile() as tmp:
-            for chunk in uploaded_file.chunks():
-                tmp.write(chunk)
-            magic_type = magic.from_file(tmp.name, mime=True)
+
+        # Rewind in case anything read it earlier
+        uploaded_file.seek(0)
+        head = uploaded_file.read(8192)
+        uploaded_file.seek(0)
+
+        magic_type = magic.from_buffer(head, mime=True)
     except Exception as ee:
         Error.record(ee)
 
@@ -568,3 +589,70 @@ def _read_file_content(file_instance, byte_limit, convert_to_string):
     except Exception as ee:
         Error.unexpected(f"Unable to read uploaded file: {filename}", ee)
         return None
+
+
+def resize_image(uploaded_file, wxh="800x600"):
+    if "image" not in uploaded_file.content_type:
+        return False
+
+    try:
+        img = Image.open(uploaded_file.file)
+        img = img.convert("RGB")  # ensures no alpha channel
+
+        # --- Handle EXIF orientation (for phone uploads) ---
+        try:
+            exif = img._getexif()
+            if exif is not None:
+                orientation_key = next(
+                    (k for k, v in ExifTags.TAGS.items() if v == "Orientation"), None
+                )
+                if orientation_key and orientation_key in exif:
+                    orientation = exif[orientation_key]
+                    if orientation == 3:
+                        img = img.rotate(180, expand=True)
+                    elif orientation == 6:
+                        img = img.rotate(270, expand=True)
+                    elif orientation == 8:
+                        img = img.rotate(90, expand=True)
+        except Exception:
+            pass  # EXIF data might not exist — skip silently
+
+        # --- Center crop + resize to specified dimensions ---
+        try:
+            pieces = wxh.split("x")
+            if len(pieces) != 2:
+                Error.record(f"Invalid resize dimensions: {wxh}. Must be WIDTHxHEIGHT (ex '800x600')")
+                pieces = [800, 600]
+            else:
+                pieces = [int(str(x)) for x in pieces]
+        except Exception as ee:
+            Error.record(ee, wxh)
+            pieces = [800, 600]
+
+        target_width, target_height = pieces[0], pieces[1]
+        width, height = img.size
+        aspect_ratio = target_width / target_height
+        img_ratio = width / height
+
+        if img_ratio > aspect_ratio:
+            # Image too wide → crop sides
+            new_width = int(height * aspect_ratio)
+            offset = (width - new_width) // 2
+            box = (offset, 0, offset + new_width, height)
+        else:
+            # Image too tall → crop top/bottom
+            new_height = int(width / aspect_ratio)
+            offset = (height - new_height) // 2
+            box = (0, offset, width, offset + new_height)
+
+        img = img.crop(box)
+        img = img.resize((target_width, target_height), Image.LANCZOS)
+
+        # --- Save cropped image back to same name ---
+        buffer = BytesIO()
+        img.save(buffer, format="JPEG", quality=90)
+        file_name = os.path.basename(uploaded_file.file.name)
+        uploaded_file.file.save(file_name, ContentFile(buffer.getvalue()), save=False)
+        #uploaded_file.save(update_fields=["file"])
+    except Exception as ee:
+        Error.record(ee)

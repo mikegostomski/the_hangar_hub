@@ -32,7 +32,7 @@ class DatabaseFile(models.Model):
     file = models.BinaryField()
 
     # Although S3 is not being used, this field is here for consistency with the S3 file model
-    s3_path = models.CharField(
+    fs_path = models.CharField(
         max_length=256,
         blank=False,
         null=False,

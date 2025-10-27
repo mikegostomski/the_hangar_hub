@@ -12,7 +12,7 @@ log = Log()
 
 
 def get_file_query():
-    if upload_service.using_s3():
+    if upload_service.using_file_system():
         return UploadedFile.objects
     else:
         return DatabaseFile.objects
@@ -20,7 +20,7 @@ def get_file_query():
 
 def get_all_files():
     app_code = AppData().get_app_code()
-    if upload_service.using_s3():
+    if upload_service.using_file_system():
         return get_file_query().filter(app_code=app_code).exclude(status="D")
     else:
         return get_file_query().filter(app_code=app_code).exclude(status="D")

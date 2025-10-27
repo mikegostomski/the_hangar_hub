@@ -1,4 +1,5 @@
 from django import template
+from django.db.models.fields.files import FieldFile
 from django.utils.html import mark_safe
 from base.classes.util.env_helper import Log, EnvHelper
 from base.templatetags.tag_processing import supporting_functions as support
@@ -88,7 +89,7 @@ class FileLinkNode(template.Node):
         pieces.append(">")
 
         # Add link
-        if upload_service.using_s3():
+        if upload_service.using_file_system():
             pieces.append(
                 f"""<a href="{file_instance.file.url}" class="upload-link upload-link-a" target="{target}">"""
             )
@@ -159,8 +160,12 @@ class FilePreviewNode(template.Node):
         is_image = "image" in file_instance.content_type
 
         if is_image:
+            file_content = file_instance.file
+            if type(file_content) is FieldFile:
+                file_content = file_content.read()
+
             pieces = [f"""<img """]
-            b64img = base64.b64encode(file_instance.file).decode()
+            b64img = base64.b64encode(file_content).decode()
             pieces.append(
                 f"""src = "data:{file_instance.content_type};base64,{b64img}" """
             )
@@ -193,7 +198,7 @@ class FilePreviewNode(template.Node):
         # Add link
         if attrs.get("link", True):
             file_url = None
-            if upload_service.using_s3():
+            if upload_service.using_file_system():
                 file_url = file_instance.file.url
             else:
                 try:

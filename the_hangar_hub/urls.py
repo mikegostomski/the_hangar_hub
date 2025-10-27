@@ -62,6 +62,10 @@ airport_paths = [
     path(f'{airport}/amenities', ap_welcome_v.manage_amenities,                                  name='manage_amenity'),
     path(f'{airport}/logo', ap_welcome_v.logo,                                  name='logo'),
     path(f'{airport}/upload/logo', ap_welcome_v.upload_logo, name='upload_logo'),
+    path(f'{airport}/blog/management', ap_welcome_v.manage_blog, name='manage_blog'),
+    path(f'{airport}/blog/post', ap_welcome_v.blog_post, name='blog_post'),
+    path(f'{airport}/blog/upload', ap_welcome_v.blog_upload, name='blog_upload'),
+    path(f'{airport}/blog/delete', ap_welcome_v.blog_delete, name='blog_delete'),
 
     # HH SUBSCRIPTIONS
     path(f'{airport}/claim', hh_subscription_v.claim_airport,                       name='claim'),

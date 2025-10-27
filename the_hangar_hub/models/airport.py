@@ -12,6 +12,9 @@ from base.models.utility.error import Error, Log, EnvHelper
 from decimal import Decimal
 from datetime import datetime, timezone
 from base.services import date_service
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+from base_upload.services import retrieval_service
 import os
 
 log = Log()
@@ -340,15 +343,40 @@ def blog_image_upload_to(instance, filename):
     return f'uploads/airports/blog/{instance.airport.identifier}-{instance.id}{ext}'
 
 class BlogEntry(models.Model):
-
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     airport = models.ForeignKey("the_hangar_hub.Airport", on_delete=models.CASCADE, related_name="blog_entries")
     title = models.CharField(max_length=250)
     content = models.TextField()
-    image = models.ImageField(upload_to=blog_image_upload_to)
 
+    def files(self):
+        return retrieval_service.get_file_query().filter(
+            tag=f"blog:{self.airport.id}", foreign_table="BlogEntry", foreign_key=self.id
+        )
 
+    def main_image(self):
+        for file in self.files():
+            if "image" in file.content_type:
+                return file
+        return None
+
+    @classmethod
+    def get(cls, pk):
+        try:
+            return cls.objects.get(pk=pk)
+        except cls.DoesNotExist:
+            return None
+        except Exception as ee:
+            log.error(f"Could not get {cls}: {ee}")
+            return None
+
+# Delete the file from storage when the BlogEntry is deleted
+@receiver(post_delete, sender=BlogEntry)
+def delete_blog_image_on_delete(sender, instance, **kwargs):
+    if instance.image:
+        storage = instance.image.storage
+        if storage.exists(instance.image.name):
+            storage.delete(instance.image.name)
 
 class HangarApplicationPreferences(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
