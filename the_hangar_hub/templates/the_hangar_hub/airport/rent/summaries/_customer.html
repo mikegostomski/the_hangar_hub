@@ -26,6 +26,9 @@
             {%if customer.delinquent%}
                 {%icon bi-heart-pulse text-danger%}
                 <span class="badge text-bg-danger">Delinquent</span><br />
+            {%elif customer.deleted%}
+                {%icon bi-heart-pulse text-danger%}
+                <span class="badge text-bg-danger">Deleted</span><br />
             {%else%}
                 {%icon bi-heart-pulse%}
                 Active<br />

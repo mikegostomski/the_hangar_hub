@@ -24,17 +24,17 @@ class AirportCustomer(models.Model):
         if airport and customer_data:
             try:
                 if Auth.is_user_object(customer_data):
-                    existing = cls.objects.get(airport=airport, contact=customer_data.contact)
+                    existing = cls.objects.get(airport=airport, contact=customer_data.contact, stripe_customer__deleted=False)
                 elif type(customer_data) is Contact:
-                    existing = cls.objects.get(airport=airport, contact=customer_data)
+                    existing = cls.objects.get(airport=airport, contact=customer_data, stripe_customer__deleted=False)
                 elif type(customer_data) is Tenant:
-                    existing = cls.objects.get(airport=airport, contact=customer_data.contact)
+                    existing = cls.objects.get(airport=airport, contact=customer_data.contact, stripe_customer__deleted=False)
                 elif type(customer_data) is HangarApplication:
-                    existing = cls.objects.get(airport=airport, contact=customer_data.user.contact)
+                    existing = cls.objects.get(airport=airport, contact=customer_data.user.contact, stripe_customer__deleted=False)
                 elif str(customer_data).startswith("cus_"):
-                    existing = cls.objects.get(airport=airport, stripe_customer__stripe_id=customer_data)
+                    existing = cls.objects.get(airport=airport, stripe_customer__stripe_id=customer_data, stripe_customer__deleted=False)
                 elif "@" in str(customer_data):
-                    existing = cls.objects.get(airport=airport, contact=customer_data.contact)
+                    existing = cls.objects.get(airport=airport, contact=customer_data.contact, stripe_customer__deleted=False)
                 else:
                     log.error(f"Unknown type of customer data was given: {customer_data}")
                     # Will not be able to create customer data without sufficient data
@@ -68,8 +68,9 @@ class AirportCustomer(models.Model):
                 )
                 return None
 
-            stripe_customer = StripeCustomer.get_or_create(
-                full_name=contact.display_name, email=contact.email, user=user,
+            stripe_customer = StripeCustomer.obtain(
+                contact=contact, user=user,
+                account=airport.stripe_account,
                 metadata={"airport": airport.identifier}
             )
             if stripe_customer:

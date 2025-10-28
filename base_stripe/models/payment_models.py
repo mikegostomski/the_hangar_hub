@@ -1,5 +1,7 @@
 
 from django.db import models
+from django.db.models import Q
+
 from base.classes.util.env_helper import EnvHelper, Log
 from base.models.utility.error import Error
 from base_stripe.services import config_service
@@ -11,6 +13,7 @@ import stripe
 from base_stripe.services.config_service import set_stripe_api_key
 from base.services import date_service, message_service
 from base.classes.util.date_helper import DateHelper
+from base_stripe.models.connected_account import StripeConnectedAccount
 
 log = Log()
 env = EnvHelper()
@@ -27,6 +30,7 @@ class StripeCustomer(models.Model):
     deleted = models.BooleanField(default=False, db_index=True)
 
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
+    stripe_account = models.ForeignKey("base_stripe.StripeConnectedAccount", on_delete=models.CASCADE, related_name="customers", null=True, blank=True)
     email = models.CharField(max_length=180, db_index=True)
     user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customer", null=True, blank=True, db_index=True)
     full_name = models.CharField(max_length=150)
@@ -59,7 +63,7 @@ class StripeCustomer(models.Model):
         try:
             log.info(f"Sync {self} ({self.stripe_id})")
             config_service.set_stripe_api_key()
-            customer = stripe.Customer.retrieve(self.stripe_id, expand=["invoice_settings.default_payment_method"])
+            customer = self.api_data()
             log.debug(customer)
             if customer:
                 if customer.get("deleted"):
@@ -106,7 +110,7 @@ class StripeCustomer(models.Model):
     def add_metadata(self, data_dict):
         try:
             config_service.set_stripe_api_key()
-            customer = stripe.Customer.retrieve(self.stripe_id)
+            customer = self.api_data()
             metadata = customer.get("metadata")
             if not metadata:
                 metadata = {}
@@ -132,7 +136,15 @@ class StripeCustomer(models.Model):
         """
         try:
             config_service.set_stripe_api_key()
-            return stripe.Customer.retrieve(self.stripe_id)
+            if self.stripe_account:
+                return stripe.Customer.retrieve(
+                    self.stripe_id, expand=["invoice_settings.default_payment_method"],
+                    stripe_account=self.stripe_account.stripe_id
+                )
+            else:
+                return stripe.Customer.retrieve(
+                    self.stripe_id, expand=["invoice_settings.default_payment_method"]
+                )
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -162,122 +174,143 @@ class StripeCustomer(models.Model):
         """
         Get (or create if needed) the Customer model from a Stripe ID
         """
-        return cls.get_or_create(stripe_id=stripe_id)
+        return cls.obtain(stripe_id=stripe_id)
 
     @classmethod
-    def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None, phone=None, address_dict=None, metadata=None, account=None):
-        # ToDo: Create customer on given account
+    def obtain(
+            cls, account=None, contact=None, display_name=None, email=None, metadata=None, stripe_id=None, user=None,
+    ):
         """
-        Create (if DNE) a Customer record in Stripe, and a local record that ties the Stripe ID to a User/email
-
-        Parameters:
-            Must provide one of:
-             - full_name AND email, or
-             - a user object, or
-             - a Stripe customer ID
-
-        Returns local record representing the Stripe customer (customer_model)
+        Find existing or create new Stripe Customer
         """
-        log.trace([full_name, email, user, stripe_id])
+        log.trace(locals())
 
         # If given a Stripe Customer ID
-        if stripe_id and str(stripe_id).startswith("cus_"):
-            try:
-                # Look for existing model
-                existing = cls.get(stripe_id)
-                if existing:
-                    return existing
+        if stripe_id:
+            if str(stripe_id).startswith("cus_"):
+                try:
+                    # Look for existing model
+                    existing = cls.get(stripe_id)
+                    if existing:
+                        return existing
 
-                # Create model from Stripe data
-                log.info(f"Creating new Customer model: {stripe_id}")
-                cus = StripeCustomer()
-                cus.stripe_id = stripe_id
-                cus.sync()
-                return cus
-            except Exception as ee:
-                Error.record(ee, stripe_id)
+                    # Create model from Stripe data
+                    log.info(f"Creating new Customer model: {stripe_id}")
+                    cus = StripeCustomer()
+                    cus.stripe_id = stripe_id
+                    cus.sync()
+                    return cus
+                except Exception as ee:
+                    Error.record(ee, stripe_id)
+            else:
+                log.error(f"Not a valid Stripe Customer ID: {stripe_id}")
+            return None
 
-        # Find or create customer from given user data
-        else:
-            user_profile = Auth.lookup_user_profile(user) if user else None
-            if user_profile is None and not (full_name and email):
-                message_service.post_error(
-                    "Full name and email address must be provided to create a Customer record in Stripe"
-                )
+        # Look for existing via email and/or user (for specified account)
+        emails = []
+        if contact:
+            emails.append(contact.email)
+            if not user:
+                user = contact.user
+        if user:
+            profile = Auth.lookup_user_profile(user, False, False)
+            if profile and profile.user:
+                emails.extend(profile.emails)
+        if email:
+            emails.append(email)
+
+        # If no emails were found, there is not enough data to go on
+        if not emails:
+            log.error("Not enough info to obtain a Stripe Customer ID")
+            return None
+
+        # Look for Customers with any of the emails
+        emails = list(set(emails))
+        customers = cls.objects.filter(email__in=emails, deleted=False)
+
+        # If user is specified, require that user
+        if user:
+            customers = customers.filter(user=user)
+
+        # For specified account, or for HH account
+        account_instance = None
+        if account:
+            if type(account) is StripeConnectedAccount:
+                account_instance = account
+            elif str(account).startswith("acct_"):
+                account_instance = StripeConnectedAccount.from_stripe_id(str(account))
+            else:
+                account_instance = None
+
+            if not account_instance:
+                log.error(f"Invalid Stripe account: {account}")
                 return None
 
-            if not full_name:
-                full_name = user_profile.display_name
-            if not email:
-                email = user_profile.email
+            customers = customers.filter(stripe_account=account_instance)
+        else:
+            customers = customers.filter(stripe_account__isnull=True)
 
-            # If user was not provided, look for one via email address
-            if not user_profile:
-                user_profile = Auth.lookup_user_profile(email)
-                if user_profile.is_user:
-                    user = user_profile.user
+        # Get customers, most-recently-updated first
+        customers = customers.order_by("-last_updated")
+        num_existing = len(customers)
+        if num_existing == 1:
+            return customers[0]
+        elif num_existing > 1:
+            Error.record("TooManyCustomers", emails)
+            # Return the newest one. Manual cleanup may be done later
+            return customers[0]
+        else:
+            log.info("No existing customer. Creating new customer.")
 
-            # Email address will be reused on customers for different connected accounts
-            # Therefore email lookup is not necessary
+        # Create a new Stripe Customer
+        primary_email = email
+        try:
+            if user:
+                if not primary_email:
+                    primary_email = user.email
+                if not display_name:
+                    display_name = user.display_name
+            if contact:
+                if not primary_email:
+                    primary_email = contact.email
+                if not display_name:
+                    display_name = contact.display_name
+            if not primary_email:
+                # Shouldn't be possible due to prior checking, but just in case
+                primary_email = emails[0]
 
-            # # Gather all known (verified) email addresses
-            # verified_emails = [email]
-            # user_profile = Auth.lookup_user_profile(user) if user else None
-            # if user_profile:
-            #     verified_emails.extend(user_profile.emails)
-            # verified_emails = list(set(verified_emails))
+            if not display_name:
+                log.error("Unable to create Customer with no display name")
+                return None
 
-
-            # # Look for existing customer model based on all known (verified) email addresses
-            # existing = None
-            # for email_address in verified_emails:
-            #     existing = StripeCustomer.get(email_address)
-            #     if existing:
-            #         break
-            #
-            # if existing:
-            #     log.info(f"Found existing customer: {existing.stripe_id}")
-            #     existing.sync()
-            #     return existing
-
-            # # Look for existing customer record in Stripe based on all known (verified) email addresses
-            # existing_id = None
-            # for email_address in verified_emails:
-            #     try:
-            #         config_service.set_stripe_api_key()
-            #         result = stripe.Customer.list(email=email_address)
-            #         if result.data:
-            #             existing_id = result.data[0].get("id")
-            #             break
-            #     except Exception as ee:
-            #         Error.record(ee, email_address)
-            # if existing_id:
-            #     existing = StripeCustomer.from_stripe_id(existing_id)
-            #     if existing:
-            #         log.info(f"Found existing customer: {existing.stripe_id}")
-            #         return existing
-
-            # Create a new Stripe Customer
-            try:
-                log.info(f"Creating new Stripe customer for {email}")
-                set_stripe_api_key()
+            set_stripe_api_key()
+            if account_instance:
                 stripe_customer = stripe.Customer.create(
-                    name=full_name,
-                    email=email,
+                    name=display_name,
+                    email=primary_email,
+                    metadata=metadata or {},
+                    stripe_account=account_instance.stripe_id
+                )
+            else:
+                stripe_customer = stripe.Customer.create(
+                    name=display_name,
+                    email=primary_email,
                     metadata=metadata or {}
                 )
-                # API either succeeds or raises an exception
-                stripe_id = stripe_customer.get("id")
-                log.info(f"Created new Stripe customer: {stripe_id}")
+            # API either succeeds or raises an exception
+            stripe_id = stripe_customer.get("id")
+            log.info(f"Created new Stripe customer: {stripe_id}")
 
-                # Create and return customer_model
-                return StripeCustomer.objects.create(
-                    full_name=full_name, email=email, stripe_id=stripe_id, user=user, metadata=metadata or {}
-                )
+            # Create and return customer_model
+            return StripeCustomer.objects.create(
+                full_name=display_name, email=primary_email,
+                stripe_id=stripe_id, stripe_account=account_instance,
+                user=user, metadata=metadata or {}
+            )
 
-            except Exception as ee:
-                Error.unexpected("Unable to create Stripe customer record", ee, email)
-                return None
+        except Exception as ee:
+            Error.unexpected("Unable to create Stripe customer record", ee, primary_email)
+            return None
 
 
 """

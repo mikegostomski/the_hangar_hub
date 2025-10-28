@@ -27,18 +27,10 @@ def create_customer_from_airport(airport):
     if airport.stripe_customer:
         return True  # Already has customer, so consider a success
 
-    customer_model = StripeCustomer.get_or_create(
-        full_name=airport.display_name,
+    customer_model = StripeCustomer.obtain(
+        display_name=airport.display_name,
         email=airport.billing_email,
-        phone=airport.billing_phone,
-        address_dict=get_stripe_address_dict(
-            airport.billing_street_1,
-            airport.billing_street_2,
-            airport.billing_city,
-            airport.billing_state,
-            airport.billing_zip,
-            airport.country
-        ),
+        # No account needed (Account == Hangar Hub)
     )
 
     try:
@@ -230,6 +222,11 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             message_service.post_error("Unable to obtain Stripe customer ID for tenant.")
             return False
 
+        # If customer id does not match existing rental agreement customer, update it
+        if rental_agreement.customer and rental_agreement.customer.stripe_id != stripe_customer_id:
+            rental_agreement.customer = stripe_customer
+            rental_agreement.save()
+
         # Look for existing subscriptions
         existing = StripeSubscription.objects.filter(
             customer=stripe_customer,
@@ -278,7 +275,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             # Calculate the anchor for the past date and pass it via metadata
             # Store the backdated start in metadata for webhook processing
             backdate_start_date = int(collection_start_date.timestamp())
-            backdate_days = (now - collection_start_date).days
+            backdate_days = int((now - collection_start_date).days)
 
         else:
             # collection_start_date is after today (local time).
@@ -317,6 +314,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
         amount_due = int(rental_agreement.rent * 100)  # In cents
         currency = "usd"
         application_fee_percent = utility_service.convert_to_decimal(airport.stripe_tx_fee * 100)
+        application_fee_amount = int(rental_agreement.rent * airport.stripe_tx_fee * 100)
         return_url = reverse('rent:rental_agreement_router', args=[airport.identifier, rental_agreement.id])
 
         set_stripe_api_key()
@@ -336,6 +334,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             # "on_behalf_of": airport.stripe_account.stripe_id,
             # "transfer_data": {"destination": airport.stripe_account.stripe_id},
             "application_fee_percent": application_fee_percent,
+            "stripe_account": airport.stripe_account.stripe_id,
         }
 
         # Add trial days if applicable
@@ -376,7 +375,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             metadata=metadata,
             payment_intent_data={
                 "setup_future_usage": "off_session",
-                "application_fee_amount": application_fee_percent,
+                "application_fee_amount": application_fee_amount,
             },
             stripe_account=airport.stripe_account.stripe_id,
             success_url=f"{env.absolute_root_url}{return_url}",
@@ -421,7 +420,9 @@ def stripe_invoice_from_rental_invoice(rental_invoice, send_invoice=False):
         if rental_agreement.stripe_customer_id:
             stripe_customer = StripeCustomer.get(rental_agreement.stripe_customer_id)
         else:
-            stripe_customer = StripeCustomer.get_or_create(tenant.display_name, tenant.email, tenant.user)
+            stripe_customer = StripeCustomer.obtain(
+                display_name=tenant.display_name, email=tenant.email, user=tenant.user, account=airport.stripe_account
+            )
             rental_agreement.customer = stripe_customer
             rental_agreement.save()
         if not stripe_customer:

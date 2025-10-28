@@ -34,12 +34,11 @@ def get_stripe_customer(source):
                 return StripeCustomer.get(source.stripe_customer_id) if source.stripe_customer_id else None
 
             elif class_name == "Application":
-                return StripeCustomer.get_or_create(user=source.user)
+                return StripeCustomer.obtain(user=source.user, account=source.airport.stripe_account)
 
             elif class_name == "Tenant":
                 Error.record("Tenant cannot be used to look up Stripe customer")
                 # It actually would work when the tenant only exists at one airport
-
                 tenant = source
                 try:
                     agreements = RentalAgreement.objects.filter(tenant=tenant)
@@ -54,7 +53,10 @@ def get_stripe_customer(source):
                 rental_agreement = source
                 if not rental_agreement.customer:
                     tenant = rental_agreement.tenant
-                    rental_agreement.customer = StripeCustomer.get_or_create(tenant.display_name, tenant.email, tenant.user)
+                    rental_agreement.customer = StripeCustomer.obtain(
+                        display_name=tenant.display_name, email=tenant.email, user=tenant.user,
+                        account=rental_agreement.airport.stripe_account
+                    )
                     rental_agreement.save()
                 return rental_agreement.customer
 

@@ -60,7 +60,7 @@ def _handle_customer_event(event):
 
     # Refresh customer with latest data
     else:
-        cust = StripeCustomer.get_or_create(stripe_id=event.object_id)
+        cust = StripeCustomer.obtain(stripe_id=event.object_id)
         return cust.sync()
 
 
@@ -214,7 +214,7 @@ def react_to_events():
         if object_type == "customer":
             # If a new customer was created, insert a local record to track it
             if event_type == "created":
-                if StripeCustomer.get_or_create(stripe_id=event.object_id):
+                if StripeCustomer.obtain(stripe_id=event.object_id):
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue
@@ -237,7 +237,7 @@ def react_to_events():
 
             # Refresh customer with latest data
             else:
-                cust = StripeCustomer.get_or_create(stripe_id=event.object_id)
+                cust = StripeCustomer.obtain(stripe_id=event.object_id)
                 if cust.sync():
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
