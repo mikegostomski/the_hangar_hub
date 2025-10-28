@@ -12,6 +12,7 @@ class StripeWebhookEvent(models.Model):
     event_type = models.CharField(max_length=60)
     event_id = models.CharField(max_length=60)
 
+    account_id = models.CharField(max_length=60, db_index=True, null=True, blank=True)
     object_type = models.CharField(max_length=60, db_index=True)
     object_id = models.CharField(max_length=60, db_index=True)
 

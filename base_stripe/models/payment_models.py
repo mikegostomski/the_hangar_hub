@@ -1,17 +1,14 @@
 
 from django.db import models
-from django.db.models import Q
 
 from base.classes.util.env_helper import EnvHelper, Log
 from base.models.utility.error import Error
 from base_stripe.services import config_service
-from base.services import message_service, utility_service
+from base.services import utility_service
 from base.classes.auth.session import Auth
-from django.contrib.auth.models import User
-from django.utils.functional import SimpleLazyObject
 import stripe
 from base_stripe.services.config_service import set_stripe_api_key
-from base.services import date_service, message_service
+from base.services import date_service
 from base.classes.util.date_helper import DateHelper
 from base_stripe.models.connected_account import StripeConnectedAccount
 
@@ -30,7 +27,6 @@ class StripeCustomer(models.Model):
     deleted = models.BooleanField(default=False, db_index=True)
 
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
-    stripe_account = models.ForeignKey("base_stripe.StripeConnectedAccount", on_delete=models.CASCADE, related_name="customers", null=True, blank=True)
     email = models.CharField(max_length=180, db_index=True)
     user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customer", null=True, blank=True, db_index=True)
     full_name = models.CharField(max_length=150)
@@ -45,6 +41,17 @@ class StripeCustomer(models.Model):
     default_payment_method = models.CharField(max_length=50, null=True, blank=True)
     default_source = models.CharField(max_length=50, null=True, blank=True)
 
+    # Customers belong to connected accounts, or the HH account
+    stripe_account = models.ForeignKey(
+        "base_stripe.StripeConnectedAccount",
+        on_delete=models.CASCADE, related_name="customers",
+        null=True, blank=True,
+        db_index=True
+    )
+    @property
+    def account_id(self):
+        return self.stripe_account.stripe_id if self.stripe_account else None
+
     @property
     def credit_balance(self):
         return self.balance_cents/100
@@ -56,14 +63,25 @@ class StripeCustomer(models.Model):
     def open_invoices(self):
         return self.customer_invoices.filter(status="open")
 
+    def api_data(self, expand=None):
+        try:
+            config_service.set_stripe_api_key()
+            params = {}
+            if self.stripe_account:
+                params["stripe_account"] = self.account_id
+            if expand:
+                params["expand"] = expand
+            return stripe.Customer.retrieve(self.stripe_id, **params)
+        except Exception as ee:
+            Error.record(ee, self)
+
     def sync(self):
         """
         Update data from Stripe API
         """
         try:
             log.info(f"Sync {self} ({self.stripe_id})")
-            config_service.set_stripe_api_key()
-            customer = self.api_data()
+            customer = self.api_data(expand=["invoice_settings.default_payment_method"])
             log.debug(customer)
             if customer:
                 if customer.get("deleted"):
@@ -107,62 +125,24 @@ class StripeCustomer(models.Model):
             Error.record(ee, self.stripe_id)
         return False
 
-    def add_metadata(self, data_dict):
-        try:
-            config_service.set_stripe_api_key()
-            customer = self.api_data()
-            metadata = customer.get("metadata")
-            if not metadata:
-                metadata = {}
-            # Add the given data
-            metadata.update(data_dict)
-            # Make sure the model ID is always included
-            metadata.update({"model_id": self.id})
-
-            stripe.Customer.modify(
-                self.id,
-                metadata=metadata
-            )
-
-            self.metadata = metadata
-            self.save()
-            return True
-        except Exception as ee:
-            Error.record(ee, self.stripe_id)
-
-    def api_data(self):
-        """
-        Get data from Stripe API
-        """
-        try:
-            config_service.set_stripe_api_key()
-            if self.stripe_account:
-                return stripe.Customer.retrieve(
-                    self.stripe_id, expand=["invoice_settings.default_payment_method"],
-                    stripe_account=self.stripe_account.stripe_id
-                )
-            else:
-                return stripe.Customer.retrieve(
-                    self.stripe_id, expand=["invoice_settings.default_payment_method"]
-                )
-        except Exception as ee:
-            Error.record(ee, self.stripe_id)
-
+    @classmethod
+    def ids_start_with(cls):
+        return "cus_"
 
     @classmethod
-    def get(cls, xx):
+    def get(cls, xx, account=None):
         try:
-            if str(xx).isnumeric():
-                return cls.objects.get(pk=xx)
+            if xx is None:
+                return None
             elif type(xx) is cls:
                 return xx
-            elif str(xx).startswith("cus_"):
-                return cls.objects.get(stripe_id=xx)
+            elif str(xx).isnumeric():
+                return cls.objects.get(pk=xx)
+            elif str(xx).startswith(cls.ids_start_with()):
+                return cls.from_stripe_id(xx, account)
             else:
-                Error.record(f"{xx} is not a valid way to look up a Stripe Customer")
+                Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None
-
-            # Cannot get by user or email because there will be multiple when customers exist on multiple connected accounts
         except cls.DoesNotExist:
             return None
         except Exception as ee:
@@ -170,11 +150,29 @@ class StripeCustomer(models.Model):
             return None
 
     @classmethod
-    def from_stripe_id(cls, stripe_id):
+    def from_stripe_id(cls, stripe_id, account=None):
         """
-        Get (or create if needed) the Customer model from a Stripe ID
+        Get (or create if needed) a model from a Stripe ID
         """
-        return cls.obtain(stripe_id=stripe_id)
+        if str(stripe_id).startswith(cls.ids_start_with()):
+            try:
+                # Look for existing model
+                existing = cls.get(stripe_id)
+                if existing:
+                    return existing
+
+                # Create model from Stripe data
+                log.info(f"Creating new {cls} model: {stripe_id}; account: {account}")
+                model = cls(stripe_id=stripe_id, stripe_account=StripeConnectedAccount.get(account))
+                model.sync()
+                return model
+            except Exception as ee:
+                Error.record(ee, stripe_id)
+        else:
+            log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
+        return None
+
+
 
     @classmethod
     def obtain(
@@ -341,6 +339,29 @@ class StripeInvoice(models.Model):
     hosted_invoice_url = models.CharField(max_length=500, null=True, blank=True)
     invoice_pdf = models.CharField(max_length=500, null=True, blank=True)
 
+    # Invoices belong to connected accounts, or the HH account
+    stripe_account = models.ForeignKey(
+        "base_stripe.StripeConnectedAccount",
+        on_delete=models.CASCADE, related_name="invoices",
+        null=True, blank=True,
+        db_index=True
+    )
+    @property
+    def account_id(self):
+        return self.stripe_account.stripe_id if self.stripe_account else None
+
+    def api_data(self, expand=None):
+        try:
+            config_service.set_stripe_api_key()
+            params = {}
+            if self.stripe_account:
+                params["stripe_account"] = self.account_id
+            if expand:
+                params["expand"] = expand
+            return stripe.Invoice.retrieve(self.stripe_id, **params)
+        except Exception as ee:
+            Error.record(ee, self)
+
     def sync(self):
         """
         Update data from Stripe API
@@ -350,8 +371,7 @@ class StripeInvoice(models.Model):
             return True
         try:
             log.info(f"Sync {self} ({self.stripe_id})")
-            config_service.set_stripe_api_key()
-            invoice = stripe.Invoice.retrieve(self.stripe_id, expand=["lines"])
+            invoice = self.api_data(expand=["lines"])
             self.customer = StripeCustomer.get(invoice.customer)
             self.status = invoice.status
             self.amount_charged = utility_service.convert_to_decimal(invoice.total/100)
@@ -380,56 +400,24 @@ class StripeInvoice(models.Model):
             Error.record(ee, self.stripe_id)
         return False
 
-    def add_metadata(self, data_dict):
-        log.trace([self, data_dict])
-        try:
-            config_service.set_stripe_api_key()
-            invoice = stripe.Invoice.retrieve(self.stripe_id)
-            metadata = invoice.get("metadata")
-            if not metadata:
-                metadata = {}
-            log.debug(f"Initial Metadata: {metadata}")
-            # Add the given data
-            metadata.update(data_dict)
-            log.debug(f"Updated Metadata: {metadata}")
-            # Make sure the model ID is always included
-            # metadata.update({"model_id": self.id})
-            # log.debug(f"Final Metadata: {metadata}")
-
-            stripe.Invoice.modify(
-                self.id,
-                metadata=metadata
-            )
-
-            log.debug(f"Saving Metadata: {metadata}")
-            self.metadata = metadata
-            self.save()
-            return True
-        except Exception as ee:
-            Error.record(ee, self.stripe_id)
-
-
-    def api_data(self):
-        """
-        Get data from Stripe API
-        """
-        try:
-
-            config_service.set_stripe_api_key()
-            return stripe.Invoice.retrieve(self.stripe_id)
-        except Exception as ee:
-            Error.record(ee, self.stripe_id)
-
+    @classmethod
+    def ids_start_with(cls):
+        return "inv_"
 
     @classmethod
-    def get(cls, xx):
+    def get(cls, xx, account=None):
         try:
-            if str(xx).isnumeric():
-                return cls.objects.get(pk=xx)
+            if xx is None:
+                return None
             elif type(xx) is cls:
                 return xx
+            elif str(xx).isnumeric():
+                return cls.objects.get(pk=xx)
+            elif str(xx).startswith(cls.ids_start_with()):
+                return cls.from_stripe_id(xx, account)
             else:
-                return cls.objects.get(stripe_id=xx)
+                Error.record(f"{xx} is not a valid way to look up a {cls}")
+                return None
         except cls.DoesNotExist:
             return None
         except Exception as ee:
@@ -437,26 +425,27 @@ class StripeInvoice(models.Model):
             return None
 
     @classmethod
-    def from_stripe_id(cls, stripe_id):
+    def from_stripe_id(cls, stripe_id, account=None):
         """
-        Get (or create if needed) the Invoice model from a Stripe ID
+        Get (or create if needed) a model from a Stripe ID
         """
-        try:
-            # Check for existing record linked to this Stripe invoice
-            return cls.objects.get(stripe_id=stripe_id)
-        except cls.DoesNotExist:
-            pass
+        if str(stripe_id).startswith(cls.ids_start_with()):
+            try:
+                # Look for existing model
+                existing = cls.get(stripe_id)
+                if existing:
+                    return existing
 
-        try:
-            # Create a new model representation for this invoice
-            inv = StripeInvoice()
-            inv.stripe_id = stripe_id
-            inv.sync()
-            return inv
-
-        except Exception as ee:
-            Error.record(ee, stripe_id)
-            return None
+                # Create model from Stripe data
+                log.info(f"Creating new {cls} model: {stripe_id}; account: {account}")
+                model = cls(stripe_id=stripe_id, stripe_account=StripeConnectedAccount.get(account))
+                model.sync()
+                return model
+            except Exception as ee:
+                Error.record(ee, stripe_id)
+        else:
+            log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
+        return None
 
 
 
@@ -473,6 +462,17 @@ class StripeSubscription(models.Model):
 
     customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="invoices", db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
+
+    # Subscription belong to connected accounts, or the HH account
+    stripe_account = models.ForeignKey(
+        "base_stripe.StripeConnectedAccount",
+        on_delete=models.CASCADE, related_name="subscriptions",
+        null=True, blank=True,
+        db_index=True
+    )
+    @property
+    def account_id(self):
+        return self.stripe_account.stripe_id if self.stripe_account else None
 
     # incomplete, incomplete_expired, trialing, active, past_due, canceled, unpaid, or paused.
     status = models.CharField(max_length=20, db_index=True)
@@ -522,15 +522,17 @@ class StripeSubscription(models.Model):
             "paused": "Paused",
         }.get(self.status) or self.status.title()
 
-    def api_data(self):
-        """
-        Get data from Stripe API
-        """
+    def api_data(self, expand=None):
         try:
             config_service.set_stripe_api_key()
-            return stripe.Subscription.retrieve(self.stripe_id)
+            params = {}
+            if self.stripe_account:
+                params["stripe_account"] = self.account_id
+            if expand:
+                params["expand"] = expand
+            return stripe.Subscription.retrieve(self.stripe_id, **params)
         except Exception as ee:
-            Error.record(ee, self.stripe_id)
+            Error.record(ee, self)
 
     def sync(self):
         """
@@ -562,30 +564,6 @@ class StripeSubscription(models.Model):
 
                 self.save()
                 return True
-        except Exception as ee:
-            Error.record(ee, self.stripe_id)
-
-
-    def add_metadata(self, data_dict):
-        try:
-            config_service.set_stripe_api_key()
-            subscription = stripe.Subscription.retrieve(self.stripe_id)
-            metadata = subscription.get("metadata")
-            if not metadata:
-                metadata = {}
-            # Add the given data
-            metadata.update(data_dict)
-            # Make sure the model ID is always included
-            metadata.update({"model_id": self.id})
-
-            stripe.Subscription.modify(
-                self.id,
-                metadata=metadata
-            )
-
-            self.metadata = metadata
-            self.save()
-            return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -624,40 +602,51 @@ class StripeSubscription(models.Model):
 
 
     @classmethod
-    def get(cls, xx):
+    def ids_start_with(cls):
+        return "sub_"
+
+    @classmethod
+    def get(cls, xx, account=None):
         try:
-            if str(xx).isnumeric():
-                return cls.objects.get(pk=xx)
+            if xx is None:
+                return None
             elif type(xx) is cls:
                 return xx
+            elif str(xx).isnumeric():
+                return cls.objects.get(pk=xx)
+            elif str(xx).startswith(cls.ids_start_with()):
+                return cls.from_stripe_id(xx, account)
             else:
-                return cls.objects.get(stripe_id=xx)
+                Error.record(f"{xx} is not a valid way to look up a {cls}")
+                return None
         except cls.DoesNotExist:
             return None
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")
             return None
 
-
     @classmethod
-    def from_stripe_id(cls, stripe_id):
+    def from_stripe_id(cls, stripe_id, account=None):
         """
-        Get (or create if needed) the Subscription model from a Stripe ID
+        Get (or create if needed) a model from a Stripe ID
         """
-        try:
-            # Check for existing record linked to this Stripe subscription
-            return cls.objects.get(stripe_id=stripe_id)
-        except cls.DoesNotExist:
-            pass
+        if str(stripe_id).startswith(cls.ids_start_with()):
+            try:
+                # Look for existing model
+                existing = cls.get(stripe_id)
+                if existing:
+                    return existing
 
-        try:
-            sub = StripeSubscription()
-            sub.stripe_id = stripe_id
-            sub.sync()
-            return sub
-        except Exception as ee:
-            Error.record(ee, stripe_id)
-            return None
+                # Create model from Stripe data
+                log.info(f"Creating new {cls} model: {stripe_id}; account: {account}")
+                model = cls(stripe_id=stripe_id, stripe_account=StripeConnectedAccount.get(account))
+                model.sync()
+                return model
+            except Exception as ee:
+                Error.record(ee, stripe_id)
+        else:
+            log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
+        return None
 
 
 """
@@ -672,6 +661,17 @@ class StripeCheckoutSession(models.Model):
 
     customer = models.ForeignKey("base_stripe.StripeCustomer", models.CASCADE, related_name="checkout_sessions", db_index=True)
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
+
+    # CheckoutSession belong to connected accounts, or the HH account
+    stripe_account = models.ForeignKey(
+        "base_stripe.StripeConnectedAccount",
+        on_delete=models.CASCADE, related_name="checkouts",
+        null=True, blank=True,
+        db_index=True
+    )
+    @property
+    def account_id(self):
+        return self.stripe_account.stripe_id if self.stripe_account else None
 
     # open, complete, or expired
     status = models.CharField(max_length=20, db_index=True)
@@ -694,15 +694,17 @@ class StripeCheckoutSession(models.Model):
             "expired": "Expired",
         }.get(self.status) or self.status.title()
 
-    def api_data(self):
-        """
-        Get data from Stripe API
-        """
+    def api_data(self, expand=None):
         try:
             config_service.set_stripe_api_key()
-            return stripe.checkout.Session.retrieve(self.stripe_id)
+            params = {}
+            if self.stripe_account:
+                params["stripe_account"] = self.account_id
+            if expand:
+                params["expand"] = expand
+            return stripe.checkout.Session.retrieve(self.stripe_id, **params)
         except Exception as ee:
-            Error.record(ee, self.stripe_id)
+            Error.record(ee, self)
 
     def sync(self, stripe_data=None):
         """
@@ -724,41 +726,53 @@ class StripeCheckoutSession(models.Model):
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
+
     @classmethod
-    def get(cls, xx):
+    def ids_start_with(cls):
+        return "cs_"
+
+    @classmethod
+    def get(cls, xx, account=None):
         try:
-            if str(xx).isnumeric():
-                return cls.objects.get(pk=xx)
+            if xx is None:
+                return None
             elif type(xx) is cls:
                 return xx
+            elif str(xx).isnumeric():
+                return cls.objects.get(pk=xx)
+            elif str(xx).startswith(cls.ids_start_with()):
+                return cls.from_stripe_id(xx, account)
             else:
-                return cls.objects.get(stripe_id=xx)
+                Error.record(f"{xx} is not a valid way to look up a {cls}")
+                return None
         except cls.DoesNotExist:
             return None
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")
             return None
 
-
     @classmethod
-    def from_stripe_id(cls, stripe_id, stripe_data=None):
+    def from_stripe_id(cls, stripe_id, account=None):
         """
-        Get (or create if needed) the CheckoutSession model from a Stripe ID
+        Get (or create if needed) a model from a Stripe ID
         """
-        try:
-            # Check for existing record linked to this Stripe subscription
-            return cls.objects.get(stripe_id=stripe_id)
-        except cls.DoesNotExist:
-            pass
+        if str(stripe_id).startswith(cls.ids_start_with()):
+            try:
+                # Look for existing model
+                existing = cls.get(stripe_id)
+                if existing:
+                    return existing
 
-        try:
-            co = StripeCheckoutSession()
-            co.stripe_id = stripe_id
-            co.sync(stripe_data=stripe_data)
-            return co
-        except Exception as ee:
-            Error.record(ee, stripe_id)
-            return None
+                # Create model from Stripe data
+                log.info(f"Creating new {cls} model: {stripe_id}; account: {account}")
+                model = cls(stripe_id=stripe_id, stripe_account=StripeConnectedAccount.get(account))
+                model.sync()
+                return model
+            except Exception as ee:
+                Error.record(ee, stripe_id)
+        else:
+            log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
+        return None
 
 
 

@@ -63,7 +63,7 @@ class WebhookValidation:
         try:
             payload = request.body
             payload_text = payload.decode('utf-8')
-            payload_json = json.loads(payload_text)
+            payload_data = json.loads(payload_text)
         except Exception as ee:
             Error.record(ee)
             response.status_code = 500
@@ -72,20 +72,20 @@ class WebhookValidation:
         # Get the event and verify it
         try:
             alt_object = alt_object_id = None
-            response.event_type = payload_json.get('type', 'unknown')
-            response.event_id = payload_json.get('id', 'unknown')
+            response.event_type = payload_data.get('type', 'unknown')
+            response.event_id = payload_data.get('id', 'unknown')
             log.info(f"Event: <{response.event_type}: {response.event_id}>")
 
             # Verify the event is from Stripe
-            response.event = stripe.Webhook.construct_event(
+            response.event = event = stripe.Webhook.construct_event(
                 payload, sig_header, webhook_secret
             )
             log.info(f"Successfully validated Stripe webhook event")
 
             if not response.object_id:
-                if "balance" in response.event_type and "account" in payload_json:
+                if "balance" in response.event_type and "account" in payload_data:
                     alt_object = "account"
-                    alt_object_id = payload_json.get("account")
+                    alt_object_id = payload_data.get("account")
                 else:
                     log.info(f"No object ID in webhook response:\n{payload_text}")
                     return response
@@ -107,6 +107,7 @@ class WebhookValidation:
                         event_id=response.event_id,
                         object_type=response.object_type or alt_object,
                         object_id=response.object_id or alt_object_id,
+                        account_id=event.get('account')
                     )
                     log.info(f"Webhook Event Logged: {whe}")
                     response.webhook_event_id = whe.id

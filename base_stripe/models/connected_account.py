@@ -6,6 +6,12 @@ from base_stripe.services.config_service import set_stripe_api_key
 log = Log()
 env = EnvHelper()
 
+"""
+Every object created in stripe must be created for a specified connected account (airport) unless it
+is created on the primary account (hangar hub).
+
+Every lookup must include the connected account's ID
+"""
 
 class StripeConnectedAccount(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
@@ -42,12 +48,23 @@ class StripeConnectedAccount(models.Model):
         return False
 
     @classmethod
+    def ids_start_with(cls):
+        return "acct_"
+
+    @classmethod
     def get(cls, xx):
         try:
-            if str(xx).isnumeric():
+            if xx is None:
+                return None
+            elif type(xx) is cls:
+                return xx
+            elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
+            elif str(xx).startswith(cls.ids_start_with()):
+                return cls.from_stripe_id(xx)
             else:
-                return cls.objects.get(stripe_id=xx)
+                Error.record(f"{xx} is not a valid way to look up a {cls}")
+                return None
         except cls.DoesNotExist:
             return None
         except Exception as ee:

@@ -5,6 +5,7 @@ from base.classes.util.date_helper import DateHelper
 from base.models.utility.error import EnvHelper, Log, Error
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.models.payment_models import StripeCheckoutSession, StripeSubscription, StripeCustomer, StripeInvoice
+from base_stripe.models.product_models import StripeProduct
 from the_hangar_hub.models.airport_customer import AirportCustomer
 from base.models.utility.variable import Variable
 from base_stripe.services import accounts_service
@@ -209,6 +210,12 @@ def get_checkout_session_application_fee(application):
 
 def get_subscription_checkout_session(rental_agreement, collection_start_date):
     try:
+        # Get hangar rent product for this airport
+        product = StripeProduct.obtain("Hangar Rent", rental_agreement.airport.stripe_account)
+        if not product:
+            message_service.post_error("Unable to obtain Stripe product for Hangar Rent.")
+            return False
+
         # Gather data
         tenant = rental_agreement.tenant
         airport = rental_agreement.airport
@@ -362,7 +369,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             line_items=[{
                 "price_data": {
                     "unit_amount": amount_due,
-                    "product": "prod_TEfRvyTmqjKlwG",  # TODO: Make a setting? Variable?
+                    "product": product.stripe_id,
                     "currency": currency,
                     "recurring": {
                         "interval": "month",
