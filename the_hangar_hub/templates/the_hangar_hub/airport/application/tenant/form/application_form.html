@@ -13,8 +13,8 @@
 
     <br />
     {%icon bi-geo-alt%} {{airport.city}}, {{airport.state}}<br />
-    {%if airport.info_email%}
-        {%icon bi-envelope-at%} {{airport.info_email}}<br />
+    {%if airport.support_email%}
+        {%icon bi-envelope-at%} {{airport.support_email}}<br />
     {%endif%}
     <br />
     {%change_airport_link 'application:airport_form' 'IDENTIFIER' onclick="delete_application_in_background();" button=True%}

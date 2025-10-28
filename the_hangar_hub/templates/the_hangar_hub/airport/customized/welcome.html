@@ -1,5 +1,6 @@
 {% extends 'base/template/standard/template.html' %}
 {% load base_taglib %}
+{% load upload_taglib %}
 {% load static %}
 
 {%block title%}Welcome to {{airport.display_name}}{%endblock%}
@@ -18,9 +19,63 @@
 
   <div class="row g-4">
 
-            <div class="col-12 col-lg-8">
-          ???
-      </div>
+    <div class="col-12 col-lg-8">
+
+        {%if blog_entries%}
+        <h2>News and Events</h2>
+        <div id="airport-blog">
+            {% for entry in blog_entries %}
+                {%with uploaded_image=entry.main_image%}
+
+                <div class="card float-left" data-entry_id="{{entry.id}}" onclick="read_more($(this));">
+                    {% if uploaded_image %}
+                        {%file_preview file=uploaded_image class="card-img-top" aria-hidden="true" link=False%}
+                    {% endif %}
+                    <div class="card-body">
+                        <b class="card-title">{{entry.title}}</b>
+                        <div class="card-text">
+                            {{ entry.content|striptags }}
+                            <br />
+                        </div>
+                    </div>
+                    <div class="read-more float-right">
+                        {%icon bi-three-dots title="Read More" style="display:inline-block;margin:10px 15px;"%}
+                    </div>
+                    <br style="clear:both;" />
+                </div>
+                {% endwith %}
+            {% endfor %}
+
+        </div>
+        <style>
+            #airport-blog .card{
+                max-width: 250px;
+                margin-right: 15px;
+                margin-bottom: 15px;
+            }
+            #airport-blog .card-body{
+                height: 120px;
+                font-size: .9em;
+                overflow: hidden;
+            }
+            .blog-popup{
+                background-color: white;
+            }
+            .blog-popup .card-title{
+                display:block;
+                margin: 25px 0;
+                font-size: 2em;
+            }
+            .blog-popup .card-text{
+
+            }
+        </style>
+        <script type="text/javascript">
+            {%include "the_hangar_hub/airport/customized/management/blog/blog.js"%}
+        </script>
+        {%endif%}
+
+    </div>
     <div class="col-12 col-md-4">
 
 

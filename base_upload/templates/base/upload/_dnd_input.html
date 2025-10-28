@@ -1,5 +1,5 @@
 {# Required: input_name, upload_url  #}
-{# Optional: input_id, upload_url_arg  #}
+{# Optional: input_id, upload_url_arg, upload_url_arg2  #}
 {# NOTE: You must include 'base/upload/_dnd_assets.html' in your template #}
 <div id="{{input_name}}_upload_container" class="dnd-container" >
     <div class="dnd-background">
@@ -9,7 +9,9 @@
            name="{{input_name}}" id="{{input_id|default:input_name}}"
            class="dnd-input"
            {%if upload_url%}
-               {%if upload_url_arg%}
+               {%if upload_url_arg and upload_url_arg2%}
+                    onchange="handle_file_selection($(this), '{%url upload_url upload_url_arg upload_url_arg2%}');"
+               {%elif upload_url_arg%}
                     onchange="handle_file_selection($(this), '{%url upload_url upload_url_arg%}');"
                {%else%}
                     onchange="handle_file_selection($(this), '{%url upload_url %}');"

@@ -84,7 +84,7 @@ def rent_subscription_email(request, airport_identifier, rental_agreement_id):
     hangar = rental_agreement.hangar
     tenant = rental_agreement.tenant
 
-    airport_email = request.POST.get("airport_email") or airport.info_email
+    airport_email = request.POST.get("airport_email") or airport.support_email
 
 
     if co_helper and co_helper.url:

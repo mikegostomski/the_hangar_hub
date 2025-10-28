@@ -32,7 +32,7 @@ class Airport(models.Model):
     timezone = models.CharField(max_length=50, blank=True, null=True)
 
     # Email displayed to users/tenants who need to contact the airport
-    info_email = models.CharField(max_length=150, blank=True, null=True)
+    support_email = models.CharField(max_length=150, blank=True, null=True)
 
 
     application_fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
@@ -354,11 +354,19 @@ class BlogEntry(models.Model):
             tag=f"blog:{self.airport.id}", foreign_table="BlogEntry", foreign_key=self.id
         )
 
+    def staged_files(self):
+        return retrieval_service.get_file_query().filter(
+            tag=f"blog:{self.airport.id}", foreign_table="BlogEntry", foreign_key=(self.id * -1)
+        )
+
     def main_image(self):
         for file in self.files():
             if "image" in file.content_type:
                 return file
         return None
+
+    class Meta:
+        ordering = ['-date_created']
 
     @classmethod
     def get(cls, pk):

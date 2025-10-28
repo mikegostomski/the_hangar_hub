@@ -1,0 +1,49 @@
+{% load base_taglib %}
+{% load upload_taglib %}
+{% load static %}
+
+{# Requires: entry #}
+
+<div class="content-800 content-center">
+    <form method="post" action="{%url 'airport:blog_post' airport.identifier%}" enctype="multipart/form-data" class="mb-4">
+        {% csrf_token %}
+        <input type="hidden" name="entry_id" value="{{entry.id}}" />
+        <div class="card">
+            <div class="card-header"><h2 class="">{%icon bi-file-earmark-plus%} Update Blog Entry</h2></div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="visually-hidden" for="blog-title">Title</label>
+                    <input type="text" id="blog-title" name="title" value="{{entry.title|default:''}}" class="form-control" placeholder="Title" />
+                </div>
+                <div class="mb-2">
+                    <label class="visually-hidden" for="blog-content">Blog/News Story</label>
+                    <textarea id="blog-content" name="content" class="form-control" rows="20" placeholder="Your post's content goes here...">{{entry.content|default:''}}</textarea>
+                </div>
+
+                {%with uploaded_image=entry.main_image%}
+                {%with staged_images=entry.staged_files%}
+                    {%if uploaded_image%}
+                        {%if staged_images%}
+                            {%file_preview file=uploaded_image class="img-fluid img-rounded mb-3" style="max-height: 100px;opacity:.1;"%}
+                        {%else%}
+                            {%file_preview file=uploaded_image class="img-fluid img-rounded mb-3" style="max-height: 100px;"%}
+                        {%endif%}
+                    {%endif%}
+                    {%if staged_images%}
+                        {%for uploaded_image in staged_images%}
+                            {%file_preview file=uploaded_image class="img-fluid img-rounded mb-3" style="max-height: 100px;"%}
+                        {%endfor%}
+                    {%endif%}
+                {%endwith%}
+                {%endwith%}
+
+                <div class="mb-2">
+                    {%include 'base/upload/_dnd_input.html' with input_name="entry_file" upload_url="airport:blog_reupload" upload_url_arg=airport.identifier upload_url_arg2=entry.id %}
+                    {%include 'base/upload/_dnd_assets.html'%}
+                </div>
+                <button class="btn btn-primary" type="submit">Publish</button>
+                <button class="btn btn-secondary" type="button" onclick="$(this).closest('.popup').addClass('hidden');">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>

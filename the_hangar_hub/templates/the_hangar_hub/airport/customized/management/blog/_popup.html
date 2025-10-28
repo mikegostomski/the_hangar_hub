@@ -1,0 +1,25 @@
+{% load base_taglib %}
+{% load upload_taglib %}
+{% load static %}
+<div class="popup blog-popup" style="max-width:850px;">
+    {%with uploaded_image=entry.main_image%}
+    <div class="card">
+        {% if uploaded_image %}
+            {%file_preview file=uploaded_image class="card-img-top" aria-hidden="true"%}
+        {% else %}
+            <img src="{% static 'images/bs-cards/blog-placeholder-2.png' %}" aria-hidden="true" class="card-img-top" />
+        {% endif %}
+        <div class="card-body">
+            <b class="card-title">{{entry.title}}</b>
+            <div class="card-text">
+                {{ entry.content|striptags }}
+                <br />
+            </div>
+        </div>
+    </div>
+    <div class="text-center">
+        <br />
+        <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').remove();">Close</button>
+    </div>
+    {% endwith %}
+</div>

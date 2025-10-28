@@ -9,7 +9,7 @@ from the_hangar_hub.models.airport_manager import AirportManager
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.invitation import Invitation
 from the_hangar_hub.models.application import HangarApplication
-from base.services import message_service, date_service
+from base.services import message_service, date_service, utility_service
 from base.decorators import require_authority, require_authentication, report_errors
 from the_hangar_hub.services import airport_service
 from base.classes.breadcrumb import Breadcrumb
@@ -152,7 +152,7 @@ def add_hangar(request, airport_identifier, building_id):
         return redirect("infrastructure:buildings", airport.identifier)
 
     hangar_code = request.POST.get("hangar_code")
-    default_rent = request.POST.get("default_rent") or 0.0
+    default_rent = utility_service.convert_to_decimal(request.POST.get("default_rent") or 0.0)
     capacity = int(request.POST.get("capacity") or 1)
     electric = request.POST.get("electric") or 0
 

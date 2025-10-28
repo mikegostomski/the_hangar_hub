@@ -162,28 +162,8 @@
                 <td class="ajax-status-container">&nbsp;</td>
             </tr>
             <tr>
-                <th scope="row">Public Email Address</th>
-                <td><input type="email" class="form-control" name="info_email" value="{{airport.info_email|default:''}}" onchange="update_airport_data($(this));" /></td>
-                <td class="ajax-status-container">&nbsp;</td>
-            </tr>
-            <tr>
-                <th scope="row">Website Address</th>
-                <td><input type="text" class="form-control" name="url" value="{{airport.url|default:''}}" onchange="update_airport_data($(this));" /></td>
-                <td class="ajax-status-container">&nbsp;</td>
-            </tr>
-            <tr>
-                <th scope="row">Logo</th>
-                <td>
-                    <div class="float-left">
-                        {%include 'base/upload/_dnd_input.html' with input_name="logo_file" upload_url="airport:upload_logo" upload_url_arg=airport.identifier %}
-                        {%include 'base/upload/_dnd_assets.html'%}
-                    </div>
-
-                    <div class="float-right">
-                        {%include "the_hangar_hub/airport/_logo.html" with class="img-fluid" style="max-width:100px;max-height:100px;"%}
-                    </div>
-                    <br style="clear:both;" />
-                </td>
+                <th scope="row">Support Email Address</th>
+                <td><input type="email" class="form-control" name="support_email" value="{{airport.support_email|default:''}}" onchange="update_airport_data($(this));" /></td>
                 <td class="ajax-status-container">&nbsp;</td>
             </tr>
         </table>

@@ -344,9 +344,10 @@ def add_tenant(request, airport_identifier, hangar_id):
     # Get or create a Stripe customer for this RentalAgreement
     customer = AirportCustomer.get(airport, contact)
     if not customer:
-        customer = StripeCustomer.get_or_create(
-            full_name=tenant.display_name, email=tenant.email, user=tenant.user
-        )
+        Error.record("Airport Customer Not Created", [airport, contact])
+        # customer = StripeCustomer.get_or_create(
+        #     full_name=tenant.display_name, email=tenant.email, user=tenant.user
+        # )
 
     # Create the rental record
     rental = None
@@ -361,7 +362,7 @@ def add_tenant(request, airport_identifier, hangar_id):
         rental.deposit = deposit
         rental.notes = notes
         rental.set_new_series()
-        rental.customer = customer
+        rental.customer = customer.stripe_customer
         rental.save()
         message_service.post_success("New tenant has been added")
 
@@ -371,18 +372,18 @@ def add_tenant(request, airport_identifier, hangar_id):
             application.status_code = "A"
             application.save()
 
+        try:
+            # If not an existing user, send an invitation
+            if not user:
+                Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
+        except Exception as ee:
+            log.error(f"Error inviting tenant: {ee}")
+
     except Exception as ee:
         log.error(f"Error creating rental: {ee}")
         issues.append("Unable to create rental record.")
         env.set_flash_scope("add_tenant_issues", issues)
         env.set_flash_scope("prefill", prefill)
-
-    # If not an existing user, send an invitation
-    if not user:
-        Invitation.invite_tenant(airport, email, tenant=tenant, hangar=hangar)
-
-    # Create a Stripe customer record (for sending invoices and collecting rent)
-    metadata = {"rental_agreement"}
 
     if rental is None or issues:
         return redirect("infrastructure:hangar",airport_identifier, hangar.code)

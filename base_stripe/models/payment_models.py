@@ -62,37 +62,40 @@ class StripeCustomer(models.Model):
             customer = stripe.Customer.retrieve(self.stripe_id, expand=["invoice_settings.default_payment_method"])
             log.debug(customer)
             if customer:
-                self.full_name = customer.name
-                self.email = customer.email
-                self.balance_cents = customer.balance
-                self.delinquent = customer.delinquent
-                self.invoice_prefix = customer.invoice_prefix
-                self.metadata = customer.metadata
-                if not self.user:
-                    self.user = Auth.lookup_user(self.email)
+                if customer.get("deleted"):
+                    self.deleted = True
+                else:
+                    self.full_name = customer.name
+                    self.email = customer.email
+                    self.balance_cents = customer.balance
+                    self.delinquent = customer.delinquent
+                    self.invoice_prefix = customer.invoice_prefix
+                    self.metadata = customer.metadata
+                    if not self.user:
+                        self.user = Auth.lookup_user(self.email)
 
-                inv_settings = customer.get("invoice_settings") or {}
-                dpm = inv_settings.get("default_payment_method") or {}
-                self.default_source = customer.get("default_source")
-                self.default_payment_method = dpm.get("type")
+                    inv_settings = customer.get("invoice_settings") or {}
+                    dpm = inv_settings.get("default_payment_method") or {}
+                    self.default_source = customer.get("default_source")
+                    self.default_payment_method = dpm.get("type")
 
-                # Expand upon payment method when possible
-                if self.default_payment_method:
-                    try:
-                        pm_id = dpm.get("id")
-                        pm = stripe.Customer.retrieve_payment_method(self.stripe_id, pm_id)
-                        payment_type = self.default_payment_method
-                        if payment_type == "card":
-                            card = pm.get("card")
-                            exp = f'exp. {card.get("exp_month")}/{card.get("exp_year")}'
-                            self.default_payment_method = f'{card.get("brand")} ****{card.get("last4")} {exp}'
-                        elif payment_type == "us_bank_account":
-                            acct = pm.get("us_bank_account")
-                            self.default_payment_method = f'{acct.get("bank_name")} ****{acct.get("last4")}'
-                        elif payment_type == "link":
-                            self.default_payment_method = "Managed via Link.com"
-                    except Exception as ee:
-                        Error.record(ee)
+                    # Expand upon payment method when possible
+                    if self.default_payment_method:
+                        try:
+                            pm_id = dpm.get("id")
+                            pm = stripe.Customer.retrieve_payment_method(self.stripe_id, pm_id)
+                            payment_type = self.default_payment_method
+                            if payment_type == "card":
+                                card = pm.get("card")
+                                exp = f'exp. {card.get("exp_month")}/{card.get("exp_year")}'
+                                self.default_payment_method = f'{card.get("brand")} ****{card.get("last4")} {exp}'
+                            elif payment_type == "us_bank_account":
+                                acct = pm.get("us_bank_account")
+                                self.default_payment_method = f'{acct.get("bank_name")} ****{acct.get("last4")}'
+                            elif payment_type == "link":
+                                self.default_payment_method = "Managed via Link.com"
+                        except Exception as ee:
+                            Error.record(ee)
 
                 self.save()
                 return True
@@ -162,7 +165,8 @@ class StripeCustomer(models.Model):
         return cls.get_or_create(stripe_id=stripe_id)
 
     @classmethod
-    def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None, phone=None, address_dict=None, metadata=None):
+    def get_or_create(cls, full_name=None, email=None, user=None, stripe_id=None, phone=None, address_dict=None, metadata=None, account=None):
+        # ToDo: Create customer on given account
         """
         Create (if DNE) a Customer record in Stripe, and a local record that ties the Stripe ID to a User/email
 
