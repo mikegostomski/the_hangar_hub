@@ -5,13 +5,14 @@ from decimal import Decimal
 from django.urls import reverse
 from base.services import message_service, utility_service
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
+from base_stripe.models.connected_account import StripeConnectedAccount
 
 log = Log()
 env = EnvHelper()
 
 
-def verify_checkout(checkout_id=None, session_var=None, account_id=None):
-    log.trace([checkout_id, session_var, account_id])
+def verify_checkout(checkout_id=None, session_var=None, account=None):
+    log.trace([checkout_id, session_var, account])
     success = False
     try:
         if checkout_id is None:
@@ -23,8 +24,9 @@ def verify_checkout(checkout_id=None, session_var=None, account_id=None):
 
 
         set_stripe_api_key()
-        if account_id:
-            checkout = stripe.checkout.Session.retrieve(checkout_id, stripe_account=account_id)
+        if account:
+            account = StripeConnectedAccount.get(account)
+            checkout = stripe.checkout.Session.retrieve(checkout_id, stripe_account=account.stripe_id)
         else:
             checkout = stripe.checkout.Session.retrieve(checkout_id)
 

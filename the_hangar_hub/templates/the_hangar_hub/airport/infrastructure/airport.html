@@ -166,6 +166,11 @@
                 <td><input type="email" class="form-control" name="support_email" value="{{airport.support_email|default:''}}" onchange="update_airport_data($(this));" /></td>
                 <td class="ajax-status-container">&nbsp;</td>
             </tr>
+            <tr>
+                <th scope="row">Support Telephone</th>
+                <td><input type="text" class="form-control" name="support_phone" value="{{airport.support_phone|default:''}}" onchange="update_airport_data($(this));" /></td>
+                <td class="ajax-status-container">&nbsp;</td>
+            </tr>
         </table>
     </section>
 

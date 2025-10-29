@@ -33,6 +33,7 @@ class Airport(models.Model):
 
     # Email displayed to users/tenants who need to contact the airport
     support_email = models.CharField(max_length=150, blank=True, null=True)
+    support_phone = models.CharField(max_length=30, blank=True, null=True)
 
 
     application_fee_amount = models.DecimalField(decimal_places=2, max_digits=6, null=True, blank=True)
@@ -213,7 +214,9 @@ class Airport(models.Model):
 
     def get_logo(self):
         try:
-            return retrieval_service.get_all_files().get(tag="logo", foreign_table="Airport", foreign_key=self.id)
+            return retrieval_service.get_all_files().get(
+                tag=f"logo:{self.id}", foreign_table="Airport", foreign_key=self.id
+            )
         except:
             return None
 

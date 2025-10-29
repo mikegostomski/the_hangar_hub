@@ -301,7 +301,7 @@ class StripeCustomer(models.Model):
                 if not primary_email:
                     primary_email = user.email
                 if not display_name:
-                    display_name = user.display_name
+                    display_name = user.contact.display_name
             if contact:
                 if not primary_email:
                     primary_email = contact.email

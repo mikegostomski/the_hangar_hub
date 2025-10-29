@@ -22,13 +22,11 @@ app = AppData()
 register = template.Library()
 
 
-# @register.simple_tag()
-# def change_airport_link(parser, token):
-#     """
-#     """
-#     log.debug(token.split_contents())
-#     return "CHANGE AIRPORT"
-#     icon = html_generating.IconNode(token.split_contents())
+@register.inclusion_tag('the_hangar_hub/airport/_logo.html', takes_context=True)
+def airport_logo(context, *args, **kwargs):
+    airport = context.get("airport")
+    return {"airport": airport, **kwargs}
+
 
 
 @register.simple_tag(takes_context=True)
@@ -51,8 +49,12 @@ def change_airport_link(context, *args, **kwargs):
 
     # Render as an icon by default, or a button if specified in kwargs
     if kwargs.get("button"):
-        return mark_safe(f"""<a class="btn btn-info" href="{reverse(url)}"{oc}>Change Airport</a>""")
+        return mark_safe(f"""<a class="btn btn-info btn-sm" href="{reverse(url)}"{oc}>Change Airport</a>""")
     else:
-        # Link will just be an edit icon (with .visually-hidden text)
-        icon = html_generating.IconNode(['icon', 'bi-pencil-square', 'text-info', 'title="Change Airport"']).render(context)
-        return mark_safe(f"""<a href="{reverse(url)}"{oc}>{icon}</a>""")
+        if kwargs.get("text"):
+            icon = html_generating.IconNode(['icon', 'bi-pencil-square']).render(context)
+            return mark_safe(f"""<a href="{reverse(url)}"{oc} style="text-decoration:none;">{icon} {kwargs.get("text")}</a>""")
+        else:
+            # Link will just be an edit icon (with .visually-hidden text)
+            icon = html_generating.IconNode(['icon', 'bi-pencil-square', 'text-info', 'title="Change Airport"']).render(context)
+            return mark_safe(f"""<a href="{reverse(url)}"{oc}>{icon}</a>""")

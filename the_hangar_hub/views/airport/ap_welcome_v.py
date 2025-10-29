@@ -1,48 +1,19 @@
-from allauth.core.internal.ratelimit import clear
-
-from the_hangar_hub.models.airport import Airport
-
-from base.fixtures.timezones import timezones
-
-from django.shortcuts import render, redirect
-from django.urls import reverse
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, FileResponse
+from django.http import HttpResponse, HttpResponseForbidden, FileResponse
 from django.db.models import Q
-import the_hangar_hub.models
 from django.core.paginator import Paginator
 from base.classes.util.env_helper import Log, EnvHelper
 from base.classes.auth.session import Auth
-from the_hangar_hub.models import Tenant
-from the_hangar_hub.models.airport import Airport
 from the_hangar_hub.models.infrastructure_models import Building, Hangar
-from the_hangar_hub.models.invitation import Invitation
-from base.services import message_service, utility_service, email_service, date_service
+from base.services import message_service, utility_service
 from base.decorators import require_authority, require_authentication, report_errors
-from the_hangar_hub.services import airport_service, tenant_s, application_service, stripe_service
-from decimal import Decimal
-from base.classes.breadcrumb import Breadcrumb
-from django.contrib.auth.models import User
-import re
-from datetime import datetime, timezone
-from base.models.contact.contact import Contact
+from the_hangar_hub.services import airport_service, tenant_s, application_service
 from the_hangar_hub.decorators import require_airport, require_airport_manager
-import stripe
 from base.models.utility.error import Error
-from base_stripe.services import checkout_service
-from the_hangar_hub.models.airport_manager import AirportManager
 from base_upload.services import retrieval_service
 from base_upload.services import upload_service
-from the_hangar_hub.services.stripe import stripe_creation_svc
-
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from the_hangar_hub.models.airport import CustomizedContent, BlogEntry
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
+from django.shortcuts import render, redirect
 from the_hangar_hub.models.airport import Airport, Amenities, Amenity
-
 
 
 log = Log()
@@ -203,6 +174,7 @@ def customize_content(request, airport_identifier):
     })
 
 
+@require_airport()
 def logo(request, airport_identifier):
     # Make sure the airport model has been queried
     airport = request.airport
@@ -227,32 +199,33 @@ def upload_logo(request, airport_identifier):
     uploaded_file = None
     try:
         if request.method == 'POST':
+            # Delete any previously-uploaded images
+            for img in retrieval_service.get_file_query().filter(
+                    tag=f"logo:{airport.id}", foreign_table="Airport", foreign_key=airport.id
+            ):
+                img.delete()
+
             uploaded_file = upload_service.upload_file(
-                request.FILES['logo_file'],
-                tag=f"logo",
+                request.FILES.get('logo_file'),
+                tag=f"logo:{airport.id}",
                 foreign_table="Airport", foreign_key=airport.id,
-                # specified_filename='airport_logo',
-                # parent_directory=f'airports/{airport.identifier}/logo'
+                # resize_dimensions="800x600",
+                specified_filename='logo',
+                parent_directory=f'airports/{airport.identifier}/uploads'
             )
-            log.info(f"Uploaded File: {uploaded_file}")
+            log.info(f"Uploaded Logo File: {uploaded_file}")
+
 
         if uploaded_file:
             Auth.audit(
                 "C", "AIRPORT",
-                f"Uploaded airport logo",
+                f"Uploaded logo file",
                 reference_code="Airport", reference_id=airport.id
             )
 
-            # Update tags for any previous logos for this airport
-            for logo in retrieval_service.get_all_files().filter(
-                tag="logo", foreign_table="Airport", foreign_key=airport.id
-            ).exclude(id=uploaded_file.id):
-                logo.tag = "old_logo"
-                logo.save()
-
             return HttpResponse("ok")
     except Exception as ee:
-        message_service.post_error(f"Could not update airport data: {ee}")
+        message_service.post_error(f"Could not upload logo file: {ee}")
 
     return HttpResponseForbidden()
 

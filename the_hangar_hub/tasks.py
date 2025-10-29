@@ -108,14 +108,7 @@ def process_stripe_event(self, webhook_record_id):
 
 def handle_customer_event(event):
     try:
-        if event.event_type == "customer.created":
-            customer = StripeCustomer.from_stripe_id(event.object_id, event.account_id)
-            if customer:
-                # Check for tenant that needs to be updated
-                for t in Tenant.objects.filter(customer__isnull=True, contact__email__iexact=customer.email):
-                    t.customer = customer
-                    t.save()
-
+        # Nothing to do???
         return True
     except Exception as ee:
         Error.record(ee, event)
