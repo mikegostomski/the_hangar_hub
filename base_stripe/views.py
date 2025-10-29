@@ -1,17 +1,11 @@
 from django.http import HttpResponse, Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
-from base.classes.util.env_helper import Log, EnvHelper
-from base.classes.auth.session import Auth
-from base_stripe.services import product_service
-from base.services import message_service
-from django.views.decorators.csrf import csrf_exempt
-import json
-import stripe
-from base_stripe.classes.webhook_validation import WebhookValidation
-from base_stripe.models.events import StripeWebhookEvent
 from base.models.utility.error import Error
-from base.decorators import require_authority, require_authentication, report_errors
-from base_stripe.models.payment_models import StripeInvoice, StripeCustomer, StripeSubscription
+from base.classes.util.env_helper import Log, EnvHelper
+from base_stripe.services import product_service
+from django.views.decorators.csrf import csrf_exempt
+import stripe
+from base_stripe.models.events import StripeWebhookEvent
 from base_stripe.services import webhook_service, config_service
 from the_hangar_hub.tasks import process_stripe_event
 
@@ -24,37 +18,14 @@ env = EnvHelper()
 
 @csrf_exempt
 def webhook(request):
-    result = WebhookValidation.validate(request)
-    if result.ignore or not result.valid_request:
-        return HttpResponse(status=result.status_code)
-
     try:
-        # Queue the task for async processing
-        process_stripe_event.delay(result.webhook_event_id)
-        return HttpResponse(status=200)
-
+        result = StripeWebhookEvent.receive(request)
+        status_code = result if str(result).isnumeric() else 200
+        if status_code == 200:
+            process_stripe_event.delay(result.id)
+        return HttpResponse(status=status_code)
     except Exception as ee:
         Error.record(ee)
-        return HttpResponse(status=500)
-
-
-def home(request, file_id):
-    """
-    Retrieve a specified file and display as attachment.
-
-    Security:
-    This will only display files belonging to the authenticated owner, or files
-    whose ID is saved in the session.  This prevents a user from changing the
-    URL to display any file in the database.
-
-    File IDs are automatically added to the session by the {%file_preview%} tag.
-    Each app must verify permissions before displaying a file preview to a user.
-
-    Authenticated users can always use this to view their own files
-    """
-    log.trace()
-
-    return HttpResponse("Hello")
 
 
 def react_to_events(request):
