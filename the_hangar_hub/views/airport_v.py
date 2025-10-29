@@ -51,7 +51,9 @@ def my_airport(request, airport_identifier):
     onboarding_link = None
     if airport.stripe_account:
         # Onboarding link can be used to manage account after onboarding
-        onboarding_link = stripe_service.get_onboarding_link(airport)
+        onboarding_link = airport.stripe_account.onboarding_url(
+            reverse("airport:manage", args=[airport.identifier])
+        )
 
     return render(
         request, "the_hangar_hub/airport/infrastructure/airport.html",

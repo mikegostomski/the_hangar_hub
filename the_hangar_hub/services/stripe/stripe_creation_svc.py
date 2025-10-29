@@ -6,9 +6,9 @@ from base.models.utility.error import EnvHelper, Log, Error
 from base_stripe.services.config_service import set_stripe_api_key, get_stripe_address_dict
 from base_stripe.models.payment_models import StripeCheckoutSession, StripeSubscription, StripeCustomer, StripeInvoice
 from base_stripe.models.product_models import StripeProduct
+from base_stripe.models.connected_account import StripeConnectedAccount
 from the_hangar_hub.models.airport_customer import AirportCustomer
 from base.models.utility.variable import Variable
-from base_stripe.services import accounts_service
 from base.services import message_service, utility_service
 from datetime import datetime, timezone, timedelta
 from django.urls import reverse
@@ -142,7 +142,7 @@ def create_connected_account(airport):
                 ),
             }
         }
-        connected_account = accounts_service.create_account(params_dict)
+        connected_account = StripeConnectedAccount.create(**params_dict)
         if connected_account:
             airport.stripe_account = connected_account
             airport.save()

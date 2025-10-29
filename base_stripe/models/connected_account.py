@@ -7,37 +7,76 @@ log = Log()
 env = EnvHelper()
 
 """
-Every object created in stripe must be created for a specified connected account (airport) unless it
-is created on the primary account (hangar hub).
+Every object created in stripe must be created for a specified connected account unless it
+is created on the primary account.
 
-Every lookup must include the connected account's ID
+Every API call must include the connected account's ID
 """
 
 class StripeConnectedAccount(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    stripe_id = models.CharField(max_length=60, db_index=True)
     deleted = models.BooleanField(default=False, db_index=True)
 
-    stripe_id = models.CharField(max_length=60, db_index=True)
-    name = models.CharField(max_length=80)
-
+    name = models.CharField(max_length=80, null=True, blank=True)
     charges_enabled = models.BooleanField(default=False)
     transfers_enabled = models.BooleanField(default=False)
     payouts_enabled = models.BooleanField(default=False)
     card_payments_enabled = models.BooleanField(default=False)
     onboarding_complete = models.BooleanField(default=False)
 
-    def sync(self):
+    def onboarding_url(self, return_url, refresh_url=None):
+        """
+        Link to Stripe session for onboarding, as well as making account changes after onboarding
+        """
+        try:
+            abs_url = env.absolute_root_url
+            if return_url and not return_url.startswith(abs_url):
+                return_url = f"{abs_url}{return_url}"
+            if refresh_url and not refresh_url.startswith(abs_url):
+                refresh_url = f"{abs_url}{refresh_url}"
+
+            set_stripe_api_key()
+            link = stripe.AccountLink.create(
+                account=self.stripe_id,
+                type="account_onboarding",
+                collection_options={"fields": "eventually_due", "future_requirements": "include"},
+                return_url=return_url,
+                refresh_url=refresh_url or return_url,
+            )
+            return link.url
+        except Exception as ee:
+            Error.unexpected("Unable to create onboarding link to Stripe", ee)
+        return None
+
+    def api_data(self, expand=None):
         try:
             set_stripe_api_key()
-            stripe_account = stripe.Account.retrieve(self.stripe_id)
-            capabilities = stripe_account.get("capabilities")
+            params = {}
+            if expand:
+                params["expand"] = expand
+            return self.stripe_api().retrieve(self.stripe_id, **params)
+        except Exception as ee:
+            Error.record(ee, self)
 
-            # Sync local data with Stripe data
-            self.name = stripe_account.get("business_profile").get("name")
-            self.charges_enabled = stripe_account.get("charges_enabled")
-            self.payouts_enabled = stripe_account.get("payouts_enabled")
-            self.onboarding_complete = stripe_account.get("details_submitted")
+    def sync(self, api_data=None):
+        """
+        Sync local (model) data with Stripe (API) data
+        """
+        try:
+            if self.deleted:
+                # Cannot sync a deleted object
+                return False
+
+            if not api_data:
+                api_data = self.api_data()
+
+            self.name = api_data.get("business_profile").get("name")
+            self.charges_enabled = api_data.get("charges_enabled")
+            self.payouts_enabled = api_data.get("payouts_enabled")
+            self.onboarding_complete = api_data.get("details_submitted")
+            capabilities = api_data.get("capabilities")
             if capabilities:
                 self.card_payments_enabled = capabilities.get("card_payments") == "active"
                 self.transfers_enabled = capabilities.get("transfers") == "active"
@@ -50,6 +89,10 @@ class StripeConnectedAccount(models.Model):
     @classmethod
     def ids_start_with(cls):
         return "acct_"
+
+    @classmethod
+    def stripe_api(cls):
+        return stripe.Account
 
     @classmethod
     def get(cls, xx):
@@ -93,3 +136,18 @@ class StripeConnectedAccount(models.Model):
             Error.record(ee, stripe_id)
             return None
 
+    @classmethod
+    def create(cls, **kwargs):
+        try:
+            set_stripe_api_key()
+            api_data = cls.stripe_api().create(**kwargs)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, **kwargs)
+            return None
+
+        try:
+            model = cls.objects.create(stripe_id=api_data.id)
+            model.sync(api_data)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, api_data.id)
+            return None
