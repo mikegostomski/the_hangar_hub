@@ -71,12 +71,10 @@ def payment_dashboard(request):
     """
     current_user = Auth.current_user()
     rental_agreements = tenant_s.get_rental_agreements(current_user)
-    stripe_customer = StripeCustomer.get(current_user)
     return render(
         request, "the_hangar_hub/airport/rent/tenant/payment/dashboard/dashboard.html",
         {
             "rental_agreements": rental_agreements,
-            "stripe_customer": stripe_customer,
         }
     )
 

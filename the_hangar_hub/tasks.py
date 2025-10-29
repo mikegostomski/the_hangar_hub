@@ -109,7 +109,7 @@ def process_stripe_event(self, webhook_record_id):
 def handle_customer_event(event):
     try:
         if event.event_type == "customer.created":
-            customer = StripeCustomer.from_stripe_id(event.object_id)
+            customer = StripeCustomer.from_stripe_id(event.object_id, event.account_id)
             if customer:
                 # Check for tenant that needs to be updated
                 for t in Tenant.objects.filter(customer__isnull=True, contact__email__iexact=customer.email):
@@ -125,7 +125,7 @@ def handle_customer_event(event):
 def handle_invoice_event(event):
     log.debug(f"CELERY::: Handle Invoice: {event.object_id}")
     try:
-        invoice = StripeInvoice.from_stripe_id(event.object_id)
+        invoice = StripeInvoice.from_stripe_id(event.object_id, event.account_id)
         log.debug(f"CELERY::: Invoice Model: {invoice}")
         if invoice and not invoice.deleted:
             # Is invoice tied to a RentalAgreement?
@@ -207,7 +207,7 @@ def handle_subscription_event(event):
     has_relation = False
     change_handled = False
     try:
-        subscription = StripeSubscription.get(event.object_id)
+        subscription = StripeSubscription.from_stripe_id(event.object_id, event.account_id)
         if subscription and not subscription.deleted:
             if has_relation:
                 pass
@@ -290,9 +290,12 @@ def handle_invoice_payment_event(event):
     # Get the invoice data
     try:
         set_stripe_api_key()
-        in_pay = stripe.InvoicePayment.retrieve(event.object_id)
+        if event.account_id:
+            in_pay = stripe.InvoicePayment.retrieve(event.object_id, stripe_account=event.account_id)
+        else:
+            in_pay = stripe.InvoicePayment.retrieve(event.object_id)
         invoice_stripe_id = in_pay.invoice
-        invoice = StripeInvoice.from_stripe_id(invoice_stripe_id)
+        invoice = StripeInvoice.from_stripe_id(invoice_stripe_id, event.account_id)
         invoice.sync()
         # ToDo: Send an email???
         return True

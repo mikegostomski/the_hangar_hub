@@ -118,11 +118,11 @@ def cancel_invoice(invoice):
 
         # Draft invoices get deleted rather than cancelled
         if rental_invoice.stripe_invoice.status == "draft":
-            if not invoice_service.delete_draft_invoice(rental_invoice.stripe_invoice.stripe_id):
+            if not invoice_service.delete_draft_invoice(rental_invoice.stripe_invoice):
                 stripe_issue = True
 
         elif rental_invoice.stripe_invoice.status == "open":
-            if not invoice_service.void_invoice(rental_invoice.stripe_invoice.stripe_id):
+            if not invoice_service.void_invoice(rental_invoice.stripe_invoice):
                 stripe_issue = True
 
         elif rental_invoice.stripe_invoice.status == "paid":
@@ -155,7 +155,8 @@ def waive_invoice(invoice):
 
         # Create a credit note for the remaining amount
         if not invoice_service.apply_credit(
-            invoice.stripe_id, invoice.stripe_invoice.amount_remaining, reason="Remaining balance waived."
+            rental_invoice.stripe_invoice, rental_invoice.stripe_invoice.amount_remaining,
+            reason="Remaining balance waived."
         ):
             stripe_issue = True
 
@@ -205,11 +206,11 @@ def pay_invoice(invoice, amount_paid=None, payment_method_code=None):
     if invoice.stripe_invoice:
         if partial_payment:
             if not invoice_service.apply_credit(
-                invoice.stripe_invoice.stripe_id, this_payment, reason="Partial out-of-band payment"
+                invoice.stripe_invoice, this_payment, reason="Partial out-of-band payment"
             ):
                 stripe_issue = True
         else:
-            if not invoice_service.mark_invoice_paid(invoice.stripe_invoice.stripe_id):
+            if not invoice_service.mark_invoice_paid(invoice.stripe_invoice):
                 stripe_issue = True
 
     # If there was an issue with the Stripe invoice...

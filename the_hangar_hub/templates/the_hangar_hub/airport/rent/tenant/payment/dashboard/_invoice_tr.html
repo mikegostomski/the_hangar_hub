@@ -2,7 +2,7 @@
 
 {## Parameter: invoice ##}
 
-<tr data-invoice_id="{{invoice.id}}">
+<tr data-invoice_id="{{invoice.id}}" {%if invoice.status_code == "X"%}class="invoice-cancelled"{%endif%}>
     <td>{%humanized_date invoice.date_created%}</td>
     <td>
         {{invoice.period_start_date|date:preferred_date_format}} - {{invoice.period_end_date|date:preferred_date_format}}
@@ -16,7 +16,9 @@
             Stripe (Monthly)
         {%endif%}
     </td>
-    <td>{%format_currency invoice.amount_charged%}</td>
+    <td {%if invoice.status_code == "X"%}style="text-decoration:line-through;"{%endif%}>
+        {%format_currency invoice.amount_charged%}
+    </td>
     <td>
         {%format_currency invoice.amount_paid%}<br />
         {%if invoice.payment_method_code%}

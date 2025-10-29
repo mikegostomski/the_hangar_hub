@@ -80,7 +80,7 @@ def hh_checkout_session(airport, price):
             cancel_url=f"{env.absolute_root_url}{reverse('airport:subscription_failure', args=[airport.identifier])}",
         )
         co_session_id = checkout_session.id
-        co_model = StripeCheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
+        co_model = StripeCheckoutSession.from_stripe_id(co_session_id, None)
         co_model.related_type = "Airport"
         co_model.related_id = airport.id
         co_model.save()
@@ -187,16 +187,13 @@ def get_checkout_session_application_fee(application):
             },
             success_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
             cancel_url=f"{env.absolute_root_url}{reverse('application:record_payment', args=[application.id])}",
-            # stripe_account= airport.stripe_account.stripe_id,
-            # application_fee_amount=airport.application_fee_stripe * airport.stripe_tx_fee,
             payment_intent_data={
-                # "setup_future_usage": "off_session",
                 "application_fee_amount": int(airport.application_fee_stripe * airport.stripe_tx_fee),
             },
             stripe_account=airport.stripe_account.stripe_id,
         )
         co_session_id = checkout_session.id
-        co_model = StripeCheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
+        co_model = StripeCheckoutSession.from_stripe_id(co_session_id, airport.stripe_account.stripe_id)
         co_model.related_type = "Application"
         co_model.related_id = application.id
         co_model.save()
@@ -335,13 +332,12 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
                 "backdate_start_date": str(backdate_start_date),
                 "backdate_days": str(backdate_days),
             },
-            "invoice_settings": {
-                "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
-            },
+            # "invoice_settings": {
+            #     "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
+            # },
             # "on_behalf_of": airport.stripe_account.stripe_id,
             # "transfer_data": {"destination": airport.stripe_account.stripe_id},
             "application_fee_percent": application_fee_percent,
-            "stripe_account": airport.stripe_account.stripe_id,
         }
 
         # Add trial days if applicable
@@ -380,10 +376,6 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
             mode='subscription',
             subscription_data=subscription_data,
             metadata=metadata,
-            payment_intent_data={
-                "setup_future_usage": "off_session",
-                "application_fee_amount": application_fee_amount,
-            },
             stripe_account=airport.stripe_account.stripe_id,
             success_url=f"{env.absolute_root_url}{return_url}",
             cancel_url=f"{env.absolute_root_url}{return_url}",
@@ -393,7 +385,7 @@ def get_subscription_checkout_session(rental_agreement, collection_start_date):
         log.debug(f"CHECKOUT SESSION ID: {co_session_id}")
 
         # Save model to track this CO Session
-        co_model = StripeCheckoutSession.from_stripe_id(co_session_id, stripe_data=checkout_session)
+        co_model = StripeCheckoutSession.from_stripe_id(co_session_id, airport.stripe_account)
         co_model.related_type = "RentalAgreement"
         co_model.related_id = rental_agreement.id
         co_model.save()
@@ -461,9 +453,7 @@ def stripe_invoice_from_rental_invoice(rental_invoice, send_invoice=False):
             },
             "application_fee_amount": tx_fee,
             "stripe_account": airport.stripe_account.stripe_id,
-            "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
-            # "on_behalf_of": airport.stripe_account.stripe_id,
-            # "transfer_data": {"destination": airport.stripe_account.stripe_id},
+            # "issuer": {"type": "account", "account": airport.stripe_account.stripe_id},
             "due_date": due_date,
         }
         set_stripe_api_key()
@@ -472,12 +462,13 @@ def stripe_invoice_from_rental_invoice(rental_invoice, send_invoice=False):
         # Create line item...
         stripe.Invoice.add_lines(
             invoice_id,
+            stripe_account=airport.stripe_account.stripe_id,
             lines=[
                 {"description": f"Hangar {hangar.code}", "amount": invoice_amount},
             ]
         )
 
-        stripe_invoice = StripeInvoice.from_stripe_id(invoice_id)
+        stripe_invoice = StripeInvoice.from_stripe_id(invoice_id, airport.stripe_account)
         stripe_invoice.related_type = "RentalAgreement"
         stripe_invoice.related_id = rental_agreement.id
         stripe_invoice.save()

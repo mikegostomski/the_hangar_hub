@@ -8,6 +8,7 @@ import stripe
 from base_stripe.models.events import StripeWebhookEvent
 from base_stripe.services import webhook_service, config_service
 from the_hangar_hub.tasks import process_stripe_event
+from base_stripe.models.connected_account import StripeConnectedAccount
 
 
 log = Log()
@@ -46,13 +47,15 @@ def reset_sandbox(request):
 
     config_service.set_stripe_api_key()
 
-    # 1. Cancel all active subscriptions
-    for sub in stripe.Subscription.list(status='active', limit=100).auto_paging_iter():
-        stripe.Subscription.delete(sub.id)
+    for acct in StripeConnectedAccount.objects.all():
 
-    # 2. Delete all customers
-    for cust in stripe.Customer.list(limit=100).auto_paging_iter():
-        stripe.Customer.delete(cust.id)
+        # 1. Cancel all active subscriptions
+        for sub in stripe.Subscription.list(status='active', stripe_account=acct.stripe_id, limit=100).auto_paging_iter():
+            stripe.Subscription.delete(sub.id)
+
+        # 2. Delete all customers
+        for cust in stripe.Customer.list(stripe_account=acct.stripe_id, limit=100).auto_paging_iter():
+            stripe.Customer.delete(cust.id)
 
     return HttpResponse("Completed")
 

@@ -52,6 +52,7 @@ def modify_customer_from_airport(airport):
                 airport.billing_zip,
                 airport.country
             ),
+            # No account needed
         )
         return customer
 

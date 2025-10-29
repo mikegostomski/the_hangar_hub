@@ -141,7 +141,7 @@ def update_rental_invoice(request, airport_identifier, rental_agreement_id):
         return HttpResponseForbidden()
 
     elif action == "finalize":
-        if stripe_invoice_service.finalize_invoice(invoice.stripe_invoice.stripe_id):
+        if stripe_invoice_service.finalize_invoice(invoice.stripe_invoice):
             return render(request, tr_html,{"invoice": invoice})
         else:
             return HttpResponseForbidden()

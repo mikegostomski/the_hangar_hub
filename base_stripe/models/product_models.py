@@ -113,7 +113,7 @@ class StripeProduct(models.Model):
             elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
             elif str(xx).startswith(cls.ids_start_with()):
-                return cls.from_stripe_id(xx, account)
+                return cls.objects.get(stripe_id=xx)
             else:
                 Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None
@@ -160,6 +160,7 @@ class StripeProduct(models.Model):
             return None
 
         try:
+            log.debug(f"Product Args: \n{kwargs}\n")
             set_stripe_api_key()
             api_data = cls.stripe_api().create(**kwargs)
         except Exception as ee:
@@ -223,11 +224,11 @@ class StripeProduct(models.Model):
             log.info(f"Create new product: {product_type} for account {account_instance}")
             model = cls.create(
                 account_instance,
-                    name=name or product_type,
-                    description=description,
-                    metadata={
-                        'product_type': product_type
-                    },
+                name=name or product_type,
+                description=description,
+                metadata={
+                    'product_type': product_type
+                },
             )
             return model
         except Exception as ee:
@@ -310,7 +311,7 @@ class StripePrice(models.Model):
             if api_data.get("deleted"):
                 self.deleted = True
             else:
-                self.product = StripeProduct.from_stripe_id(api_data.get("product"))
+                self.product = StripeProduct.from_stripe_id(api_data.get("product"), self.stripe_account)
                 self.active = api_data.get("active")
                 self.nickname = api_data.get("nickname")
                 self.recurring = api_data.get("recurring")
@@ -391,7 +392,7 @@ class StripePrice(models.Model):
             elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
             elif str(xx).startswith(cls.ids_start_with()):
-                return cls.from_stripe_id(xx, account)
+                return cls.objects.get(stripe_id=xx)
             else:
                 Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None
@@ -450,7 +451,7 @@ class StripePrice(models.Model):
                 stripe_account=kwargs.get("stripe_account"),
                 active=api_data.get("active"),
                 unit_amount=api_data.get("unit_amount"),
-                product=StripeProduct.from_stripe_id(api_data.get("product"))
+                product=StripeProduct.from_stripe_id(api_data.get("product"), account)
             )
             model.sync()
             return model

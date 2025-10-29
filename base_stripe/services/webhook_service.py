@@ -60,7 +60,7 @@ def _handle_customer_event(event):
 
     # Refresh customer with latest data
     else:
-        cust = StripeCustomer.obtain(stripe_id=event.object_id)
+        cust = StripeCustomer.from_stripe_id(event.object_id, event.account_id)
         return cust.sync()
 
 
@@ -75,7 +75,7 @@ def _handle_invoice_event(event):
 
     # Refresh invoice with latest data
     else:
-        inv = StripeInvoice.from_stripe_id(event.object_id)
+        inv = StripeInvoice.from_stripe_id(event.object_id, event.account_id)
         return inv.sync()
 
 
@@ -88,7 +88,7 @@ def _handle_subscription_event(event):
             del_obj.save()
         return True
     log.info(f"handle_subscription_event({event.object_id})")
-    sub = StripeSubscription.from_stripe_id(event.object_id)
+    sub = StripeSubscription.from_stripe_id(event.object_id, event.account_id)
     log.info(f"sub: {sub}")
     return sub.sync()
 
@@ -101,7 +101,7 @@ def _handle_checkout_session_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    co = StripeCheckoutSession.from_stripe_id(event.object_id)
+    co = StripeCheckoutSession.from_stripe_id(event.object_id, event.account_id)
     return co.sync()
 
 def _handle_product_event(event):
@@ -112,7 +112,7 @@ def _handle_product_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    co = StripeProduct.from_stripe_id(event.object_id)
+    co = StripeProduct.from_stripe_id(event.object_id, event.account_id)
     return co.sync()
 
 def _handle_price_event(event):
@@ -123,7 +123,7 @@ def _handle_price_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    co = StripePrice.from_stripe_id(event.object_id)
+    co = StripePrice.from_stripe_id(event.object_id, event.account_id)
     return co.sync()
 
 def _handle_account_event(event):
@@ -134,7 +134,7 @@ def _handle_account_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    co = StripeConnectedAccount.from_stripe_id(event.object_id)
+    co = StripeConnectedAccount.from_stripe_id(event.object_id, event.account_id)
     return co.sync()
 
 
@@ -176,7 +176,7 @@ def react_to_events():
         if object_type == "invoice":
             # If a new invoice was created, insert a local record to track it
             if event_type == "created":
-                if StripeInvoice.from_stripe_id(event.object_id):
+                if StripeInvoice.from_stripe_id(event.object_id, event.account_id):
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue
@@ -200,7 +200,7 @@ def react_to_events():
             # Refresh invoice with latest data
             else:
                 # The create function will return an existing record, or create if needed
-                inv = StripeInvoice.from_stripe_id(event.object_id)
+                inv = StripeInvoice.from_stripe_id(event.object_id, event.account_id)
                 if inv.sync():
                     log.debug(f"UPDATING INVOICE {event.object_id}")
                     processed_object_ids.append(event.object_id)
@@ -251,7 +251,7 @@ def react_to_events():
 
             # If a new subscription was created, insert a local record to track it
             if event_type == "created":
-                if StripeSubscription.from_stripe_id(event.object_id):
+                if StripeSubscription.from_stripe_id(event.object_id, event.account_id):
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue
@@ -263,7 +263,7 @@ def react_to_events():
 
             # Refresh subscription with latest data
             else:
-                sub = StripeSubscription.from_stripe_id(event.object_id)
+                sub = StripeSubscription.from_stripe_id(event.object_id, event.account_id)
                 if sub.sync():
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
@@ -273,7 +273,7 @@ def react_to_events():
         CONNECTED_ACCOUNTS
         """
         if object_type == "account":
-            ca = StripeConnectedAccount.from_stripe_id(event.object_id)
+            ca = StripeConnectedAccount.from_stripe_id(event.object_id, event.account_id)
             if ca and ca.sync():
                 processed_object_ids.append(event.object_id)
                 processed_events.append(event)

@@ -53,7 +53,10 @@ def terminate_rental_agreement(rental_agreement):
         try:
             if rental_agreement.stripe_subscription:
                 set_stripe_api_key()
-                stripe.Subscription.cancel(rental_agreement.stripe_subscription.stripe_id)
+                stripe.Subscription.cancel(
+                    rental_agreement.stripe_subscription.stripe_id,
+                    stripe_account=rental_agreement.airport.stripe_account.stripe_id
+                )
                 canceled_subscriptions += 1
                 # Celery will react to this
         except Exception as ee:
@@ -64,7 +67,10 @@ def terminate_rental_agreement(rental_agreement):
             # May also have had an active future subscription
             if rental_agreement.future_stripe_subscription:
                 set_stripe_api_key()
-                stripe.Subscription.cancel(rental_agreement.future_stripe_subscription.stripe_id)
+                stripe.Subscription.cancel(
+                    rental_agreement.future_stripe_subscription.stripe_id,
+                    stripe_account=rental_agreement.airport.stripe_account.stripe_id
+                )
                 canceled_subscriptions += 1
                 # Celery will react to this
         except Exception as ee:

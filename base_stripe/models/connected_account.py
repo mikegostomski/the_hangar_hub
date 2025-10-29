@@ -107,7 +107,7 @@ class StripeConnectedAccount(models.Model):
             elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
             elif str(xx).startswith(cls.ids_start_with()):
-                return cls.from_stripe_id(xx)
+                return cls.objects.get(stripe_id=xx)
             else:
                 Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None

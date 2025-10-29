@@ -118,7 +118,7 @@ class Airport(models.Model):
         for sub_data in subs.data:
             # If not yet linked to a subscription, link to first active subscription
             if sub_data.status in ["trialing", "active"] and not self.stripe_subscription:
-                sub_model = StripeSubscription.from_stripe_id(sub_data.id)
+                sub_model = StripeSubscription.from_stripe_id(sub_data.id, None)
                 if sub_model:
                     self.stripe_subscription = sub_model
                     self.save()

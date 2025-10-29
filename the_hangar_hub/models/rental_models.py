@@ -393,6 +393,9 @@ class RentalInvoice(models.Model):
         if self.stripe_invoice:
             log.info(f"Sync {self}")
             self.stripe_invoice.sync()
+            if self.stripe_invoice.deleted:
+                self.stripe_invoice = None
+                self.save()
             if self.status_code == "W" and self.stripe_status_code == "P":
                 # Stripe marks waived invoices as Paid. Do not update Waived to Paid in local model
                 pass
@@ -431,7 +434,7 @@ class RentalInvoice(models.Model):
 
     @property
     def is_stripe_invoice(self):
-        return self.stripe_invoice_id
+        return self.stripe_invoice and not self.stripe_invoice.deleted
 
     @property
     def stripe_id(self):
@@ -446,14 +449,14 @@ class RentalInvoice(models.Model):
             return int(now.timestamp())
 
     def stripe_status(self):
-        if self.stripe_invoice:
+        if self.is_stripe_invoice:
             return self.status_options().get(self.stripe_status_code) or self.stripe_status_code
         return None
 
     @property
     def stripe_status_code(self):
         # Codes come from base_stripe.StripeInvoice
-        if self.stripe_invoice:
+        if self.is_stripe_invoice:
             return {
                 "draft": "I",
                 "open": "O",

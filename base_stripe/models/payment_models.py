@@ -1,6 +1,6 @@
 
 from django.db import models
-
+from django.db.models import Q
 from base.classes.util.env_helper import EnvHelper, Log
 from base.models.utility.error import Error
 from base_stripe.services import config_service
@@ -142,7 +142,7 @@ class StripeCustomer(models.Model):
             elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
             elif str(xx).startswith(cls.ids_start_with()):
-                return cls.from_stripe_id(xx, account)
+                return cls.objects.get(stripe_id=xx)
             else:
                 Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None
@@ -151,6 +151,16 @@ class StripeCustomer(models.Model):
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")
             return None
+
+    @classmethod
+    def from_user(cls, user, account=None):
+        if Auth.is_user_object(user):
+            profile = Auth.lookup_user_profile(user)
+            q = cls.objects.filter(Q(user=user) | Q(email__in=profile.emails))
+            if account:
+                q = q.filter(stripe_account=StripeConnectedAccount.get(account))
+            return q
+        return []
 
     @classmethod
     def from_stripe_id(cls, stripe_id, account=None):
@@ -369,6 +379,10 @@ class StripeInvoice(models.Model):
                 params["expand"] = expand
             return self.stripe_api().retrieve(self.stripe_id, **params)
         except Exception as ee:
+            if self.status == "draft" and "No such invoice" in str(ee):
+                self.deleted = True
+                self.save()
+                return {"deleted": True}
             Error.record(ee, self)
 
     def sync(self):
@@ -399,7 +413,7 @@ class StripeInvoice(models.Model):
                                 sid = line.get('parent').get("subscription_item_details")
                                 subscription_id = sid.get("subscription") if sid else None
                                 if subscription_id:
-                                    self.subscription = StripeSubscription.from_stripe_id(subscription_id)
+                                    self.subscription = StripeSubscription.from_stripe_id(subscription_id, self.stripe_account)
                 except Exception as ee:
                     log.error(f"Error in ChatGPT-created code: {ee}")
             self.save()
@@ -410,7 +424,7 @@ class StripeInvoice(models.Model):
 
     @classmethod
     def ids_start_with(cls):
-        return "inv_"
+        return "in_"
 
     @classmethod
     def stripe_api(cls):
@@ -426,7 +440,7 @@ class StripeInvoice(models.Model):
             elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
             elif str(xx).startswith(cls.ids_start_with()):
-                return cls.from_stripe_id(xx, account)
+                return cls.objects.get(stripe_id=xx)
             else:
                 Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None
@@ -596,14 +610,14 @@ class StripeSubscription(models.Model):
             return False
         try:
             if not api_data:
-                api_data = self.api_data(expand=["lines"])
+                api_data = self.api_data()
 
             if api_data.get("deleted"):
                 self.deleted = True
             else:
                 self.status = api_data.status
                 self.metadata = api_data.metadata
-                self.customer = StripeCustomer.from_stripe_id(api_data.customer)
+                self.customer = StripeCustomer.from_stripe_id(api_data.customer, self.stripe_account)
 
                 self.trial_end_date = date_service.string_to_date(api_data.trial_end)
                 self.ended_at = date_service.string_to_date(api_data.ended_at)
@@ -653,7 +667,13 @@ class StripeSubscription(models.Model):
 
     def _populate_first_paid_date(self):
         if not self.start_date:
-            invoice_list = stripe.Invoice.list(subscription=self.stripe_id, limit=10)
+            if self.stripe_account:
+                invoice_list = stripe.Invoice.list(
+                    subscription=self.stripe_id, stripe_account=self.stripe_account.stripe_id, limit=10
+                )
+            else:
+                invoice_list = stripe.Invoice.list(subscription=self.stripe_id, limit=10)
+
             for invoice in sorted(invoice_list.auto_paging_iter(), key=lambda i: i['created']):
                 if invoice['amount_due'] > 0:
                     self.start_date = date_service.string_to_date(invoice['created'])
@@ -678,7 +698,7 @@ class StripeSubscription(models.Model):
             elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
             elif str(xx).startswith(cls.ids_start_with()):
-                return cls.from_stripe_id(xx, account)
+                return cls.objects.get(stripe_id=xx)
             else:
                 Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None
@@ -834,7 +854,7 @@ class StripeCheckoutSession(models.Model):
                 self.metadata = api_data.metadata
                 self.url = api_data.url
                 self.expiration_date = date_service.string_to_date(api_data.expires_at) if api_data.expires_at else None
-                self.customer = StripeCustomer.from_stripe_id(api_data.customer)
+                self.customer = StripeCustomer.from_stripe_id(api_data.customer, self.stripe_account)
             self.save()
             return True
         except Exception as ee:
@@ -859,7 +879,7 @@ class StripeCheckoutSession(models.Model):
             elif str(xx).isnumeric():
                 return cls.objects.get(pk=xx)
             elif str(xx).startswith(cls.ids_start_with()):
-                return cls.from_stripe_id(xx, account)
+                return cls.objects.get(stripe_id=xx)
             else:
                 Error.record(f"{xx} is not a valid way to look up a {cls}")
                 return None
