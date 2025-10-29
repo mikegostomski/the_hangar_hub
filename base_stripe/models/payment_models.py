@@ -24,22 +24,8 @@ env = EnvHelper()
 class StripeCustomer(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    deleted = models.BooleanField(default=False, db_index=True)
-
     stripe_id = models.CharField(max_length=60, unique=True, db_index=True)
-    email = models.CharField(max_length=180, db_index=True)
-    user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customer", null=True, blank=True, db_index=True)
-    full_name = models.CharField(max_length=150)
-
-    use_auto_pay = models.BooleanField(default=False)  # ToDo: Probably not used
-    balance_cents = models.IntegerField(default=0)
-    delinquent = models.BooleanField(default=False)
-    invoice_prefix = models.CharField(max_length=10, null=True, blank=True)
-    status = models.CharField(max_length=10, null=True, blank=True)
-    metadata = models.JSONField(default=dict, null=True, blank=True)
-
-    default_payment_method = models.CharField(max_length=50, null=True, blank=True)
-    default_source = models.CharField(max_length=50, null=True, blank=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     # Customers belong to connected accounts, or the HH account
     stripe_account = models.ForeignKey(
@@ -48,6 +34,19 @@ class StripeCustomer(models.Model):
         null=True, blank=True,
         db_index=True
     )
+
+    email = models.CharField(max_length=180, db_index=True)
+    user = models.ForeignKey("auth.User", models.CASCADE, related_name="stripe_customer", null=True, blank=True, db_index=True)
+    full_name = models.CharField(max_length=150)
+    use_auto_pay = models.BooleanField(default=False)  # ToDo: Probably not used
+    balance_cents = models.IntegerField(default=0)
+    delinquent = models.BooleanField(default=False)
+    invoice_prefix = models.CharField(max_length=10, null=True, blank=True)
+    status = models.CharField(max_length=10, null=True, blank=True)
+    metadata = models.JSONField(default=dict, null=True, blank=True)
+    default_payment_method = models.CharField(max_length=50, null=True, blank=True)
+    default_source = models.CharField(max_length=50, null=True, blank=True)
+
     @property
     def account_id(self):
         return self.stripe_account.stripe_id if self.stripe_account else None
@@ -71,53 +70,53 @@ class StripeCustomer(models.Model):
                 params["stripe_account"] = self.account_id
             if expand:
                 params["expand"] = expand
-            return stripe.Customer.retrieve(self.stripe_id, **params)
+            return self.stripe_api().retrieve(self.stripe_id, **params)
         except Exception as ee:
             Error.record(ee, self)
 
-    def sync(self):
-        """
-        Update data from Stripe API
-        """
+    def sync(self, api_data=None):
         try:
-            log.info(f"Sync {self} ({self.stripe_id})")
-            customer = self.api_data(expand=["invoice_settings.default_payment_method"])
-            log.debug(customer)
-            if customer:
-                if customer.get("deleted"):
-                    self.deleted = True
-                else:
-                    self.full_name = customer.name
-                    self.email = customer.email
-                    self.balance_cents = customer.balance
-                    self.delinquent = customer.delinquent
-                    self.invoice_prefix = customer.invoice_prefix
-                    self.metadata = customer.metadata
-                    if not self.user:
-                        self.user = Auth.lookup_user(self.email)
+            if self.deleted:
+                # Cannot sync a deleted object
+                return False
 
-                    inv_settings = customer.get("invoice_settings") or {}
-                    dpm = inv_settings.get("default_payment_method") or {}
-                    self.default_source = customer.get("default_source")
-                    self.default_payment_method = dpm.get("type")
+            # Given api_data cannot be used because invoice settings must be expanded
+            api_data = self.api_data(expand=["invoice_settings.default_payment_method"])
 
-                    # Expand upon payment method when possible
-                    if self.default_payment_method:
-                        try:
-                            pm_id = dpm.get("id")
-                            pm = stripe.Customer.retrieve_payment_method(self.stripe_id, pm_id)
-                            payment_type = self.default_payment_method
-                            if payment_type == "card":
-                                card = pm.get("card")
-                                exp = f'exp. {card.get("exp_month")}/{card.get("exp_year")}'
-                                self.default_payment_method = f'{card.get("brand")} ****{card.get("last4")} {exp}'
-                            elif payment_type == "us_bank_account":
-                                acct = pm.get("us_bank_account")
-                                self.default_payment_method = f'{acct.get("bank_name")} ****{acct.get("last4")}'
-                            elif payment_type == "link":
-                                self.default_payment_method = "Managed via Link.com"
-                        except Exception as ee:
-                            Error.record(ee)
+            if api_data.get("deleted"):
+                self.deleted = True
+            else:
+                self.full_name = api_data.name
+                self.email = api_data.email
+                self.balance_cents = api_data.balance
+                self.delinquent = api_data.delinquent
+                self.invoice_prefix = api_data.invoice_prefix
+                self.metadata = api_data.metadata
+                if not self.user:
+                    self.user = Auth.lookup_user(self.email)
+
+                inv_settings = api_data.get("invoice_settings") or {}
+                dpm = inv_settings.get("default_payment_method") or {}
+                self.default_source = api_data.get("default_source")
+                self.default_payment_method = dpm.get("type")
+
+                # Expand upon payment method when possible
+                if self.default_payment_method:
+                    try:
+                        pm_id = dpm.get("id")
+                        pm = self.stripe_api().retrieve_payment_method(self.stripe_id, pm_id)
+                        payment_type = self.default_payment_method
+                        if payment_type == "card":
+                            card = pm.get("card")
+                            exp = f'exp. {card.get("exp_month")}/{card.get("exp_year")}'
+                            self.default_payment_method = f'{card.get("brand")} ****{card.get("last4")} {exp}'
+                        elif payment_type == "us_bank_account":
+                            acct = pm.get("us_bank_account")
+                            self.default_payment_method = f'{acct.get("bank_name")} ****{acct.get("last4")}'
+                        elif payment_type == "link":
+                            self.default_payment_method = "Managed via Link.com"
+                    except Exception as ee:
+                        Error.record(ee)
 
                 self.save()
                 return True
@@ -128,6 +127,10 @@ class StripeCustomer(models.Model):
     @classmethod
     def ids_start_with(cls):
         return "cus_"
+
+    @classmethod
+    def stripe_api(cls):
+        return stripe.Customer
 
     @classmethod
     def get(cls, xx, account=None):
@@ -173,6 +176,39 @@ class StripeCustomer(models.Model):
         return None
 
 
+    @classmethod
+    def create(cls, account, **kwargs):
+        log.trace([account])
+        log.debug(kwargs)
+        try:
+            # Account is a required param to ensure it is always considered - may be None for primary account
+            connected_account = StripeConnectedAccount.get(account)
+            if connected_account:
+                kwargs["stripe_account"] = connected_account.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process account info", ee, account)
+            return None
+
+        try:
+            set_stripe_api_key()
+            api_data = cls.stripe_api().create(**kwargs)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, **kwargs)
+            return None
+
+        try:
+            model = cls.objects.create(
+                stripe_id=api_data.id,
+                stripe_account=kwargs.get("stripe_account"),
+                email=kwargs.get("email"),
+                full_name=kwargs.get("name"),
+            )
+            model.sync(api_data)
+            return model
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, api_data.id)
+            return None
+
 
     @classmethod
     def obtain(
@@ -185,24 +221,12 @@ class StripeCustomer(models.Model):
 
         # If given a Stripe Customer ID
         if stripe_id:
-            if str(stripe_id).startswith("cus_"):
-                try:
-                    # Look for existing model
-                    existing = cls.get(stripe_id)
-                    if existing:
-                        return existing
-
-                    # Create model from Stripe data
-                    log.info(f"Creating new Customer model: {stripe_id}")
-                    cus = StripeCustomer()
-                    cus.stripe_id = stripe_id
-                    cus.sync()
-                    return cus
-                except Exception as ee:
-                    Error.record(ee, stripe_id)
-            else:
-                log.error(f"Not a valid Stripe Customer ID: {stripe_id}")
-            return None
+            model = cls.from_stripe_id(stripe_id, account)
+            if not model:
+                # Never create a new customer from a missing stripe id
+                # (could be wrong account; could have been deleted; manual review is appropriate)
+                Error.record(f"CustomerNotFound", (stripe_id, account))
+            return model
 
         # Look for existing via email and/or user (for specified account)
         emails = []
@@ -281,30 +305,15 @@ class StripeCustomer(models.Model):
                 log.error("Unable to create Customer with no display name")
                 return None
 
-            set_stripe_api_key()
-            if account_instance:
-                stripe_customer = stripe.Customer.create(
-                    name=display_name,
-                    email=primary_email,
-                    metadata=metadata or {},
-                    stripe_account=account_instance.stripe_id
-                )
-            else:
-                stripe_customer = stripe.Customer.create(
-                    name=display_name,
-                    email=primary_email,
-                    metadata=metadata or {}
-                )
-            # API either succeeds or raises an exception
-            stripe_id = stripe_customer.get("id")
-            log.info(f"Created new Stripe customer: {stripe_id}")
-
-            # Create and return customer_model
-            return StripeCustomer.objects.create(
-                full_name=display_name, email=primary_email,
-                stripe_id=stripe_id, stripe_account=account_instance,
-                user=user, metadata=metadata or {}
+            model = cls.create(
+                account_instance,
+                name=display_name,
+                email=primary_email,
+                metadata=metadata or {}
             )
+            if model and user and not model.user:
+                model.user = user
+                model.save()
 
         except Exception as ee:
             Error.unexpected("Unable to create Stripe customer record", ee, primary_email)
@@ -358,7 +367,7 @@ class StripeInvoice(models.Model):
                 params["stripe_account"] = self.account_id
             if expand:
                 params["expand"] = expand
-            return stripe.Invoice.retrieve(self.stripe_id, **params)
+            return self.stripe_api().retrieve(self.stripe_id, **params)
         except Exception as ee:
             Error.record(ee, self)
 
@@ -367,33 +376,32 @@ class StripeInvoice(models.Model):
         Update data from Stripe API
         """
         if self.status == "deleted":
-            # Nothing to update
-            return True
+            return False
         try:
-            log.info(f"Sync {self} ({self.stripe_id})")
-            invoice = self.api_data(expand=["lines"])
-            self.customer = StripeCustomer.get(invoice.customer)
-            self.status = invoice.status
-            self.amount_charged = utility_service.convert_to_decimal(invoice.total/100)
-            self.amount_remaining = utility_service.convert_to_decimal(invoice.amount_remaining/100)
-            self.metadata = invoice.metadata
-            self.hosted_invoice_url = invoice.hosted_invoice_url
-            self.invoice_pdf = invoice.invoice_pdf
-
-            try:
-                for line in invoice.get("lines").get("data"):
-                    if "period" in line:
-                        self.period_start = date_service.string_to_date(line.get('period').get("start"))
-                        self.period_end = date_service.string_to_date(line.get('period').get("end"))
-                    if not self.subscription:
-                        if "parent" in line:
-                            sid = line.get('parent').get("subscription_item_details")
-                            subscription_id = sid.get("subscription") if sid else None
-                            if subscription_id:
-                                self.subscription = StripeSubscription.from_stripe_id(subscription_id)
-            except Exception as ee:
-                log.error(f"Error in ChatGPT-created code: {ee}")
-
+            api_data = self.api_data(expand=["lines"])
+            if api_data.get("deleted"):
+                self.deleted = True
+            else:
+                self.customer = StripeCustomer.get(api_data.customer)
+                self.status = api_data.status
+                self.amount_charged = utility_service.convert_to_decimal(api_data.total/100)
+                self.amount_remaining = utility_service.convert_to_decimal(api_data.amount_remaining/100)
+                self.metadata = api_data.metadata
+                self.hosted_invoice_url = api_data.hosted_invoice_url
+                self.invoice_pdf = api_data.invoice_pdf
+                try:
+                    for line in api_data.get("lines").get("data"):
+                        if "period" in line:
+                            self.period_start = date_service.string_to_date(line.get('period').get("start"))
+                            self.period_end = date_service.string_to_date(line.get('period').get("end"))
+                        if not self.subscription:
+                            if "parent" in line:
+                                sid = line.get('parent').get("subscription_item_details")
+                                subscription_id = sid.get("subscription") if sid else None
+                                if subscription_id:
+                                    self.subscription = StripeSubscription.from_stripe_id(subscription_id)
+                except Exception as ee:
+                    log.error(f"Error in ChatGPT-created code: {ee}")
             self.save()
             return True
         except Exception as ee:
@@ -403,6 +411,10 @@ class StripeInvoice(models.Model):
     @classmethod
     def ids_start_with(cls):
         return "inv_"
+
+    @classmethod
+    def stripe_api(cls):
+        return stripe.Invoice
 
     @classmethod
     def get(cls, xx, account=None):
@@ -446,6 +458,48 @@ class StripeInvoice(models.Model):
         else:
             log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
         return None
+
+
+    @classmethod
+    def create(cls, account, customer, **kwargs):
+        log.trace([account, customer])
+        log.debug(kwargs)
+        try:
+            # Account is a required param to ensure it is always considered - may be None for primary account
+            connected_account = StripeConnectedAccount.get(account)
+            if connected_account:
+                kwargs["stripe_account"] = connected_account.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process account info", ee, account)
+            return None
+
+        try:
+            customer_model = StripeCustomer.get(customer, connected_account)
+            if customer_model:
+                kwargs["customer"] = customer_model.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process customer info", ee, customer)
+            return None
+
+        try:
+            set_stripe_api_key()
+            api_data = cls.stripe_api().create(**kwargs)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, **kwargs)
+            return None
+
+        try:
+            model = cls.objects.create(
+                stripe_id=api_data.id,
+                stripe_account=kwargs.get("stripe_account"),
+                customer=kwargs.get("customer"),
+                status=api_data.get("status"),
+            )
+            model.sync()
+            return model
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, api_data.id)
+            return None
 
 
 
@@ -530,40 +584,45 @@ class StripeSubscription(models.Model):
                 params["stripe_account"] = self.account_id
             if expand:
                 params["expand"] = expand
-            return stripe.Subscription.retrieve(self.stripe_id, **params)
+            return self.stripe_api().retrieve(self.stripe_id, **params)
         except Exception as ee:
             Error.record(ee, self)
 
-    def sync(self):
+    def sync(self, api_data=None):
         """
         Update data from Stripe API
         """
+        if self.status == "deleted":
+            return False
         try:
-            log.info(f"Sync {self} ({self.stripe_id})")
-            subscription = self.api_data()
-            if subscription:
-                self.status = subscription.status
-                self.metadata = subscription.metadata
-                self.customer = StripeCustomer.from_stripe_id(subscription.customer)
+            if not api_data:
+                api_data = self.api_data(expand=["lines"])
 
-                self.trial_end_date = date_service.string_to_date(subscription.trial_end)
-                self.ended_at = date_service.string_to_date(subscription.ended_at)
-                self.cancel_at = date_service.string_to_date(subscription.cancel_at)
-                self.cancel_at_period_end = subscription.cancel_at_period_end
-                self.canceled_at = date_service.string_to_date(subscription.canceled_at)
-                self.cancellation_reason = subscription.cancellation_details.reason
+            if api_data.get("deleted"):
+                self.deleted = True
+            else:
+                self.status = api_data.status
+                self.metadata = api_data.metadata
+                self.customer = StripeCustomer.from_stripe_id(api_data.customer)
+
+                self.trial_end_date = date_service.string_to_date(api_data.trial_end)
+                self.ended_at = date_service.string_to_date(api_data.ended_at)
+                self.cancel_at = date_service.string_to_date(api_data.cancel_at)
+                self.cancel_at_period_end = api_data.cancel_at_period_end
+                self.canceled_at = date_service.string_to_date(api_data.canceled_at)
+                self.cancellation_reason = api_data.cancellation_details.reason
 
                 # Determine recurring charge (sum of items)
-                self._populate_recurring_charge(subscription)
+                self._populate_recurring_charge(api_data)
 
                 # Determine current period (account for multiple items)
-                self._populate_current_period(subscription)
+                self._populate_current_period(api_data)
 
                 # Find the date of the first non-zero invoice in this subscription
                 self._populate_first_paid_date()
 
-                self.save()
-                return True
+            self.save()
+            return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
 
@@ -604,6 +663,10 @@ class StripeSubscription(models.Model):
     @classmethod
     def ids_start_with(cls):
         return "sub_"
+
+    @classmethod
+    def stripe_api(cls):
+        return stripe.Subscription
 
     @classmethod
     def get(cls, xx, account=None):
@@ -647,6 +710,52 @@ class StripeSubscription(models.Model):
         else:
             log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
         return None
+
+
+    @classmethod
+    def create(cls, account, customer, **kwargs):
+        """
+        Note: Subscriptions will typically be created via checkout sessions
+        """
+        log.trace([account, customer])
+        log.debug(kwargs)
+        try:
+            # Account is a required param to ensure it is always considered - may be None for primary account
+            connected_account = StripeConnectedAccount.get(account)
+            if connected_account:
+                kwargs["stripe_account"] = connected_account.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process account info", ee, account)
+            return None
+
+        try:
+            customer_model = StripeCustomer.get(customer, connected_account)
+            if customer_model:
+                kwargs["customer"] = customer_model.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process customer info", ee, customer)
+            return None
+
+        try:
+            set_stripe_api_key()
+            api_data = cls.stripe_api().create(**kwargs)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, **kwargs)
+            return None
+
+        try:
+            model = cls.objects.create(
+                stripe_id=api_data.id,
+                stripe_account=kwargs.get("stripe_account"),
+                customer=kwargs.get("customer"),
+                status=api_data.get("status"),
+            )
+            model.sync()
+            return model
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, api_data.id)
+            return None
+
 
 
 """
@@ -702,26 +811,31 @@ class StripeCheckoutSession(models.Model):
                 params["stripe_account"] = self.account_id
             if expand:
                 params["expand"] = expand
-            return stripe.checkout.Session.retrieve(self.stripe_id, **params)
+            return self.stripe_api().retrieve(self.stripe_id, **params)
         except Exception as ee:
             Error.record(ee, self)
 
-    def sync(self, stripe_data=None):
+    def sync(self, api_data=None):
         """
         Update data from Stripe API
 
         if Stripe data was just obtained (from creation for example), skip the API call
         """
+        if self.status == "deleted":
+            return False
         try:
-            log.info(f"Sync {self} ({self.stripe_id})")
-            co = stripe_data or self.api_data()
-            if co:
-                self.status = co.status
-                self.metadata = co.metadata
-                self.url = co.url
-                self.expiration_date = date_service.string_to_date(co.expires_at) if co.expires_at else None
-                self.customer = StripeCustomer.from_stripe_id(co.customer)
-                self.save()
+            if not api_data:
+                api_data = self.api_data()
+
+            if api_data.get("deleted"):
+                self.deleted = True
+            else:
+                self.status = api_data.status
+                self.metadata = api_data.metadata
+                self.url = api_data.url
+                self.expiration_date = date_service.string_to_date(api_data.expires_at) if api_data.expires_at else None
+                self.customer = StripeCustomer.from_stripe_id(api_data.customer)
+            self.save()
             return True
         except Exception as ee:
             Error.record(ee, self.stripe_id)
@@ -730,6 +844,10 @@ class StripeCheckoutSession(models.Model):
     @classmethod
     def ids_start_with(cls):
         return "cs_"
+
+    @classmethod
+    def stripe_api(cls):
+        return stripe.checkout.Session
 
     @classmethod
     def get(cls, xx, account=None):
@@ -774,6 +892,43 @@ class StripeCheckoutSession(models.Model):
             log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
         return None
 
+    @classmethod
+    def create(cls, account, customer, **kwargs):
+        log.trace([account, customer])
+        log.debug(kwargs)
+        try:
+            # Account is a required param to ensure it is always considered - may be None for primary account
+            connected_account = StripeConnectedAccount.get(account)
+            if connected_account:
+                kwargs["stripe_account"] = connected_account.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process account info", ee, account)
+            return None
 
+        try:
+            customer_model = StripeCustomer.get(customer, connected_account)
+            if customer_model:
+                kwargs["customer"] = customer_model.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process customer info", ee, customer)
+            return None
 
+        try:
+            set_stripe_api_key()
+            api_data = cls.stripe_api().create(**kwargs)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, **kwargs)
+            return None
 
+        try:
+            model = cls.objects.create(
+                stripe_id=api_data.id,
+                stripe_account=kwargs.get("stripe_account"),
+                customer=kwargs.get("customer"),
+                status=api_data.get("status"),
+            )
+            model.sync()
+            return model
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, api_data.id)
+            return None

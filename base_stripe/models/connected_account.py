@@ -72,14 +72,17 @@ class StripeConnectedAccount(models.Model):
             if not api_data:
                 api_data = self.api_data()
 
-            self.name = api_data.get("business_profile").get("name")
-            self.charges_enabled = api_data.get("charges_enabled")
-            self.payouts_enabled = api_data.get("payouts_enabled")
-            self.onboarding_complete = api_data.get("details_submitted")
-            capabilities = api_data.get("capabilities")
-            if capabilities:
-                self.card_payments_enabled = capabilities.get("card_payments") == "active"
-                self.transfers_enabled = capabilities.get("transfers") == "active"
+            if api_data.get("deleted"):
+                self.deleted = True
+            else:
+                self.name = api_data.get("business_profile").get("name")
+                self.charges_enabled = api_data.get("charges_enabled")
+                self.payouts_enabled = api_data.get("payouts_enabled")
+                self.onboarding_complete = api_data.get("details_submitted")
+                capabilities = api_data.get("capabilities")
+                if capabilities:
+                    self.card_payments_enabled = capabilities.get("card_payments") == "active"
+                    self.transfers_enabled = capabilities.get("transfers") == "active"
             self.save()
             return True
         except Exception as ee:
@@ -127,11 +130,9 @@ class StripeConnectedAccount(models.Model):
 
         try:
             # Create a new model representation for this StripeConnectedAccount
-            ca = StripeConnectedAccount()
-            ca.stripe_id = stripe_id
-            ca.sync()
-            return ca
-
+            model = cls.objects.create(stripe_id=stripe_id)
+            model.sync()
+            return model
         except Exception as ee:
             Error.record(ee, stripe_id)
             return None
@@ -148,6 +149,7 @@ class StripeConnectedAccount(models.Model):
         try:
             model = cls.objects.create(stripe_id=api_data.id)
             model.sync(api_data)
+            return model
         except Exception as ee:
             Error.unexpected(f"Could not create {cls}", ee, api_data.id)
             return None

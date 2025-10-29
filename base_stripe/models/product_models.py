@@ -42,7 +42,7 @@ class StripeProduct(models.Model):
     def prices_for_display(self):
         return self.prices.filter(display=True)
 
-    def sync(self):
+    def sync(self, api_data=None):
         """
         Update data from Stripe API
         """
@@ -50,12 +50,15 @@ class StripeProduct(models.Model):
             return False
         try:
             log.info(f"Sync {self} ({self.stripe_id})")
-            stripe_data = self.api_data()
-            log.debug(stripe_data)
-            self.active = stripe_data.get("active")
-            self.name = stripe_data.get("name")
-            self.description = stripe_data.get("description")
-            self.metadata = stripe_data.get("metadata")
+            if not api_data:
+                api_data = self.api_data()
+            if api_data.get("deleted"):
+                self.deleted = True
+            else:
+                self.active = api_data.get("active")
+                self.name = api_data.get("name")
+                self.description = api_data.get("description")
+                self.metadata = api_data.get("metadata")
             self.save()
             return True
         except Exception as ee:
@@ -88,13 +91,17 @@ class StripeProduct(models.Model):
                 params["stripe_account"] = self.account_id
             if expand:
                 params["expand"] = expand
-            return stripe.Product.retrieve(self.stripe_id, **params)
+            return self.stripe_api().retrieve(self.stripe_id, **params)
         except Exception as ee:
             Error.record(ee, self)
 
     @classmethod
     def ids_start_with(cls):
         return "prod_"
+
+    @classmethod
+    def stripe_api(cls):
+        return stripe.Product
 
     @classmethod
     def get(cls, xx, account=None):
@@ -140,6 +147,38 @@ class StripeProduct(models.Model):
         return None
 
     @classmethod
+    def create(cls, account, **kwargs):
+        log.trace([account])
+        log.debug(kwargs)
+        try:
+            # Account is a required param to ensure it is always considered - may be None for primary account
+            connected_account = StripeConnectedAccount.get(account)
+            if connected_account:
+                kwargs["stripe_account"] = connected_account.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process account info", ee, account)
+            return None
+
+        try:
+            set_stripe_api_key()
+            api_data = cls.stripe_api().create(**kwargs)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, **kwargs)
+            return None
+
+        try:
+            model = cls.objects.create(
+                stripe_id=api_data.id,
+                stripe_account=kwargs.get("stripe_account"),
+                active=api_data.get("active"),
+            )
+            model.sync()
+            return model
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, api_data.id)
+            return None
+
+    @classmethod
     def obtain(cls, product_type, account=None, name=None, description=None):
         """
         Get or create a product.
@@ -171,7 +210,7 @@ class StripeProduct(models.Model):
             else:
                 products = stripe.Product.list(limit=20)
 
-            # Fine the product with specified code
+            # Find the product with specified code
             for product in products.auto_paging_iter():
                 if product.metadata.get('product_type') == product_type:
                     return product
@@ -182,32 +221,18 @@ class StripeProduct(models.Model):
         product = None
         try:
             log.info(f"Create new product: {product_type} for account {account_instance}")
-            if account_instance:
-                product = stripe.Product.create(
+            model = cls.create(
+                account_instance,
                     name=name or product_type,
                     description=description,
                     metadata={
                         'product_type': product_type
                     },
-                    stripe_account=account_instance.stripe_id
-                )
-            else:
-                product = stripe.Product.create(
-                    name=name or product_type,
-                    description=description,
-                    metadata={
-                        'product_type': product_type
-                    },
-                )
+            )
+            return model
         except Exception as ee:
             Error.unexpected("Unable to create Stripe product", ee)
-
-        if product:
-            try:
-                return cls.objects.create(stripe_id=product.id, stripe_account=account_instance, active=True)
-            except Exception as ee:
-                Error.unexpected("Unable to create stripe product record", ee)
-        return None
+            return None
 
 
 """
@@ -272,7 +297,7 @@ class StripePrice(models.Model):
     def features_json(self):
         return json.dumps(self.features or [], indent=4)
 
-    def sync(self):
+    def sync(self, api_data=None):
         """
         Update data from Stripe API
         """
@@ -280,14 +305,18 @@ class StripePrice(models.Model):
             return False
         try:
             log.info(f"Sync {self} ({self.stripe_id})")
-            stripe_data = self.api_data()
-            self.product = StripeProduct.from_stripe_id(stripe_data.get("product"))
-            self.active = stripe_data.get("active")
-            self.nickname = stripe_data.get("nickname")
-            self.recurring = stripe_data.get("recurring")
-            self.metadata = stripe_data.get("metadata")
-            self.unit_amount = stripe_data.get("unit_amount")
-            self.type = stripe_data.get("type")
+            if not api_data:
+                api_data = self.api_data()
+            if api_data.get("deleted"):
+                self.deleted = True
+            else:
+                self.product = StripeProduct.from_stripe_id(api_data.get("product"))
+                self.active = api_data.get("active")
+                self.nickname = api_data.get("nickname")
+                self.recurring = api_data.get("recurring")
+                self.metadata = api_data.get("metadata")
+                self.unit_amount = api_data.get("unit_amount")
+                self.type = api_data.get("type")
             self.save()
             return True
         except Exception as ee:
@@ -301,7 +330,7 @@ class StripePrice(models.Model):
             # Make sure the model ID is always included
             metadata.update({"model_id": self.id})
             set_stripe_api_key()
-            stripe.Price.modify(
+            self.stripe_api().modify(
                 self.stripe_id,
                 metadata=metadata
             )
@@ -317,7 +346,7 @@ class StripePrice(models.Model):
                 days = int(num_days)
                 self.recurring["trial_period_days"] = days
                 set_stripe_api_key()
-                stripe.Price.modify(
+                self.stripe_api().modify(
                     self.stripe_id,
                     recurring={"trial_period_days": days}
                 )
@@ -339,7 +368,7 @@ class StripePrice(models.Model):
                 params["stripe_account"] = self.account_id
             if expand:
                 params["expand"] = expand
-            return stripe.Product.retrieve(self.stripe_id, **params)
+            return self.stripe_api().retrieve(self.stripe_id, **params)
         except Exception as ee:
             Error.record(ee, self)
 
@@ -347,6 +376,10 @@ class StripePrice(models.Model):
     @classmethod
     def ids_start_with(cls):
         return "price_"
+
+    @classmethod
+    def stripe_api(cls):
+        return stripe.Price
 
     @classmethod
     def get(cls, xx, account=None):
@@ -390,4 +423,38 @@ class StripePrice(models.Model):
         else:
             log.error(f"Not a valid {cls} Stripe ID: {stripe_id}")
         return None
+
+    @classmethod
+    def create(cls, account, **kwargs):
+        log.trace([account])
+        log.debug(kwargs)
+        try:
+            # Account is a required param to ensure it is always considered - may be None for primary account
+            connected_account = StripeConnectedAccount.get(account)
+            if connected_account:
+                kwargs["stripe_account"] = connected_account.stripe_id
+        except Exception as ee:
+            Error.unexpected(f"Could process account info", ee, account)
+            return None
+
+        try:
+            set_stripe_api_key()
+            api_data = cls.stripe_api().create(**kwargs)
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, **kwargs)
+            return None
+
+        try:
+            model = cls.objects.create(
+                stripe_id=api_data.id,
+                stripe_account=kwargs.get("stripe_account"),
+                active=api_data.get("active"),
+                unit_amount=api_data.get("unit_amount"),
+                product=StripeProduct.from_stripe_id(api_data.get("product"))
+            )
+            model.sync()
+            return model
+        except Exception as ee:
+            Error.unexpected(f"Could not create {cls}", ee, api_data.id)
+            return None
 
