@@ -323,10 +323,12 @@ class StripeCustomer(models.Model):
                 email=primary_email,
                 metadata=metadata or {}
             )
+            # Add user, if one ws given
             if model and user and not model.user:
                 model.user = user
                 model.save()
 
+            return model
         except Exception as ee:
             Error.unexpected("Unable to create Stripe customer record", ee, primary_email)
             return None
