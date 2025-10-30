@@ -9,6 +9,8 @@ from base.classes.auth.session import Auth
 import stripe
 from base_stripe.services.config_service import set_stripe_api_key
 from base.services import date_service
+from datetime import datetime, timezone, timedelta
+import calendar
 from base.classes.util.date_helper import DateHelper
 from base_stripe.models.connected_account import StripeConnectedAccount
 
@@ -547,6 +549,8 @@ class StripeSubscription(models.Model):
     metadata = models.JSONField(default=dict, null=True, blank=True)
 
     amount = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+    payment_method = models.CharField(max_length=30, null=True, blank=True)
+    payment_expire_ym = models.IntegerField(max_length=6, null=True, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
     trial_end_date = models.DateTimeField(null=True, blank=True)
     current_period_start = models.DateTimeField(null=True, blank=True)
@@ -556,7 +560,6 @@ class StripeSubscription(models.Model):
     cancel_at_period_end = models.BooleanField(null=True, blank=True)
     canceled_at = models.DateTimeField(null=True, blank=True)
     cancellation_reason = models.CharField(max_length=30, null=True, blank=True)
-
 
     related_type = models.CharField(max_length=20, null=True, blank=True)
     related_id = models.IntegerField(null=True, blank=True)
@@ -590,6 +593,28 @@ class StripeSubscription(models.Model):
             "paused": "Paused",
         }.get(self.status) or self.status.title()
 
+    @property
+    def cc_expiration_date(self):
+        if self.payment_expire_ym:
+            exp_year = int(str(self.payment_expire_ym)[:4])
+            exp_month = int(str(self.payment_expire_ym)[4:])
+            _, exp_day = calendar.monthrange(exp_year, exp_month)
+            return datetime(year=exp_year, month=exp_month, day=exp_day, hour=23, minute=59, second=59, tzinfo=timezone.utc)
+        return None
+
+    @property
+    def cc_expiration_warning(self):
+        cutoff = datetime.now(timezone.utc) + timedelta(days=90)
+        if self.cc_expiration_date < cutoff:
+            return DateHelper(self.cc_expiration_date).humanized()
+        return None
+
+    @property
+    def cc_expiration_alert(self):
+        if self.cc_expiration_date < datetime.now(timezone.utc):
+            return DateHelper(self.cc_expiration_date).humanized()
+        return None
+
     def api_data(self, expand=None):
         try:
             config_service.set_stripe_api_key()
@@ -606,11 +631,12 @@ class StripeSubscription(models.Model):
         """
         Update data from Stripe API
         """
+        log.trace()
         if self.status == "deleted":
             return False
         try:
             if not api_data:
-                api_data = self.api_data()
+                api_data = self.api_data(expand=['default_payment_method'])
 
             if api_data.get("deleted"):
                 self.deleted = True
@@ -634,6 +660,21 @@ class StripeSubscription(models.Model):
 
                 # Find the date of the first non-zero invoice in this subscription
                 self._populate_first_paid_date()
+
+                try:
+                    payment_method = api_data.default_payment_method
+                    if payment_method:
+                        if payment_method.type == 'card':
+                            card = f"{payment_method.card.brand} ***{payment_method.card.last4}"
+                            exp = f"{payment_method.card.exp_month}/{payment_method.card.exp_year}"
+                            self.payment_method = f"{card} exp {exp}"
+                            self.payment_expire_ym = int(f"{payment_method.card.exp_year}{payment_method.card.exp_month}")
+                        elif payment_method.type == 'us_bank_account':
+                            self.payment_method = f"{payment_method.us_bank_account.bank_name} ***{payment_method.us_bank_account.last4}"
+                        else:
+                            self.payment_method = payment_method.type
+                except Exception as ee:
+                    Error.record(ee)
 
             self.save()
             return True

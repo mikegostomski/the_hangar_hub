@@ -26,8 +26,25 @@
         {%endif%}<br />
 
 
-        {%icon bi-credit-card title="Recurring Charge"%}
+        {%icon bi-cash-coin title="Recurring Charge"%}
         {%format_currency subscription.amount%}<br />
+
+        {%icon bi-credit-card title="Recurring Charge"%}
+        {{subscription.payment_method}}<br />
+
+        {%if subscription.cc_expiration_alert%}
+            <span class="badge text-bg-danger">
+                {%icon bi-exclamation-triangle title="Credit Card Expired!"%}
+                Expired {{subscription.cc_expiration_alert}}
+            </span>
+            <br />
+        {%elif subscription.cc_expiration_warning%}
+            <span class="badge text-bg-warning">
+                {%icon bi-alarm title="Credit Card Expires Soon!"%}
+                Expires {{subscription.cc_expiration_warning}}
+            </span>
+            <br />
+        {%endif%}
 
         {%if subscription.canceled_at%}
             {%icon bi-calendar-x title="Canceled"%}
