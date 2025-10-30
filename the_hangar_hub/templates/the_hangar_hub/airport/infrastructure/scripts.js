@@ -174,3 +174,36 @@ function terminate_rental_agreement(btn_el){
         Are you sure you want to terminate this rental agreement?
     {%end_js_confirm%}
 }
+
+function activate_icon_checkboxes(){
+    $(".icon-checkbox-container").find("input[type=checkbox]").each(function(){
+        icon_checkbox_sync($(this));
+        $(this).change(function(){
+            icon_checkbox_sync($(this));
+        });
+    });
+}
+
+function icon_checkbox_sync(checkbox_el){
+    let label = checkbox_el.closest("label");
+    let icon = label.find(".bi");
+
+    icon.removeClass("bi-square");
+    if(checkbox_el.prop("checked")){
+        icon.addClass("text-success");
+        icon.removeClass("text-muted");
+        icon.addClass(icon.data("checked"));
+        icon.removeClass(icon.data("unchecked"));
+    }
+    else{
+        icon.removeClass("text-success");
+        icon.addClass("text-muted");
+        icon.removeClass(icon.data("checked"));
+        icon.addClass(icon.data("unchecked"));
+    }
+
+}
+
+$(document).ready(function(){
+    activate_icon_checkboxes();
+});

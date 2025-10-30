@@ -1,0 +1,122 @@
+{% load base_taglib %}
+
+
+
+<button type="button" class="btn btn-success btn-sm" onclick="$('#new-tenant-container').removeClass('hidden')">
+    {%icon bi-person-plus%} Add Tenant
+</button>
+<div id="new-tenant-container" class="popup {%if not selected_application%}hidden{%endif%}" style="max-width:800px;">
+    <form method="post" action="{% url 'rent:add_tenant' airport.identifier hangar.id %}">
+        {% csrf_token %}
+        {%if selected_application%}
+            <input type="hidden" name="application_id" value="{{ selected_application.id }}" />
+        {%endif%}
+
+        <h2 class="mb-0">New Tenant Form</h2>
+        <strong>Hangar {{hangar.code}}</strong><br />
+        <br />
+
+        {%if issues%}
+            <div class="alert alert-danger">
+                <b>{%icon bi-exclamation-triangle%} There were issues creating the new tenant</b><br />
+                <ul>
+                    {%for issue in issues%}
+                        <li>{{issue}}</li>
+                    {%endfor%}
+                </ul>
+            </div>
+        {%endif%}
+
+        <div class="modal-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="nt-first_name" class="form-label">First Name</label>
+                    <input type="text" name="first_name" id="nt-first_name"
+                           placeholder="First Name"
+                           {%if selected_application%}
+                                value="{{ prefill.first_name|default:selected_application.user.first_name }}"
+                           {%else%}
+                                value="{{ prefill.first_name|default:'' }}"
+                           {%endif%}
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label for="nt-last_name" class="form-label">Last Name</label>
+                    <input type="text" name="last_name" id="nt-last_name"
+                           placeholder="Last Name"
+                           {%if selected_application%}
+                                value="{{ prefill.last_name|default:selected_application.user.last_name }}"
+                           {%else%}
+                                value="{{ prefill.last_name|default:'' }}"
+                           {%endif%}
+                           class="form-control" />
+                </div>
+
+                <div class="col-12">
+                    <label for="nt-email" class="form-label">Email Address</label>
+                    <input type="email" name="email" id="nt-email"
+                           placeholder="Email Address"
+                           {%if selected_application%}
+                                value="{{ prefill.email|default:selected_application.preferred_email }}"
+                           {%else%}
+                                value="{{ prefill.email|default:'' }}"
+                           {%endif%}
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label for="nt-start_date" class="form-label">Start Date</label>
+                    <input type="date" name="start_date" id="nt-start_date"
+                           value="{{ prefill.start_date|default:'' }}"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label for="nt-end_date" class="form-label">End Date</label>
+                    <input type="date" name="end_date" id="nt-end_date"
+                           value="{{ prefill.end_date|default:'' }}"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label for="nt-rent" class="form-label">Rent</label>
+                    <input type="text" name="rent" id="nt-rent"
+                           placeholder="Rent"
+                           value="{{ prefill.rent|default:hangar.rent }}"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label for="nt-deposit" class="form-label">Deposit</label>
+                    <input type="text" name="deposit" id="nt-deposit"
+                           placeholder="Deposit"
+                           value="{{ prefill.deposit|default:'' }}"
+                           class="form-control" />
+                </div>
+
+                <div class="col-12">
+                    <label for="nt-notes" class="form-label">Notes</label>
+                    <textarea name="notes" id="nt-notes"
+                              placeholder="Notes"
+                              rows="3"
+                              class="form-control"
+                   {%if selected_application%}
+                        >{{ prefill.notes|default:selected_application.aircraft_description }}</textarea>
+                   {%else%}
+                        >{{ prefill.notes|default:'' }}</textarea>
+                   {%endif%}
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">
+                {%icon bi-slash-circle%} Cancel
+            </button>
+            <button type="submit" class="btn btn-success">
+                {%icon bi-person-plus%} Add Tenant
+            </button>
+        </div>
+    </form>
+</div>

@@ -4,83 +4,136 @@
 {%block title%}Hangar: {{hangar.code}}{%endblock%}
 
 {% block main_content %}
-<h1>{{hangar.code}}</h1>
 
-<div class="content-block">
-    <h2>Hangar Data</h2>
-    {%include "the_hangar_hub/airport/infrastructure/one_hangar/_table_hangar_data.html"%}
+<div class="  content-center">
+    <header class="mb-4">
+        <h1 class="h2 mb-1">{{ hangar.code }}</h1>
+    </header>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+
+            {# TENANTS #}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h2 class="float-left h5 mb-0">Current/Future Tenants</h2>
+                    <div class="float-right">
+                        {%include "the_hangar_hub/airport/infrastructure/one_hangar/_popup_new_tenant_form.html" %}
+                    </div><br style="clear:both;" />
+                </div>
+                <div class="card-body">
+
+
+
+                    <table class="table">
+                        <tr>
+                            <th scope="col">First Name</th>
+                            <th scope="col">Last Name</th>
+                            <th scope="col">Email Address</th>
+                            <th scope="col">Start Date</th>
+                            <th scope="col">End Date</th>
+                            <th scope="col">Rent</th>
+                            <th scope="col">Deposit</th>
+                            <th scope="col">Notes</th>
+                            <th scope="col">Flags</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                        {%for rental in hangar.present_rental_agreements%}
+                            {%include "the_hangar_hub/airport/infrastructure/one_hangar/_tr_rental_agreement.html" with rental=rental%}
+                        {%empty%}
+                            {%if not hangar.future_rentals%}
+                            <tr>
+                                <td colspan="10" class="text-center">No Current Tenants</td>
+                            </tr>
+                            {%endif%}
+                        {%endfor%}
+
+                        {%for rental in hangar.future_rentals%}
+                            {%include "the_hangar_hub/airport/infrastructure/one_hangar/_tr_rental_agreement.html" with rental=rental%}
+                        {%endfor%}
+
+                    </table>
+
+                </div>
+            </div>
+
+            {# MAINTENANCE #}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Maintenance Requests</h2>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-1">
+                    </table>
+                </div>
+            </div>
+
+
+            {# RENTAL HISTORY #}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Rental History</h2>
+                </div>
+                <div class="card-body">
+
+                    <table class="table">
+                        <tr>
+                            <th scope="col">Tenant</th>
+                            <th scope="col">Start Date</th>
+                            <th scope="col">End Date</th>
+                            <th scope="col">Rent</th>
+                            <th scope="col">Deposit</th>
+                            <th scope="col">Notes</th>
+                        </tr>
+                        {%for rental in rentals%}
+                            <tr>
+                                <td>
+                                    <a href="{%url 'rent:rental_invoices' airport.identifier rental.id%}">{{rental.tenant.display_name}}</a>
+                                </td>
+                                <td>{{rental.start_date|date:preferred_date_format}}</td>
+                                <td>{{rental.end_date|date:preferred_date_format}}</td>
+                                <td>{{rental.rent}}</td>
+                                <td>{{rental.deposit}}</td>
+                                <td>{{rental.notes}}</td>
+                            </tr>
+                        {%empty%}
+                            <tr>
+                                <td colspan="6" class="text-center">No Rental History</td>
+                            </tr>
+                        {%endfor%}
+                    </table>
+
+                </div>
+            </div>
+
+        </div>
+        <div class="col-12 col-md-4">
+
+
+
+          {# HANGAR DATA #}
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Office Hours</h2>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-1">
+
+                    </table>
+                </div>
+            </div>
+
+
+
+        </div>
+
+
+
+
+    </div>
 </div>
 
-<div class="content-block">
-    <h2>Current/Future Tenants</h2>
-
-    <table class="table">
-        <tr>
-            <th scope="col">First Name</th>
-            <th scope="col">Last Name</th>
-            <th scope="col">Email Address</th>
-            <th scope="col">Start Date</th>
-            <th scope="col">End Date</th>
-            <th scope="col">Rent</th>
-            <th scope="col">Deposit</th>
-            <th scope="col">Notes</th>
-            <th scope="col">Flags</th>
-            <th scope="col">Actions</th>
-        </tr>
-        {%for rental in hangar.present_rental_agreements%}
-            {%include "the_hangar_hub/airport/infrastructure/one_hangar/_tr_rental_agreement.html" with rental=rental%}
-        {%empty%}
-            {%if not hangar.future_rentals%}
-            <tr>
-                <td colspan="9" class="text-center">No Current Tenants</td>
-            </tr>
-            {%endif%}
-        {%endfor%}
-
-        {%for rental in hangar.future_rentals%}
-            {%include "the_hangar_hub/airport/infrastructure/one_hangar/_tr_rental_agreement.html" with rental=rental%}
-        {%endfor%}
-
-        {%include "the_hangar_hub/airport/infrastructure/one_hangar/_tr_new_tenant_form.html" %}
-    </table>
-</div>
-
-
-<div class="content-block">
-    <h2>Maintenance Requests</h2>
-    ToDo: Display Recent Maintenance Requests
-</div>
-
-
-<div class="content-block">
-    <h2>Rental History</h2>
-    <table class="table">
-        <tr>
-            <th scope="col">Tenant</th>
-            <th scope="col">Start Date</th>
-            <th scope="col">End Date</th>
-            <th scope="col">Rent</th>
-            <th scope="col">Deposit</th>
-            <th scope="col">Notes</th>
-        </tr>
-        {%for rental in rentals%}
-            <tr>
-                <td>
-                    <a href="{%url 'rent:rental_invoices' airport.identifier rental.id%}">{{rental.tenant.display_name}}</a>
-                </td>
-                <td>{{rental.start_date|date:preferred_date_format}}</td>
-                <td>{{rental.end_date|date:preferred_date_format}}</td>
-                <td>{{rental.rent}}</td>
-                <td>{{rental.deposit}}</td>
-                <td>{{rental.notes}}</td>
-            </tr>
-        {%empty%}
-            <tr>
-                <td colspan="6" class="text-center">No Rental History</td>
-            </tr>
-        {%endfor%}
-    </table>
-</div>
 
 {%include "the_hangar_hub/airport/application/management/_selected_application.html"%}
 <script type="text/javascript">

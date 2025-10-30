@@ -44,9 +44,15 @@ class Hangar(models.Model):
 
     building = models.ForeignKey("the_hangar_hub.Building", on_delete=models.CASCADE, related_name="hangars")
     code = models.CharField(max_length=30)
+    default_rent = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Default passed to tenant
+
     capacity = models.IntegerField(default=1)
     electric = models.BooleanField(default=False)
-    default_rent = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Default passed to tenant
+    heated = models.BooleanField(default=False)
+    water = models.BooleanField(default=False)
+    wifi = models.BooleanField(default=False)
+    shelves = models.BooleanField(default=False)
+    auto_door = models.BooleanField(default=False)
 
     def present_rental_agreements(self):
         return RentalAgreement.present_rental_agreements().filter(hangar=self)
@@ -82,6 +88,16 @@ class Hangar(models.Model):
         except Exception as ee:
             log.error(f"Could not get {cls}: {ee}")
             return None
+
+    @classmethod
+    def hangar_type_options(cls):
+        return {
+            "TH": "T-Hangar",
+            "BH": "Box Hangar",
+            "SH": "Shared Hangar",
+            "SP": "Shade Port",
+            "TD": "Tie-Down",
+        }
 
     def __str__(self):
         return f"{self.building.airport.identifier}: {self.code}"

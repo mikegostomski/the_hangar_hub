@@ -571,7 +571,10 @@ class IconNode(template.Node):
                 f'<button type="button" onclick="{onclick}" class="btn btn-icon {classes}"'
             ]
         else:
-            icon = ["<span"]
+            icon = ["<span "]
+
+        # Data attributes will live on both the icon and on the icon wrapper
+        data_attributes = []
 
         for kk, vv in other_attributes.items():
             if kk == "title":
@@ -582,7 +585,9 @@ class IconNode(template.Node):
 
             # Data attributes need the '_' converted to '-'
             if kk.startswith("data_"):
-                icon.append(f'{kk.replace("data_", "data-")}="{vv}"')
+                data_attr = f'{kk.replace("data_", "data-")}="{vv}"'
+                icon.append(data_attr)
+                data_attributes.append(data_attr)
             elif kk.startswith("aria_"):
                 icon.append(f'{kk.replace("aria_", "aria-")}="{vv}"')
             else:
@@ -593,7 +598,7 @@ class IconNode(template.Node):
 
         icon.append(">")
 
-        # Build a basic FA icon inside the div or button
+        # Build a basic FA/BI icon inside the div or button
         icon.append(f'<span class="{library_base_class}')
         for this_class in icon_classes:
             icon.append(f" {this_class}")
@@ -603,6 +608,11 @@ class IconNode(template.Node):
         # Icon should always be aria-hidden, since title/label was printed in a visually-hidden span
         icon.append(' aria-hidden="true"')
         icon.append(' style="background-color:transparent;"')
+
+        if data_attributes:
+            for da in data_attributes:
+                icon.append(f' {da}')
+
         icon.append("></span>")
 
         # Append hidden screen reader text, if present

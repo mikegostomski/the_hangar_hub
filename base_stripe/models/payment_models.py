@@ -209,7 +209,7 @@ class StripeCustomer(models.Model):
         try:
             model = cls.objects.create(
                 stripe_id=api_data.id,
-                stripe_account=kwargs.get("stripe_account"),
+                stripe_account=connected_account,
                 email=kwargs.get("email"),
                 full_name=kwargs.get("name"),
             )

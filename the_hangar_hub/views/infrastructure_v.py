@@ -154,7 +154,13 @@ def add_hangar(request, airport_identifier, building_id):
     hangar_code = request.POST.get("hangar_code")
     default_rent = utility_service.convert_to_decimal(request.POST.get("default_rent") or 0.0)
     capacity = int(request.POST.get("capacity") or 1)
-    electric = request.POST.get("electric") or 0
+    electric = int(request.POST.get("electric") or 0)
+    heated = int(request.POST.get("heated") or 0)
+    water = int(request.POST.get("water") or 0)
+    wifi = int(request.POST.get("wifi") or 0)
+    shelves = int(request.POST.get("shelves") or 0)
+    auto_door = int(request.POST.get("auto_door") or 0)
+    log.debug([electric, heated, water, wifi, auto_door])
 
     # Hangar codes are unique to the airport (not just the building)
     airport_hangars = [x.code for x in Hangar.objects.filter(building__airport=airport)]
@@ -186,7 +192,16 @@ def add_hangar(request, airport_identifier, building_id):
                     seq += 1
                     hangar_code = f"{pre}{seq}{post}".strip()
                 Hangar.objects.create(
-                    building=building, default_rent=default_rent, code=hangar_code, capacity=capacity, electric=electric
+                    building=building,
+                    code=hangar_code,
+                    default_rent=default_rent,
+                    capacity=capacity,
+                    electric=electric,
+                    heated=heated,
+                    water = water,
+                    wifi = wifi,
+                    shelves = shelves,
+                    auto_door = auto_door,
                 )
                 airport_hangars.append(hangar_code)
 
@@ -197,7 +212,16 @@ def add_hangar(request, airport_identifier, building_id):
             message_service.post_error("Hangar code already exists")
         else:
             Hangar.objects.create(
-                building=building, default_rent=default_rent, code=hangar_code, capacity=capacity, electric=electric
+                building=building,
+                code=hangar_code,
+                default_rent=default_rent,
+                capacity=capacity,
+                electric=electric,
+                heated=heated,
+                water = water,
+                wifi = wifi,
+                shelves = shelves,
+                auto_door = auto_door,
             )
     return redirect("infrastructure:hangars", airport.identifier, building_id)
 
