@@ -60,8 +60,8 @@ def _handle_customer_event(event):
 
     # Refresh customer with latest data
     else:
-        cust = StripeCustomer.from_stripe_id(event.object_id, event.account_id)
-        return cust.sync()
+        model = StripeCustomer.from_stripe_id(event.object_id, event.account_id)
+        return model.sync()
 
 
 def _handle_invoice_event(event):
@@ -75,8 +75,8 @@ def _handle_invoice_event(event):
 
     # Refresh invoice with latest data
     else:
-        inv = StripeInvoice.from_stripe_id(event.object_id, event.account_id)
-        return inv.sync()
+        model = StripeInvoice.from_stripe_id(event.object_id, event.account_id)
+        return model.sync()
 
 
 def _handle_subscription_event(event):
@@ -88,9 +88,8 @@ def _handle_subscription_event(event):
             del_obj.save()
         return True
     log.info(f"handle_subscription_event({event.object_id})")
-    sub = StripeSubscription.from_stripe_id(event.object_id, event.account_id)
-    log.info(f"sub: {sub}")
-    return sub.sync()
+    model = StripeSubscription.from_stripe_id(event.object_id, event.account_id)
+    return model.sync()
 
 
 def _handle_checkout_session_event(event):
@@ -112,8 +111,8 @@ def _handle_product_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    co = StripeProduct.from_stripe_id(event.object_id, event.account_id)
-    return co.sync()
+    model = StripeProduct.from_stripe_id(event.object_id, event.account_id)
+    return model.sync()
 
 def _handle_price_event(event):
     if event.event_type == "price.deleted":
@@ -123,8 +122,8 @@ def _handle_price_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    co = StripePrice.from_stripe_id(event.object_id, event.account_id)
-    return co.sync()
+    model = StripePrice.from_stripe_id(event.object_id, event.account_id)
+    return model.sync()
 
 def _handle_account_event(event):
     if event.event_type == "account.deleted":
@@ -134,8 +133,8 @@ def _handle_account_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    co = StripeConnectedAccount.from_stripe_id(event.object_id, event.account_id)
-    return co.sync()
+    model = StripeConnectedAccount.from_stripe_id(event.object_id)
+    return model.sync()
 
 
 
