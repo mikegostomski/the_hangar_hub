@@ -78,6 +78,13 @@ def util(request):
 
 def auth(request):
     auth_instance = auth_service.get_auth_instance()
+
+    socialauth_providers = env.get_setting("SOCIALACCOUNT_PROVIDERS")
+    try:
+        google_client_id = socialauth_providers.get("google").get("APP").get("client_id")
+    except:
+        google_client_id = None
+
     return {
         'is_authenticated': auth_instance.is_logged_in(),
         'is_logged_in': auth_instance.is_logged_in(),
@@ -91,4 +98,5 @@ def auth(request):
         'is_developer': auth_service.has_authority("developer"),
         'is_admin': auth_service.has_authority("admin"),
         'avatar_url': auth_instance.get_current_user_profile().get_avatar_url(),
+        'google_client_id': google_client_id,
     }

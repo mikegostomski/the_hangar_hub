@@ -47,6 +47,12 @@
     });
     </script>
 
+    {% if not user.is_authenticated %}
+    {% if not is_development %}
+      <script src="https://accounts.google.com/gsi/client" async></script>
+    {% endif %}
+    {% endif %}
+
     {% block scripts %}{% endblock %}
 </head>
 <body>
