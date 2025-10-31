@@ -87,7 +87,6 @@ def _handle_subscription_event(event):
             del_obj.deleted = True
             del_obj.save()
         return True
-    log.info(f"handle_subscription_event({event.object_id})")
     model = StripeSubscription.from_stripe_id(event.object_id, event.account_id)
     return model.sync()
 
@@ -201,7 +200,6 @@ def react_to_events():
                 # The create function will return an existing record, or create if needed
                 inv = StripeInvoice.from_stripe_id(event.object_id, event.account_id)
                 if inv.sync():
-                    log.debug(f"UPDATING INVOICE {event.object_id}")
                     processed_object_ids.append(event.object_id)
                     processed_events.append(event)
                 continue

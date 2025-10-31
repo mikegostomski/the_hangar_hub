@@ -50,7 +50,6 @@ class StripeWebhookEvent(models.Model):
                 payload, sig_header, webhook_secret
             )
             payload_data = json.loads(payload.decode('utf-8'))
-            log.info(f"Successfully validated Stripe webhook event:\n{event}\n")
             """
             Sample event:
             {
@@ -95,7 +94,6 @@ class StripeWebhookEvent(models.Model):
             }
 
             """
-            log.info(f"Event payload:\n{payload_data}\n")
             """
             Sample payload_data:
             {
@@ -161,9 +159,5 @@ class StripeWebhookEvent(models.Model):
             object_id=object_id,
             account_id=event.get('account')
         )
-        if whe:
-            log.info(f"Webhook event created: {whe}")
-        else:
-            log.error("Unable to create WebhookEvent")
 
         return whe
