@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'base',
     'base_upload',
     'base_stripe',
+    'base_infotext',
 
     # base dependencies
     'crequest',

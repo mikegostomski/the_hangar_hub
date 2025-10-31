@@ -191,6 +191,7 @@ urlpatterns = [
     re_path(f'^base/', include(('base.urls', 'base'), namespace='base')),
     re_path(f'^upload/', include(('base_upload.urls', 'base_upload'), namespace='upload')),
     re_path(f'^stripe/', include(('base_stripe.urls', 'base_stripe'), namespace='stripe')),
+    re_path(f'^infotext/', include(('base_infotext.urls', 'base_infotext'), namespace='infotext')),
 
     re_path(f'', include((public_paths, 'the_hangar_hub'), namespace='public')),
     re_path(f'dev/', include((developer_paths, 'the_hangar_hub'), namespace='dev')),

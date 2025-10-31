@@ -1,0 +1,80 @@
+{% extends 'base/template/standard/template.html' %}
+{% load base_taglib %}
+{% load infotext_taglib %}
+
+{% block title %}Edit Infotext{% endblock %}
+{% block scripts %}
+    <!-- Summernote requirements -->
+    <link href="{%static_content_url%}/wdt/summernote/summernote-0.8.18/summernote-lite.min.css" rel="stylesheet" type="text/css">
+    <script src="{%static_content_url%}/wdt/summernote/summernote-0.8.18/summernote-lite.min.js"></script>
+    <!-- End of Summernote requirements -->
+{% endblock %}
+
+{% block pagecontent %}
+
+    <h1>Infotext for {%app_name%}</h1>
+
+    <form method="get" class="float-right">
+        <label for="keywords" class="visually-hidden">Search for text:</label>
+        <div class="input-group mb-3">
+          <input type="text" name="keywords" id="keywords" class="form-control" value="{{keywords|default:''}}" placeholder="Search Infotext" />
+          <div class="input-group-append">
+            <button class="btn btn-info" type="submit">{%icon fa-search title="Search Infotext"%}</button>
+          </div>
+        </div>
+    </form><br style="clear:both;" />
+    <br />
+
+    <table class="table table-condensed">
+        <tr class="visually-hidden">
+            <th scope="col" class="hidden">ID</th>
+            <th scope="col">Actions</th>
+            <th scope="col">Identifier</th>
+            <th scope="col">Content</th>
+        </tr>
+        {% for group_title, text_instances in results.items %}
+            <tr style="background-color:#A1A58D;">
+                <td colspan="3"><h2>{{group_title}}</h2></td>
+            </tr>
+            {% for it in text_instances %}
+            <tr class="it-row">
+                <td class="it-id hidden">{{it.id}}</td>
+                <td class="it-code">
+                    {{it.text_code}}
+                    {%if is_developer%}
+                    <br />
+                    <input type="text" id="group-{{it.id}}" placeholder="Group Title" value="{{it.group_title|default:''}}" class="form-control" onchange="update_group($(this));" />
+                    {%endif%}
+                </td>
+                <td>
+                    {%icon fa-pencil-square-o fa-fw text-info title="Edit" onclick="enable_edit($(this));"%}<br />
+                    {%icon fa-trash-o fa-fw text-danger title="Delete" onclick="delete_infotext($(this));"%}
+                </td>
+                <td class="it-content">
+                    <div class="it-readonly">{{it.content|safe}}</div>
+                    <div class="it-editable hidden">
+                        <div class="summernote">{{it.content|safe}}</div>
+                    </div>
+
+                </td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+
+    {%if return_address%}
+        <div class="well text-center lg" style="max-width: 800px;margin:50px auto;">
+            <b>After saving your changes</b>, go back
+            <a href="{{return_address}}">where you came from</a>
+        </div>
+    {%endif%}
+
+    <script type="text/javascript">
+        {%include 'base_infotext/index.js'%}
+    </script>
+    <style>
+        .note-save{
+            float: right;
+        }
+    </style>
+{% endblock %}
