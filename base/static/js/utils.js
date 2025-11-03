@@ -408,6 +408,36 @@ function copy_text(element) {
     }
 }
 
+function prepare_wysiwyg(){
+    let q;
+    $(".wysiwyg-input").each(function(){
+        let textarea = $(this);
+        let input_id = textarea.attr("id");
+        let editor_id = `${input_id}-editor`;
+
+        q = new Quill('#' + editor_id, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['link', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Sync Quill content to the hidden textarea on change
+        q.on('text-change', function() {
+            document.getElementById(input_id).value = q.root.innerHTML;
+        });
+        q.root.innerHTML = document.getElementById(input_id).value;
+    });
+
+}
+
 $(document).ready(function(){
     $("span.code").click(function(){
         copy_text($(this));

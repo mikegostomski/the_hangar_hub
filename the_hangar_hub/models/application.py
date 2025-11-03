@@ -38,6 +38,8 @@ class HangarApplication(models.Model):
     aircraft_height = models.IntegerField(verbose_name="Height", blank=True, null=True)
     registration_number = models.CharField(verbose_name="Registration Number", max_length=10, blank=True, null=True)
 
+    certification_text = models.TextField(blank=True, null=True)
+
     @property
     def aircraft_description(self):
         if self.aircraft_make or self.aircraft_model:

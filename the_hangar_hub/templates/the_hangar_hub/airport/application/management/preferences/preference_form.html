@@ -4,6 +4,10 @@
 
 {%block title%}The Hangar Hub: Hangar Application Preferences - {{airport.identifier}}{%endblock%}
 
+{% block scripts %}
+    {%wysiwyg%}
+{%endblock%}
+
 {% block main_content %}
 
 <section>
@@ -51,14 +55,26 @@
     </section>
 
     <section>
-        <h2>Application Fee</h2>
-        To charge an application fee, enter the fee amount.  Application fees will be collected upon submission.
-        <br />
-        <br />
-        <div class="input-group mb-3">
-            <label for="application_fee" class="visually-hidden">Application Fee Amount</label>
-            <span class="input-group-text">$</span>
-            <input type="text" name="application_fee" id="application_fee" value="{{airport.application_fee_amount|default:''}}" class="form-control" placeholder="No Fee" />
+        <div class="content-800">
+            <h2>Certification Statement</h2>
+            If you want prospective tenants to have to agree to terms and conditions, enter that text here
+            <br />
+            <br />
+            {%wysiwyg_input id="infotext_certification" name="infotext_certification" value=ha_preferences.infotext_certification%}
+        </div>
+    </section>
+
+    <section>
+        <div class="content-800">
+            <h2>Application Fee</h2>
+            To charge an application fee, enter the fee amount.  Application fees will be collected upon submission.
+            <br />
+            <br />
+            <div class="input-group mb-3">
+                <label for="application_fee" class="visually-hidden">Application Fee Amount</label>
+                <span class="input-group-text">$</span>
+                <input type="text" name="application_fee" id="application_fee" value="{{airport.application_fee_amount|default:''}}" class="form-control" placeholder="No Fee" />
+            </div>
         </div>
     </section>
 

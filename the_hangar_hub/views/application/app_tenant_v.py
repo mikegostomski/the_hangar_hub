@@ -82,9 +82,10 @@ def form(request, airport_identifier=None, application_id=None):
 @require_airport()
 def save(request, application_id):
     application = _get_user_application(request, application_id)
+    airport_preferences = application.airport.application_preferences()
     if not application:
         return HttpResponseForbidden()
-    elif _save_application_fields(request, application):
+    elif _save_application_fields(request, application, airport_preferences):
         message_service.post_success("Application data has been saved")
         return HttpResponse("ok")
     else:
@@ -101,18 +102,25 @@ def submit(request, application_id):
         if not application:
             return redirect("application:resume", application.id)
 
-        if not _save_application_fields(request, application):
+        airport_preferences = application.airport.application_preferences()
+        if not _save_application_fields(request, application, airport_preferences):
             return redirect("application:resume", application.id)
 
         # Validate fields...
         issues = []
         try:
-            airport_preferences = application.airport.application_preferences()
+
             for ff in airport_preferences.fields():
                 attr = ff.name
                 val = getattr(application, attr)
                 if attr in airport_preferences.required_fields and not val:
                     issues.append(f"{ff.verbose_name} is a required field.")
+
+            if airport_preferences.infotext_certification:
+                if not application.certification_text:
+                    issues.append("You must agree to the certification text")
+                elif application.certification_text != airport_preferences.infotext_certification:
+                    issues.append("You must agree to the updated certification text")
 
             if not issues:
                 if airport.application_fee_amount:
@@ -227,7 +235,7 @@ def _get_application_for_review(request, application_id):
     message_service.post_error("Application was not found")
     return None
 
-def _save_application_fields(request, application):
+def _save_application_fields(request, application, airport_preferences):
     try:
         application.preferred_phone = application.user.contact.phone_number_options().get(request.POST.get("preferred_phone"))
         application.mailing_address = application.user.contact.address_options().get(request.POST.get("mailing_address"))
@@ -251,6 +259,13 @@ def _save_application_fields(request, application):
             mailing_address = contact_service.add_address_from_request(request, application.user.contact)
             if mailing_address:
                 application.mailing_address = mailing_address
+
+        if airport_preferences.infotext_certification:
+            agreed = request.POST.get("infotext_certification") == "Y"
+            if agreed:
+                application.certification_text = airport_preferences.infotext_certification
+            else:
+                application.certification_text = None
 
         application.save()
         return True

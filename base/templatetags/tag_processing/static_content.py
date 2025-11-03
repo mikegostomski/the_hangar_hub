@@ -29,6 +29,17 @@ def jquery(*args, **kwargs):
     """)
 
 
+def wysiwyg(*args, **kwargs):
+    ready = '$(document).ready(function(){ prepare_wysiwyg(); });'
+    return mark_safe(f"""
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script type="text/javascript">
+        {ready}
+    </script>
+    """)
+
+
 def bootstrap(*args, **kwargs):
     css = f"https://stackpath.bootstrapcdn.com/bootstrap/{kwargs.get('version', '5.3.0')}/css/bootstrap.min.css"
     js = f"https://stackpath.bootstrapcdn.com/bootstrap/{kwargs.get('version', '5.3.0')}/js/bootstrap.min.js"

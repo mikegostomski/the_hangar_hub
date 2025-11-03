@@ -247,6 +247,15 @@ def check_admin_menu(context, *args, **kwargs):
 # STATIC CONTENT CATEGORY
 # # # # # # # # # # # # # # # # # # #
 
+@register.simple_tag
+def wysiwyg(*args, **kwargs):
+    return static_content.wysiwyg(*args, **kwargs)
+
+
+@register.tag()
+def wysiwyg_input(parser, token):
+    return html_generating.WysiwygInput(token.split_contents())
+
 
 @register.simple_tag
 def static_content_url():

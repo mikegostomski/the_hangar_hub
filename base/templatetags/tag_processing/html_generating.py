@@ -401,6 +401,54 @@ class SelectNode(template.Node):
         return " ".join(pieces)
 
 
+class WysiwygInput(template.Node):
+    def __init__(self, args):
+        self.args = args
+
+    def render(self, context):
+        # Prepare attributes
+        attrs = support.process_args(self.args, context)
+        random_int = randrange(1000, 9999)
+
+        if "id" in attrs:
+            base_id = attrs.get("id")
+        else:
+            base_id = f"wysiwyg-{random_int}"
+
+        if "name" in attrs:
+            name = attrs.get("name")
+        else:
+            name = f"wysiwyg_{random_int}"
+
+        if "value" in attrs:
+            value = attrs.get("value") or ""
+        else:
+            value = ""
+
+        # Remove special attrs that should not appear in the HTML element
+        for ii in ["multiple", "values", "value", "null_label", "nullable", "options"]:
+            if ii in attrs:
+                del attrs[ii]
+
+        pieces = [
+            f'<textarea id="{base_id}" name="{name}" class="wysiwyg-input hidden">{value}</textarea>',
+            f'<div id="{base_id}-editor" '
+        ]
+        for attr_key, attr_val in attrs.items():
+            if attr_key in ["value", "id"]:
+                continue
+            # Data attributes need the '_' converted to '-'
+            if attr_key.startswith("data_"):
+                pieces.append(f'{attr_key.replace("data_", "data-")}="{attr_val}"')
+            elif attr_key.startswith("aria_"):
+                pieces.append(f'{attr_key.replace("aria_", "aria-")}="{attr_val}"')
+
+            else:
+                pieces.append(f'{attr_key}="{attr_val}"')
+        pieces.append(f'></div>')
+        return " ".join(pieces)
+
+
 class FaNode(template.Node):
     """Handles the FontAwesome icon-generating tag"""
     def __init__(self, args):

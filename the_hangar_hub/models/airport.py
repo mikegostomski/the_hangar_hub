@@ -403,6 +403,7 @@ class HangarApplicationPreferences(models.Model):
     infotext_aircraft = models.TextField(blank=True, null=True)
     infotext_hangar = models.TextField(blank=True, null=True)
     infotext_bottom = models.TextField(blank=True, null=True)
+    infotext_certification = models.TextField(blank=True, null=True)
 
     @property
     def required_fields(self):

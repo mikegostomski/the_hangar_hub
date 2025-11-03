@@ -91,6 +91,10 @@ def save_preferences(request, airport_identifier):
 
     ha_preferences.required_fields_csv = ",".join(required_fields) if required_fields else None
     ha_preferences.ignored_fields_csv = ",".join(ignored_fields) if ignored_fields else None
+
+    infotext_certification = request.POST.get("infotext_certification")
+    ha_preferences.infotext_certification = infotext_certification
+
     ha_preferences.save()
 
     # Application fee is saved on the airport object

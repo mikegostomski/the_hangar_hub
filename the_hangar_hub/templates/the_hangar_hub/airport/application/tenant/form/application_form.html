@@ -199,7 +199,32 @@
             {%endif%}
         </div>
         <br />
+
+        {%if airport_preferences.infotext_certification%}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="card-title heading">
+                    <label>
+                        <input type="checkbox"
+                               name="infotext_certification" id="infotext_certification"
+                               value="Y"
+                               {%if application.certification_text and airport_preferences.infotext_certification == application.certification_text%}
+                                checked
+                               {%endif%}
+                        />
+                        &nbsp;
+                        I agree to the following statement
+                        {%required%}
+                    </label>
+                </div>
+                <div class="card-text indent">
+                     {{airport_preferences.infotext_certification|safe}}
+                </div>
+            </div>
+        </div>
+        {%endif%}
         <br />
+
 
         <div class="">
             {%if airport.has_application_fee%}

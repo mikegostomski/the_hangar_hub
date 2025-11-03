@@ -131,6 +131,32 @@ The Hangar Hub: Hangar Application -
         {%endif%}
     </div>
 
+    {%if airport_preferences.infotext_certification or application.certification_text%}
+    <div class="content-800 content-block">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="card-text">
+                    <div class="float-left" style="margin-right:10px;">
+                        {%if application.certification_text%}
+                            {%icon bi-check2-circle bi-2x text-success title="Checked"%}
+                        {%else%}
+                            {%icon bi-square bi-2x text-danger title="Not Checked"%}
+                        {%endif%}
+                    </div>
+                    <div class="float-left" style="padding-top:7px;">
+                        {%if application.certification_text%}
+                            {{application.certification_text|safe}}
+                        {%else%}
+                            <strong>No Certification</strong><br />
+                            <em>This application was submitted prior to requiring acceptance of certification language</em>
+                        {%endif%}
+                    </div>
+                    <br style="clear:both;" />
+                </div>
+            </div>
+        </div>
+    </div>
+    {%endif%}
 
     {%if is_manager%}
     <form method="post" action="{%url 'application:submit_review' application.id%}">
