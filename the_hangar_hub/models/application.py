@@ -136,8 +136,12 @@ class HangarApplication(models.Model):
     @staticmethod
     def hangar_type_options():
         return {
-            "F": "First Available",
-            "T": "T-Hangar",
+            "FA": "First Available",
+            "TH": "T-Hangar",
+            "BH": "Box Hangar",
+            "SH": "Shared Hangar",
+            "SP": "Shade Port",
+            "TD": "Tie-Down",
         }
 
     @property
