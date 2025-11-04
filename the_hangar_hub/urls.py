@@ -127,6 +127,7 @@ infrastructure_paths = [
     path(f'{airport}/buildings/<building_id>/add', infrastructure_v.add_hangar,    name='add_hangar'),
     path(f'{airport}/hangar/delete', infrastructure_v.delete_hangar,    name='delete_hangar'),
     path(f'{airport}/hangars/{hangar}', infrastructure_v.one_hangar,                name='hangar'),
+    path(f'{airport}/hangars/{hangar}/update', infrastructure_v.update_hangar,                name='update_hangar'),
 ]
 
 mx_paths = [

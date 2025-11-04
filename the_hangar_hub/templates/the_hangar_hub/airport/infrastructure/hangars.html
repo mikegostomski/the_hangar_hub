@@ -14,6 +14,7 @@
     <table class="table">
         <tr valign="top">
             <th scope="col">Hangar Code</th>
+            <th scope="col">Hangar Type</th>
             <th scope="col" width="120">Default Rent</th>
             <th scope="col" class="" width="200">Amenities</th>
             <th scope="col" width="100">Capacity</th>
@@ -27,6 +28,7 @@
                 <td>
                     <a href="{%url 'infrastructure:hangar' airport.identifier hangar.id%}">{{hangar.code}}</a>
                 </td>
+                <td align="right">{{hangar.hangar_type}}</td>
                 <td align="right">{%format_currency hangar.rent%}</td>
                 <td align="">
                     {%if hangar.electric%}
@@ -75,6 +77,10 @@
                 <input type="text" id="hangar_code" name="hangar_code" placeholder="{{building.code}}-#" class="form-control" />
             </td>
             <td>
+                <label for="hangar_type_code" class="visually-hidden">Hangar Type</label>
+                {%select_menu id="hangar_type_code" name="hangar_type_code" class="form-select" options=hangar_model.hangar_type_options nullable=False%}
+            </td>
+            <td>
                 <label for="default_rent" class="visually-hidden">Default Rent</label>
                 <input type="text" id="default_rent" name="default_rent" value="{%format_currency building.default_rent%}" placeholder="$0.00" class="form-control" style="text-align:right;" />
             </td>
@@ -111,7 +117,9 @@
                 <label for="capacity" class="visually-hidden">Capacity</label>
                 <input type="number" id="capacity" name="capacity" placeholder="1" class="form-control" style="text-align:right;" />
             </td>
-            <td>&nbsp;</td>
+            <td>
+                <em class="text-muted">--</em>
+            </td>
             <td>
                 <button type="submit" class="btn btn-success btn-sm">Add Hangar</button>
             </td>

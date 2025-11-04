@@ -14,7 +14,7 @@
         <div class="col-12 col-lg-8">
 
             {# TENANTS #}
-            <div class="card mb-3">
+            <div class="card sm-3">
                 <div class="card-header">
                     <h2 class="float-left h5 mb-0">Current/Future Tenants</h2>
                     <div class="float-right">
@@ -107,7 +107,7 @@
             </div>
 
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-sm-4">
 
 
 
@@ -115,22 +115,83 @@
 
             <div class="card mb-3">
                 <div class="card-header">
-                    <h2 class="h5 mb-0">Office Hours</h2>
+                    <h2 class="h5 mb-0">Details</h2>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm mb-1">
-
+                    <table>
+                        <tr>
+                            <th scope="row">
+                                <label for="hangar_type_code">Type</label>
+                            </th>
+                            <td>
+                                {%select_menu id="hangar_type_code" name="hangar_type_code" options=hangar.hangar_type_options value=hangar.hangar_type_code class="form-select" onchange="update_hangar_data($(this));"%}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="default_rent">Default Rent</label>
+                            </th>
+                            <td>
+                                <input type="text" name="default_rent" id="default_rent" class="form-control" value="{%format_currency hangar.default_rent%}" onchange="update_hangar_data($(this));" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="default_rent">Capacity</label>
+                            </th>
+                            <td>
+                                <input type="number" name="capacity" id="capacity" class="form-control" value="{{hangar.capacity}}" onchange="update_hangar_data($(this));" />
+                            </td>
+                        </tr>
                     </table>
                 </div>
             </div>
 
 
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Amenities</h2>
+                </div>
+                <div class="card-body">
+                    <fieldset>
+                        <legend class="visually-hidden">Hangar Amenities</legend>
 
+                        <label>
+                            <input type="checkbox" name="electric" value="Y" {%if hangar.electric%}checked{%endif%} onchange="update_hangar_data($(this));" />
+                            {%icon bi-lightbulb %} Electricity
+                        </label><br />
+
+                        <label>
+                            <input type="checkbox" name="heated" value="Y" {%if hangar.heated%}checked{%endif%} onchange="update_hangar_data($(this));" />
+                            {%icon bi-thermometer-snow %} Heated
+                        </label><br />
+
+                        <label>
+                            <input type="checkbox" name="water" value="Y" {%if hangar.water%}checked{%endif%} onchange="update_hangar_data($(this));" />
+                            {%icon bi-droplet %} Water
+                        </label><br />
+
+                        <label>
+                            <input type="checkbox" name="wifi" value="Y" {%if hangar.wifi%}checked{%endif%} onchange="update_hangar_data($(this));" />
+                            {%icon bi-wifi %} WiFi
+                        </label><br />
+
+                        <label>
+                            <input type="checkbox" name="shelves" value="Y" {%if hangar.shelves%}checked{%endif%} onchange="update_hangar_data($(this));" />
+                            {%icon bi-archive %} Storage/Shelves
+                        </label><br />
+
+                        <label>
+                            <input type="checkbox" name="auto_door" value="Y" {%if hangar.auto_door%}checked{%endif%} onchange="update_hangar_data($(this));" />
+                            {%icon bi-door-open %} Automated Door
+                        </label><br />
+
+
+
+                    </fieldset>
+                </div>
+            </div>
         </div>
-
-
-
-
     </div>
 </div>
 
@@ -138,6 +199,7 @@
 {%include "the_hangar_hub/airport/application/management/_selected_application.html"%}
 <script type="text/javascript">
     {%include "the_hangar_hub/airport/infrastructure/scripts.js"%}
+    {%include "the_hangar_hub/airport/infrastructure/one_hangar/hangar.js"%}
 </script>
 
 {%endblock%}

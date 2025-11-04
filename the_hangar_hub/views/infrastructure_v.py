@@ -138,6 +138,7 @@ def my_hangars(request, airport_identifier, building_id):
             "airport": airport,
             "building": building,
             "hangars": hangars,
+            "hangar_model": Hangar,
         }
     )
 
@@ -152,6 +153,7 @@ def add_hangar(request, airport_identifier, building_id):
         return redirect("infrastructure:buildings", airport.identifier)
 
     hangar_code = request.POST.get("hangar_code")
+    hangar_type_code = request.POST.get("hangar_type_code")
     default_rent = utility_service.convert_to_decimal(request.POST.get("default_rent") or 0.0)
     capacity = int(request.POST.get("capacity") or 1)
     electric = int(request.POST.get("electric") or 0)
@@ -194,6 +196,7 @@ def add_hangar(request, airport_identifier, building_id):
                 Hangar.objects.create(
                     building=building,
                     code=hangar_code,
+                    hangar_type_code=hangar_type_code,
                     default_rent=default_rent,
                     capacity=capacity,
                     electric=electric,
@@ -282,3 +285,35 @@ def one_hangar(request, airport_identifier, hangar_id):
             "issues": env.get_flash_scope("add_tenant_issues") or [],
         }
     )
+
+
+@report_errors()
+@require_airport_manager()
+def update_hangar(request, airport_identifier, hangar_id):
+    airport = request.airport
+    log.debug("SAVING")
+    try:
+        hangar = airport_service.get_managed_hangar(airport, hangar_id)
+        if not hangar:
+            message_service.post_error("Hangar Not Found")
+            return HttpResponseForbidden()
+
+        attr = request.POST.get("attr")
+        value = request.POST.get("value")
+        if not hasattr(hangar, attr):
+            message_service.post_error("Invalid request")
+            return HttpResponseForbidden()
+        
+        if attr in ["electric", "heated", "water", "wifi", "shelves", "auto_door"]:
+            value = value == "Y"
+        elif attr == "default_rent":
+            value = utility_service.convert_to_decimal(value)
+
+
+        setattr(hangar, attr, value)
+        hangar.save()
+        log.info(f"Set {attr} to {value}")
+        return HttpResponse("ok")
+    except Exception as ee:
+        Error.unexpected("Unable to save hangar data", ee)
+        return HttpResponseForbidden()

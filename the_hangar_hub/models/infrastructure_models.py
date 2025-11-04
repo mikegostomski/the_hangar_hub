@@ -44,6 +44,7 @@ class Hangar(models.Model):
 
     building = models.ForeignKey("the_hangar_hub.Building", on_delete=models.CASCADE, related_name="hangars")
     code = models.CharField(max_length=30)
+    hangar_type_code = models.CharField(max_length=2, default="TH")
     default_rent = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Default passed to tenant
 
     capacity = models.IntegerField(default=1)
@@ -98,6 +99,9 @@ class Hangar(models.Model):
             "SP": "Shade Port",
             "TD": "Tie-Down",
         }
+
+    def hangar_type(self):
+        return self.hangar_type_options().get(self.hangar_type_code) or self.hangar_type_code
 
     def __str__(self):
         return f"{self.building.airport.identifier}: {self.code}"
