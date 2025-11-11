@@ -443,3 +443,9 @@ $(document).ready(function(){
         copy_text($(this));
     })
 })
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    $(".popup").addClass("hidden");
+  }
+});

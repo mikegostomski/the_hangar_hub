@@ -8,6 +8,9 @@
             {%file_preview file=uploaded_image class="card-img-top" aria-hidden="true"%}
         {% endif %}
         <div class="card-body">
+            <div class="float-right">
+                {{entry.date_created|date}}
+            </div>
             <b class="card-title">{{entry.title}}</b>
             <div class="card-text">
                 {{ entry.content|safe }}

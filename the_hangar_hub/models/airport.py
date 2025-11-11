@@ -15,6 +15,7 @@ from base.services import date_service, utility_service
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from base_upload.services import retrieval_service
+from base.classes.util.date_helper import DateHelper
 import os
 
 log = Log()
@@ -355,6 +356,9 @@ class BlogEntry(models.Model):
     def content_summary(self):
         if self.content:
             return utility_service.strip_tags(self.content)[:200]
+
+    def created_dh(self):
+        return DateHelper(self.date_created)
 
     def files(self):
         return retrieval_service.get_file_query().filter(

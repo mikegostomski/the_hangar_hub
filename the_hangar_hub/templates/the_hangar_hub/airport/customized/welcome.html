@@ -40,6 +40,9 @@
                             <br />
                         </div>
                     </div>
+                    <div class="humanized float-left">
+                        {{entry.created_dh.humanized}}
+                    </div>
                     <div class="read-more float-right">
                         {%icon bi-three-dots title="Read More" style="display:inline-block;margin:10px 15px;"%}
                     </div>
@@ -68,8 +71,11 @@
                 margin: 25px 0;
                 font-size: 2em;
             }
-            .blog-popup .card-text{
-
+            .card .humanized{
+                margin-top: 10px;
+                margin-left: 15px;
+                font-size: .8em;
+                font-style: italic;
             }
         </style>
         <script type="text/javascript">
