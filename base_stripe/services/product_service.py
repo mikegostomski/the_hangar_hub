@@ -17,7 +17,7 @@ def get_product_query():
     return StripeProduct.objects.prefetch_related('prices')
 
 
-def get_price_list(account):
+def get_price_list(account=None):
     prices = []
     try:
         set_stripe_api_key()

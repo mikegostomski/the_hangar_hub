@@ -30,6 +30,8 @@
                 <div class="card float-left" data-entry_id="{{entry.id}}" onclick="read_more($(this));">
                     {% if uploaded_image %}
                         {%file_preview file=uploaded_image class="card-img-top" aria-hidden="true" link=False%}
+                    {% else %}
+                        <img src="{% static 'images/bs-cards/blog-placeholder-3.png' %}" aria-hidden="true" class="card-img-top" />
                     {% endif %}
                     <div class="card-body">
                         <b class="card-title">{{entry.title}}</b>

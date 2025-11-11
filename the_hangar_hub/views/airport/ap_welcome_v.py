@@ -14,7 +14,7 @@ from base_upload.services import upload_service
 from the_hangar_hub.models.airport import CustomizedContent, BlogEntry
 from django.shortcuts import render, redirect
 from the_hangar_hub.models.airport import Airport, Amenities, Amenity
-
+from datetime import datetime, timezone
 
 log = Log()
 env = EnvHelper()
@@ -377,9 +377,9 @@ def blog_upload(request, airport_identifier, entry_id=None):
                 the_file,
                 tag=f"blog:{airport.id}",
                 foreign_table="BlogEntry", foreign_key=img_key,
-                resize_dimensions="800x600",
-                # specified_filename='airport_logo',
-                # parent_directory=f'airports/{airport.identifier}/logo'
+                resize_dimensions="800x533",
+                specified_filename=str(int(datetime.now(timezone.utc).timestamp())),
+                parent_directory=f'airports/{airport.identifier}/blog'
             )
             log.info(f"Uploaded File: {uploaded_file}")
 

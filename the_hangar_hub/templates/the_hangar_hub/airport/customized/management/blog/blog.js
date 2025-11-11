@@ -52,6 +52,7 @@
                     $("#new-title").val("");
                     $("#new-content").val("");
                 }
+                prepare_wysiwyg();
             },
             error:function(){
                 el.after(getAjaxStatusFailedIcon());

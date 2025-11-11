@@ -126,7 +126,7 @@ def create_connected_account(airport):
                 "name": airport.display_name,
                 "support_email": airport.billing_email,
                 "support_phone": airport.billing_phone,
-                "url": airport.url,
+                "url": airport.customized_content.url,
                 "product_description": "Airport Payment",
             },
             "company": {

@@ -15,9 +15,11 @@
                     <label class="visually-hidden" for="blog-title">Title</label>
                     <input type="text" id="blog-title" name="title" value="{{entry.title|default:''}}" class="form-control" placeholder="Title" />
                 </div>
-                <div class="mb-2">
+                <div class="mb-2 mt-3">
                     <label class="visually-hidden" for="blog-content">Blog/News Story</label>
-                    <textarea id="blog-content" name="content" class="form-control" rows="20" placeholder="Your post's content goes here...">{{entry.content|default:''}}</textarea>
+                    {%with existing_content=entry.content|default:''%}
+                        {%wysiwyg_input id="blog-content" name="content" placeholder="Your post's content goes here..." value=existing_content%}
+                    {%endwith%}
                 </div>
 
                 {%with uploaded_image=entry.main_image%}

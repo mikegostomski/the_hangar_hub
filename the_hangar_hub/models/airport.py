@@ -11,7 +11,7 @@ from the_hangar_hub.services import stripe_service
 from base.models.utility.error import Error, Log, EnvHelper
 from decimal import Decimal
 from datetime import datetime, timezone
-from base.services import date_service
+from base.services import date_service, utility_service
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from base_upload.services import retrieval_service
@@ -352,6 +352,10 @@ class BlogEntry(models.Model):
     title = models.CharField(max_length=250)
     content = models.TextField()
 
+    def content_summary(self):
+        if self.content:
+            return utility_service.strip_tags(self.content)[:200]
+
     def files(self):
         return retrieval_service.get_file_query().filter(
             tag=f"blog:{self.airport.id}", foreign_table="BlogEntry", foreign_key=self.id
@@ -384,10 +388,16 @@ class BlogEntry(models.Model):
 # Delete the file from storage when the BlogEntry is deleted
 @receiver(post_delete, sender=BlogEntry)
 def delete_blog_image_on_delete(sender, instance, **kwargs):
-    if instance.image:
-        storage = instance.image.storage
-        if storage.exists(instance.image.name):
-            storage.delete(instance.image.name)
+    if instance.files():
+        for ff in instance.files():
+            ff.delete()
+    if instance.staged_files():
+        for ff in instance.staged_files():
+            ff.delete()
+
+        # storage = instance.image.storage
+        # if storage.exists(instance.image.name):
+        #     storage.delete(instance.image.name)
 
 class HangarApplicationPreferences(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
@@ -428,6 +438,7 @@ class HangarApplicationPreferences(models.Model):
                 "status_code",
                 "wl_index", "wl_group_code",
                 "manager_notes_public", "manager_notes_private",
+                "certification_text"
             ] and not x.name.startswith("fee")
         ]
 

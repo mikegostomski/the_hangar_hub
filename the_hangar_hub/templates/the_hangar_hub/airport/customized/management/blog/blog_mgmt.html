@@ -4,6 +4,9 @@
 {% load static %}
 
 {%block title%}Customize Content for {{airport.display_name}}{%endblock%}
+{% block scripts %}
+    {%wysiwyg%}
+{%endblock%}
 
 {% block main_content %}
 <h1>Airport Blog/News</h1>
@@ -26,11 +29,13 @@
             <div class="card-body">
                 <div class="mb-2">
                     <label class="visually-hidden" for="blog-title">Title</label>
-                    <input type="text" id="new-title" name="title" value="{{prefill.title|default:''}}" class="form-control" placeholder="Title" />
+                    <input type="text" id="new-title" name="title" value="{{prefill.title|default:''}}" class="form-control" placeholder="Title" autofocus />
                 </div>
                 <div class="mb-2">
                     <label class="visually-hidden" for="blog-content">Blog/News Story</label>
-                    <textarea id="new-content" name="content" class="form-control" rows="20" placeholder="Your post's content goes here...">{{prefill.content|default:''}}</textarea>
+                    {%with wysiwyg_prefill=prefill.content|default:''%}
+                    {%wysiwyg_input id="new-content" name="content" value=wysiwyg_prefill  placeholder="Your post's content goes here..."%}
+                    {%endwith%}
                 </div>
 
                 {%for image in pending_images%}
@@ -53,15 +58,17 @@
     {% for entry in entries %}
         <div class="list-group-item" data-entry_id="{{entry.id}}" id="lgi-{{entry.id}}">
             {%with uploaded_image=entry.main_image%}
+            <div class="float-left" style="margin-right: 10px;">
             {% if uploaded_image %}
-                <div class="float-left" style="margin-right: 10px;">
-                    {%file_preview file=uploaded_image class="img-fluid img-rounded mt-2 mb-2" style="max-width: 260px; max-height: 120px;"%}
-                </div>
+                {%file_preview file=uploaded_image aria-hidden="true" class="img-fluid img-rounded mt-2 mb-2" style="max-width: 260px; max-height: 120px;"%}
+            {% else %}
+                <img src="{% static 'images/bs-cards/blog-placeholder-3.png' %}" aria-hidden="true" class="img-fluid img-rounded mt-2 mb-2" style="max-width: 260px; max-height: 120px;" />
             {% endif %}
+            </div>
             {% endwith %}
             <div class="float-left">
                 <b class="mb-1 heading xl">{{ entry.title }}</b><br />
-                <p class="mb-1" style="white-space: pre-wrap">{{ entry.content|truncatechars:200 }}</p>
+                <p class="mb-1" style="white-space: pre-wrap">{{ entry.content_summary }}</p>
             </div>
             <div class="float-right">
                 <small>{{ entry.date_created|date:"Y-m-d H:i" }}</small><br />
