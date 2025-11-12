@@ -1,0 +1,24 @@
+
+
+
+<div class="card mb-3 shadow-sm" data-post_id="{{message_group.post.id}}">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                <strong>{{ message_group.post.user.contact.display_name }}</strong>
+                <small class="text-muted ms-2">{{ message_group.post.role_display }}</small>
+            </div>
+            <small class="text-muted">{{ message_group.post.date_created|date:"M d, Y H:i" }}</small>
+        </div>
+        <p class="posted_content mb-0">{{ message_group.post.content }}</p>
+        <button type="button" class="btn btn-info btn-sm" onclick="mb_reply($(this));">reply</button>
+    </div>
+</div>
+
+{%if message_group.replies%}
+<div class="indent">
+    {%for reply_group in message_group.replies%}
+        {%include "the_hangar_hub/airport/customized/message_board/_message_group.html" with message_group=reply_group%}
+    {%endfor%}
+</div>
+{%endif%}

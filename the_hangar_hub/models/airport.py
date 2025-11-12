@@ -201,6 +201,9 @@ class Airport(models.Model):
     def get_new_mx_requests(self):
         return self.maintenance_requests.filter(status_code="R")
 
+    def message_board_topics(self):
+        return self.message_board_threads.all().order_by("-date_created")
+
     def get_unreviewed_applications(self):
         return self.applications.filter(status_code="S")
 
@@ -346,6 +349,7 @@ def blog_image_upload_to(instance, filename):
     base, ext = os.path.splitext(filename)
     return f'uploads/airports/blog/{instance.airport.identifier}-{instance.id}{ext}'
 
+
 class BlogEntry(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -402,6 +406,73 @@ def delete_blog_image_on_delete(sender, instance, **kwargs):
         # storage = instance.image.storage
         # if storage.exists(instance.image.name):
         #     storage.delete(instance.image.name)
+
+class _PostGroup:
+    post = None
+    replies = None
+
+    def __init__(self, post, all_posts):
+        self.post = post
+        self.replies = []
+        for pp in [entry for entry in all_posts if entry.in_response_to and entry.in_response_to.id == post.id]:
+            self.replies.append(_PostGroup(pp, all_posts))
+
+        log.debug(f"GROUP: {post} has {len(self.replies)} replies")
+
+
+class MessageBoardThread(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    airport = models.ForeignKey("the_hangar_hub.Airport", on_delete=models.CASCADE, related_name="message_board_threads", db_index=True)
+    # tenant = models.ForeignKey("the_hangar_hub.Tenant", on_delete=models.CASCADE, related_name="message_board_threads", null=True, blank=True)
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="message_board_threads", db_index=True)
+    topic = models.CharField(max_length=100)
+
+
+    def posts(self):
+        all_posts = self.entries.all().order_by("date_created")
+        return _PostGroup(all_posts[0], all_posts)
+
+
+    @classmethod
+    def get(cls, pk):
+        try:
+            return cls.objects.get(pk=pk)
+        except cls.DoesNotExist:
+            return None
+        except Exception as ee:
+            log.error(f"Could not get {cls}: {ee}")
+            return None
+
+class MessageBoardEntry(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    thread = models.ForeignKey(MessageBoardThread, on_delete=models.CASCADE, related_name="entries", db_index=True)
+    # tenant = models.ForeignKey("the_hangar_hub.Tenant", on_delete=models.CASCADE, related_name="message_board_entries", null=True, blank=True)
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="message_board_entries", db_index=True)
+    in_response_to = models.ForeignKey("the_hangar_hub.MessageBoardEntry", on_delete=models.CASCADE, related_name="replies", null=True, blank=True, db_index=True)
+    role_display = models.CharField(max_length=30)
+    content = models.TextField()
+    visibility_code = models.CharField(max_length=1)  # [P]ublic or [D]irect
+    flagged = models.BooleanField(default=False)
+    reviewed = models.BooleanField(default=False)
+
+    @classmethod
+    def visibility_options(cls):
+        return {
+            "P": "Public",
+            "D": "Direct Message"
+        }
+
+    @classmethod
+    def get(cls, pk):
+        try:
+            return cls.objects.get(pk=pk)
+        except cls.DoesNotExist:
+            return None
+        except Exception as ee:
+            log.error(f"Could not get {cls}: {ee}")
+            return None
 
 class HangarApplicationPreferences(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)

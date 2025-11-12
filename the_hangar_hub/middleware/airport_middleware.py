@@ -66,9 +66,11 @@ class AirportMiddleware:
                 request.airport = ha.airport
                 airport_service.save_airport_selection(request.airport)
 
-        # If found, activate the timezone
+        # If an airport was found...
         if hasattr(request, "airport") and request.airport:
+            # Activate the airport's timezone
             request.airport.activate_timezone()
+
             return view_func(request, *view_args, **view_kwargs)
 
         return None

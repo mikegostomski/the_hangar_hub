@@ -552,7 +552,7 @@ class StripeSubscription(models.Model):
 
     amount = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     payment_method = models.CharField(max_length=30, null=True, blank=True)
-    payment_expire_ym = models.IntegerField(max_length=6, null=True, blank=True)
+    payment_expire_ym = models.IntegerField(null=True, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
     trial_end_date = models.DateTimeField(null=True, blank=True)
     current_period_start = models.DateTimeField(null=True, blank=True)

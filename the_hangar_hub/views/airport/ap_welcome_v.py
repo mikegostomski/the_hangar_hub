@@ -13,7 +13,7 @@ from base_upload.services import retrieval_service
 from base_upload.services import upload_service
 from the_hangar_hub.models.airport import CustomizedContent, BlogEntry
 from django.shortcuts import render, redirect
-from the_hangar_hub.models.airport import Airport, Amenities, Amenity
+from the_hangar_hub.models.airport import Airport, Amenities, Amenity, MessageBoardThread, MessageBoardEntry
 from datetime import datetime, timezone
 
 log = Log()
@@ -461,3 +461,82 @@ def blog_delete(request, airport_identifier):
         message_service.post_error(f"Could not delete blog file: {ee}")
 
     return HttpResponseForbidden()
+
+
+@require_authentication()
+@require_airport()
+def message_board_post(request, airport_identifier):
+    airport = request.airport
+
+    # This may be a new topic, or a response to an existing post
+    response_to = request.POST.get("response_to")
+    linked_post = MessageBoardEntry.get(response_to) if response_to else None
+
+    topic = request.POST.get("mb_topic")
+    if topic:
+        topic = utility_service.strip_tags(topic).strip()[:100]
+
+    # Must be a reply to a post, or have a new topic
+    if (not topic) and (not linked_post):
+        message_service.post_error("You must provide a topic for this post")
+        return HttpResponseForbidden() if env.is_ajax else redirect("airport:welcome", airport.identifier)
+
+    content = request.POST.get("mb_content")
+    if content:
+        content = utility_service.strip_tags(content).strip()
+    if not content:
+        message_service.post_error("You must provide some content for this post")
+        return HttpResponseForbidden() if env.is_ajax else redirect("airport:welcome", airport.identifier)
+
+    visibility_code = request.POST.get("visibility_code") or "P"
+    if visibility_code not in MessageBoardEntry.visibility_options():
+        visibility_code = "P"
+
+    # Determine user and role info
+    user_profile = request.user_profile
+    is_manager = airport_service.manages_this_airport()
+    rentals = tenant_s.get_relevant_rental_agreements(user_profile.user)
+    if is_manager:
+        role_display = "Airport Manager"
+    elif rentals:
+        if len(rentals) == 1:
+            role_display = f"Hangar {rentals[0].code}"
+        else:
+            hangars = "".join([x.code for x in rentals])
+            role_display = f"Hangars {hangars}"[:30]
+    else:
+        role_display = "Guest"
+        # ToDo: Allow guests to post?
+        if False:
+            message_service.post_error("Only airport managers and tenants may post messages")
+            return HttpResponseForbidden() if env.is_ajax else redirect("airport:welcome", airport.identifier)
+
+    try:
+        if topic and not linked_post:
+            thread = MessageBoardThread.objects.create(
+                airport=airport, user=user_profile.user, topic=topic
+            )
+        else:
+            thread = linked_post.thread
+
+        new_post = MessageBoardEntry.objects.create(
+            thread=thread,
+            user=user_profile.user,
+            in_response_to=linked_post,
+            role_display=role_display,
+            content=content,
+            visibility_code=visibility_code
+        )
+
+        if env.is_ajax:
+            return render(
+                request, "the_hangar_hub/airport/customized/message_board/_message_board.html",
+                {}
+            )
+        else:
+            return redirect("airport:welcome", airport.identifier)
+
+    except Exception as ee:
+        Error.unexpected("Unable to save message board post", ee)
+        return HttpResponseForbidden() if env.is_ajax else redirect("airport:welcome", airport.identifier)
+

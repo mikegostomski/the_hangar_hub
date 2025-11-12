@@ -50,7 +50,6 @@
                 </div>
                 {% endwith %}
             {% endfor %}
-
         </div>
         <style>
             #airport-blog .card{
@@ -81,7 +80,13 @@
         <script type="text/javascript">
             {%include "the_hangar_hub/airport/customized/management/blog/blog.js"%}
         </script>
+        <br style="clear:both;" />
         {%endif%}
+
+
+
+        <h2>Message Board</h2>
+        {%include "the_hangar_hub/airport/customized/message_board/_message_board.html"%}
 
     </div>
     <div class="col-12 col-md-4">
