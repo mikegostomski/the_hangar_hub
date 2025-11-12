@@ -1,6 +1,7 @@
 from base.services import auth_service
 from django.urls import reverse
 from base.classes.util.app_data import Log, EnvHelper, AppData
+from base.classes.auth.session import Auth
 
 log = Log()
 env = EnvHelper()
@@ -37,6 +38,12 @@ class BaseMiddleware:
         # This happens for every request EXCEPT posting messages to the screen
         if not posted_messages:
             env.cycle_flash_scope()
+
+        # If authenticated, store user profile in the request
+        if request.user.is_authenticated:
+            request.user_profile = Auth.current_user_profile()
+        else:
+            request.user_profile = None
 
         # Render the response
         response = self.get_response(request)
