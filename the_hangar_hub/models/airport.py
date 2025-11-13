@@ -411,6 +411,17 @@ class _PostGroup:
     post = None
     replies = None
 
+    def flagged(self):
+        if self.post.flagged:
+            if self.post.deleted:
+                return True
+            if not self.post.reviewed:
+                return True
+        return False
+
+    def deleted(self):
+        return self.post.deleted
+
     def __init__(self, post, all_posts):
         self.post = post
         self.replies = []
@@ -456,6 +467,7 @@ class MessageBoardEntry(models.Model):
     visibility_code = models.CharField(max_length=1)  # [P]ublic or [D]irect
     flagged = models.BooleanField(default=False)
     reviewed = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False)
 
     @classmethod
     def visibility_options(cls):

@@ -69,7 +69,8 @@ airport_paths = [
     path(f'{airport}/blog/upload', ap_welcome_v.blog_upload, name='blog_upload'),
     path(f'{airport}/blog/update', ap_welcome_v.blog_update_form, name='blog_update'),
     path(f'{airport}/blog/delete', ap_welcome_v.blog_delete, name='blog_delete'),
-    path(f'{airport}/mb/post', ap_welcome_v.message_board_post, name='message_board_post'),
+    path(f'{airport}/mb/post', ap_welcome_v.message_board_post, name='mb_post'),
+    path(f'{airport}/mb/flag', ap_welcome_v.message_board_flag, name='mb_flag'),
 
     # HH SUBSCRIPTIONS
     path(f'{airport}/claim', hh_subscription_v.claim_airport,                       name='claim'),
