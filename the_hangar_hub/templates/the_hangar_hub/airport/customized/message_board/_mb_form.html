@@ -1,0 +1,37 @@
+{% load base_taglib %}
+<button type="button" class="btn btn-secondary" onclick="$('#mb-new-container').removeClass('hidden').find('input[name=mb_topic]').trigger('focus');">
+    Start a New Thread
+</button>
+<div class="content-800 popup hidden" id="mb-new-container">
+    <form id="mb_post_form" method="post" action="{%url 'airport:mb_post' airport.identifier%}">
+        {%csrf_token%}
+        <div class="form-floating mb-3">
+            <input type="text" id="mb_topic" name="mb_topic" maxlength="100" class="form-control" placeholder=" " />
+            <label for="mb_topic">Message Board Topic</label>
+        </div>
+        <div class="form-floating mb-3">
+            <textarea id="mb_content" name="mb_content" class="form-control" placeholder=" " style="min-height:200px;"></textarea>
+            <label for="mb_content">Message Board Content</label>
+        </div>
+        <div class="text-center">
+            <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Cancel</button>
+            <button type="submit" class="btn btn-primary">Post</button>
+        </div>
+    </form>
+</div>
+<div class="content-800 popup hidden" id="mb-response-container">
+    <form id="mb_reply_form" method="post" action="{%url 'airport:mb_post' airport.identifier%}">
+        {%csrf_token%}
+        <input type="hidden" name="response_to" value="" />
+        <div class="source"></div>
+
+        <div class="form-floating mb-3">
+            <textarea id="mb_reply" name="mb_content" class="form-control" placeholder=" " style="min-height:200px;"></textarea>
+            <label for="mb_reply">Reply Content</label>
+        </div>
+        <div class="text-center">
+            <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="mb_submit_reply();">Post</button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,100 @@
+{%load base_taglib%}
+
+{%with post_deleted=message_group.deleted%}
+{%with post_flagged=message_group.is_flagged%}
+{%with flagged_or_deleted=message_group.flagged_or_deleted%}
+
+{%if is_airport_manager or is_developer or not post_deleted%}
+
+<div id="post-{{message_group.post.id}}"
+     class="card mb-2 {%if post_deleted%}deleted {%if is_airport_manager%}hidden{%endif%}{%endif%} {%if highlight_post and highlight_post.id == message_group.post.id%}highlight{%endif%}"
+     data-post_id="{{message_group.post.id}}"
+>
+    <div class="card-body">
+
+        {## METADATA (name, date, time) ##}
+        <div class="float-left mb-header">
+            {{ message_group.post.user.first_name }} {{ message_group.post.user.last_name|first }}.<br />
+            <small class="text-muted">{{ message_group.post.date_created|date:preferred_date_format }}</small><br />
+            <small class="text-muted">{{ message_group.post.date_created|date:preferred_time_format }}</small><br />
+        </div>
+
+        {## POSTED CONTENT ##}
+        <div class="float-left posted_content mb-0">
+
+            {## FLAGGED BADGE ##}
+            {%if post_flagged%}
+                <span class="badge text-bg-danger">
+                    {%icon bi-flag-fill%} This post was flagged for review
+                </span><br />
+
+                {%if message_group.total_replies and not is_airport_manager%}
+                    <br />
+                    <span class="badge text-bg-info">
+                        {{message_group.total_replies}} replies are being suppressed until this post has been reviewed
+                    </span><br />
+                {%endif%}
+            {%endif%}
+
+            {%if is_airport_manager or not post_flagged%}
+
+                {## RESPONDING TO ( @user ) ##}
+                {%if message_group.post.in_response_to%}
+                    <div class="text-muted sm">
+                        @{{message_group.post.in_response_to.user.first_name}}
+                        {{message_group.post.in_response_to.user.last_name|first}}.
+                    </div>
+                {%endif%}
+
+                {## POSTED CONTENT ##}
+                <div class="posted-message">{{ message_group.post.content }}</div>
+            {%endif%}
+        </div>
+
+        {## ACTION BUTTONS ##}
+        <div class="float-right">
+            {%if is_airport_manager or not flagged_or_deleted%}
+
+                {## REPLY ##}
+                {%icon bi-reply text-primary lg title="Reply" class="float-right" onclick="mb_reply($(this));"%}
+
+                {## REVIEW (unflag or delete) ##}
+                {%if is_airport_manager%}
+                    <br />
+                    {%if post_deleted%}
+                        {%icon bi-recycle text-success class="float-right mt-3" title="Undelete Post" onclick="mb_review($(this));"%}
+                    {%else%}
+                        {%icon bi-trash text-danger class="float-right mt-3 ms-2" title="Delete Post" onclick="mb_delete($(this));"%}
+
+                        {%if flagged_or_deleted%}
+                            {%icon bi-hand-thumbs-up text-success class="float-right mt-3" title="Remove Flag" onclick="mb_review($(this));"%}
+                        {%endif%}
+                    {%endif%}
+
+                {## FLAG (if not previously flagged) ##}
+                {%elif message_group.post.can_flag%}
+                    <br />
+                    {%icon bi-flag text-danger sm class="float-right mt-3 ms-2" title="Flag Inappropriate Post" onclick="mb_flag($(this));"%}
+                {%endif%}
+            {%endif%}
+        </div>
+        <br style="clear:both;" />
+    </div>
+</div>
+
+{## REPLIES ##}
+{%if message_group.replies%}
+{%if is_airport_manager or not flagged_or_deleted%}
+<div id="replies-{{message_group.post.id}}" class="indent {%if post_deleted%}deleted {%if is_airport_manager%}hidden{%endif%}{%endif%}" {%if not message_group.post.in_response_to%}style="border:0;"{%endif%}>
+    {%for reply_group in message_group.replies%}
+        {%include "the_hangar_hub/airport/customized/message_board/_mb_post.html" with message_group=reply_group%}
+    {%endfor%}
+</div>
+{%endif%}
+{%endif%}
+
+{%endif%}
+
+{%endwith%}
+{%endwith%}
+{%endwith%}

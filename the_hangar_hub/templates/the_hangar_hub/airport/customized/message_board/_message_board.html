@@ -2,69 +2,27 @@
 <div id="airport-message-board">
     <div class="list-group">
     {%for thread in airport.message_board_topics%}
-        <div class="list-group-item">
-            <div onclick="mb_expand($(this));" style="cursor:pointer;">
-                <div class="float-left">
-                    {{ thread.topic }}
-                </div>
-                <div class="float-right">
-                    <small class="text-muted">{{ thread.date_created|date:"M d, Y H:i" }}</small>
-                </div>
-                <br style="clear:both;" />
-            </div>
-            <div class="content-800 popup hidden">
-                <div class="float-right">{%icon bi-x-square title="Close Thread" onclick="$('.popup').addClass('hidden');"%}</div>
-                <div class="float-left" style="max-width:90%;"><strong>{{ thread.topic }}</strong></div>
-                <br style="clear:both;" />
-                {%include "the_hangar_hub/airport/customized/message_board/_message_group.html" with message_group=thread.posts%}
-            </div>
-        </div>
-    {% empty %}
-        <p class="text-muted">No message board threads available.</p>
+        {%include "the_hangar_hub/airport/customized/message_board/_mb_thread.html"%}
     {%endfor%}
-
     </div>
     <br />
 
-    <button type="button" class="btn btn-secondary" onclick="$('#mb-new-container').removeClass('hidden').find('input[name=mb_topic]').trigger('focus');">
-        Start a New Thread
-    </button>
-    <div class="content-800 popup hidden" id="mb-new-container">
-        <form method="post" action="{%url 'airport:mb_post' airport.identifier%}">
-            {%csrf_token%}
-            <div class="form-floating mb-3">
-                <input type="text" id="mb_topic" name="mb_topic" maxlength="100" class="form-control" placeholder=" " />
-                <label for="mb_topic">Message Board Topic</label>
-            </div>
-            <div class="form-floating mb-3">
-                <textarea id="mb_content" name="mb_content" class="form-control" placeholder=" " style="min-height:200px;"></textarea>
-                <label for="mb_content">Message Board Content</label>
-            </div>
-            <div class="text-center">
-                <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Cancel</button>
-                <button type="submit" class="btn btn-primary">Post</button>
-            </div>
-        </form>
-    </div>
-    <div class="content-800 popup hidden" id="mb-response-container">
-        <form method="post" action="{%url 'airport:mb_post' airport.identifier%}">
-            {%csrf_token%}
-            <input type="hidden" name="response_to" value="" />
-            <div class="source"></div>
-
-            <div class="form-floating mb-3">
-                <textarea id="mb_reply" name="mb_content" class="form-control" placeholder=" " style="min-height:200px;"></textarea>
-                <label for="mb_reply">Reply Content</label>
-            </div>
-            <div class="text-center">
-                <button type="button" class="btn btn-secondary" onclick="$(this).closest('.popup').addClass('hidden');">Cancel</button>
-                <button type="submit" class="btn btn-primary">Post</button>
-            </div>
-        </form>
-    </div>
+    {%include "the_hangar_hub/airport/customized/message_board/_mb_form.html"%}
 </div>
 <script type="text/javascript">
     {%include "the_hangar_hub/airport/customized/message_board/mb_script.js"%}
+
+    {%if expand_thread or highlight_post%}
+        $(document).ready(function(){
+            {%if highlight_post%}
+                $("#thread-{{highlight_post.thread.id}}").trigger("click");
+                mb_go_to_post({{highlight_post.id}});
+            {%else%}
+                $("#thread-{{expand_thread.id}}").trigger("click");
+            {%endif%}
+        });
+    {%endif%}
+
 </script>
 <style>
     .mb-header{
@@ -77,5 +35,21 @@
     }
     #airport-message-board .card-body{
         padding: 7px 10px;
+    }
+    .card.deleted .posted-message{
+        text-decoration: line-through;
+        font-style: italic;
+        color: #555;
+    }
+    .indent.deleted .card .posted-message{
+        text-decoration: line-through;
+        font-style: italic;
+        color: #555;
+    }
+    .card.highlight{
+        border: 1px solid green;
+        box-shadow:
+            0 0 10px rgba(0, 255, 0, 0.6),
+            0 0 20px rgba(0, 255, 0, 0.4);
     }
 </style>

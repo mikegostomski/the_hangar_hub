@@ -13,7 +13,7 @@ from base_upload.services import retrieval_service
 from base_upload.services import upload_service
 from the_hangar_hub.models.airport import CustomizedContent, BlogEntry
 from django.shortcuts import render, redirect
-from the_hangar_hub.models.airport import Airport, Amenities, Amenity, MessageBoardThread, MessageBoardEntry
+from the_hangar_hub.models.airport import Airport, Amenities, Amenity, MessageBoardThread, MessageBoardEntry, PostGroup
 from datetime import datetime, timezone
 
 log = Log()
@@ -531,7 +531,9 @@ def message_board_post(request, airport_identifier):
         if env.is_ajax:
             return render(
                 request, "the_hangar_hub/airport/customized/message_board/_message_board.html",
-                {}
+                {
+                    "highlight_post": new_post,
+                }
             )
         else:
             return redirect("airport:welcome", airport.identifier)
@@ -544,36 +546,94 @@ def message_board_post(request, airport_identifier):
 @require_authentication()
 @require_airport()
 def message_board_flag(request, airport_identifier):
+    """
+    Used to flag messages for review.
+    Also to review or delete flagged messages.
+    """
     airport = request.airport
     try:
         post_id = request.POST.get("post_id")
         post = MessageBoardEntry.get(post_id) if post_id else None
         if not post:
-            message_service.post_error("Unable to locate the flagged post.")
+            message_service.post_error("Unable to locate the specified post.")
             return HttpResponseForbidden()
+
+        flag = request.POST.get("flag", "F")
+        if flag in ["A", "D"] and not airport_service.manages_this_airport():
+            message_service.post_info("Only airport management may perform the specified action.")
+            return HttpResponseForbidden()
+
+        if flag == "D":
+            post.deleted = True
+            post.save()
+            Auth.audit(
+                "D", "MESSAGE_BOARD",
+                reference_code="MessageBoardEntry",
+                reference_id=post.id,
+            )
+
+            # Redraw the post and replies
+            all_posts = post.thread.entries.all().order_by("date_created")
+            message_group = PostGroup(post, all_posts)
+            return render(
+                request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
+                {"message_group": message_group}
+            )
+
+        if flag == "A":
+            post.deleted = False
+            post.reviewed = True
+            post.save()
+            Auth.audit(
+                "U", "MESSAGE_BOARD",
+                reference_code="MessageBoardEntry",
+                comments="Reviewed and approved",
+                reference_id=post.id,
+            )
+            # Redraw the post and replies
+            all_posts = post.thread.entries.all().order_by("date_created")
+            message_group = PostGroup(post, all_posts)
+            return render(
+                request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
+                {"message_group": message_group}
+            )
+
+        # Otherwise, post is being flagged
 
         if post.reviewed:
             message_service.post_info("The specified post has already been reviewed by airport management.")
             return HttpResponseForbidden()
 
-        if post.flagged:
+        if post.was_flagged():
             message_service.post_info("The specified post has been flagged for review.")
-            return HttpResponse("ok")
+            # Redraw the post and replies
+            all_posts = post.thread.entries.all().order_by("date_created")
+            message_group = PostGroup(post, all_posts)
+            return render(
+                request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
+                {"message_group": message_group}
+            )
 
         post.flagged = True
         post.save()
         message_service.post_info("The specified post has been flagged for review.")
 
         Auth.audit(
-            "I", "FLAG",
-            comments=None,
+            "U", "MESSAGE_BOARD",
+            comments="Flagged for review",
             reference_code="MessageBoardEntry",
             reference_id=post.id,
             previous_value=post.content
         )
-        return HttpResponse("ok")
+        # Redraw the post and replies
+        all_posts = post.thread.entries.all().order_by("date_created")
+        message_group = PostGroup(post, all_posts)
+        return render(
+            request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
+            {"message_group": message_group}
+        )
 
     except Exception as ee:
-        Error.unexpected("Unable to save message board post", ee)
+        Error.unexpected("Unable to update message board post", ee)
         return HttpResponseForbidden()
 
