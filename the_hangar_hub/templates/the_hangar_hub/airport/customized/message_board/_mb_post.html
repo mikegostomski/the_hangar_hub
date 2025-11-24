@@ -1,13 +1,13 @@
 {%load base_taglib%}
 
-{%with post_deleted=message_group.deleted%}
-{%with post_flagged=message_group.is_flagged%}
-{%with flagged_or_deleted=message_group.flagged_or_deleted%}
+{%with display_mode=message_group.display_mode%}
+{%with post_deleted=message_group.is_deleted%}
+{%with post_flagged=message_group.is_flagged_for_review%}
 
-{%if is_airport_manager or is_developer or not post_deleted%}
+{%if display_mode != "SKIP"%}
 
 <div id="post-{{message_group.post.id}}"
-     class="card mb-2 {%if post_deleted%}deleted {%if is_airport_manager%}hidden{%endif%}{%endif%} {%if highlight_post and highlight_post.id == message_group.post.id%}highlight{%endif%}"
+     class="card mb-2 {%if post_deleted%}deleted{%endif%} {%if display_mode == 'HIDDEN'%}hidden{%endif%} {%if highlight_post and highlight_post.id == message_group.post.id%}highlight{%endif%}"
      data-post_id="{{message_group.post.id}}"
 >
     <div class="card-body">
@@ -21,22 +21,28 @@
 
         {## POSTED CONTENT ##}
         <div class="float-left posted_content mb-0">
-
-            {## FLAGGED BADGE ##}
-            {%if post_flagged%}
-                <span class="badge text-bg-danger">
-                    {%icon bi-flag-fill%} This post was flagged for review
-                </span><br />
-
-                {%if message_group.total_replies and not is_airport_manager%}
-                    <br />
-                    <span class="badge text-bg-info">
-                        {{message_group.total_replies}} replies are being suppressed until this post has been reviewed
-                    </span><br />
+            {%if display_mode == 'PLACEHOLDER'%}
+                {% if post_flagged%}
+                    <span class="text-danger">This post has been flagged for review</span>
+                {%else%}
+                    <span class="text-danger">This post has been deleted</span>
                 {%endif%}
-            {%endif%}
+            {%else%}
 
-            {%if is_airport_manager or not post_flagged%}
+                {## FLAGGED BADGE ##}
+                {%if post_flagged%}
+                    <span class="badge text-bg-danger">
+                        {%icon bi-flag-fill%} This post was flagged for review
+                    </span><br />
+
+                    {%if message_group.total_replies and not display_mode == "VIEW"%}
+                        <br />
+                        <span class="badge text-bg-info">
+                            {{message_group.total_replies}} replies are being suppressed until this post has been reviewed
+                        </span><br />
+                    {%endif%}
+                {%endif%}
+
 
                 {## RESPONDING TO ( @user ) ##}
                 {%if message_group.post.in_response_to%}
@@ -53,20 +59,20 @@
 
         {## ACTION BUTTONS ##}
         <div class="float-right">
-            {%if is_airport_manager or not flagged_or_deleted%}
+            {%if display_mode == "VIEW"%}
 
                 {## REPLY ##}
                 {%icon bi-reply text-primary lg title="Reply" class="float-right" onclick="mb_reply($(this));"%}
 
                 {## REVIEW (unflag or delete) ##}
-                {%if is_airport_manager%}
+                {%if is_airport_manager or is_developer%}
                     <br />
                     {%if post_deleted%}
                         {%icon bi-recycle text-success class="float-right mt-3" title="Undelete Post" onclick="mb_review($(this));"%}
                     {%else%}
                         {%icon bi-trash text-danger class="float-right mt-3 ms-2" title="Delete Post" onclick="mb_delete($(this));"%}
 
-                        {%if flagged_or_deleted%}
+                        {%if post_flagged%}
                             {%icon bi-hand-thumbs-up text-success class="float-right mt-3" title="Remove Flag" onclick="mb_review($(this));"%}
                         {%endif%}
                     {%endif%}
@@ -84,7 +90,7 @@
 
 {## REPLIES ##}
 {%if message_group.replies%}
-{%if is_airport_manager or not flagged_or_deleted%}
+{%if display_mode == "VIEW"%}
 <div id="replies-{{message_group.post.id}}" class="indent {%if post_deleted%}deleted {%if is_airport_manager%}hidden{%endif%}{%endif%}" {%if not message_group.post.in_response_to%}style="border:0;"{%endif%}>
     {%for reply_group in message_group.replies%}
         {%include "the_hangar_hub/airport/customized/message_board/_mb_post.html" with message_group=reply_group%}
@@ -93,7 +99,8 @@
 {%endif%}
 {%endif%}
 
-{%endif%}
+
+{%endif%} {## if SKIP ##}
 
 {%endwith%}
 {%endwith%}

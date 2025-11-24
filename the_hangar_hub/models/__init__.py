@@ -6,3 +6,4 @@ from the_hangar_hub.models.infrastructure_models import Building, Hangar
 from the_hangar_hub.models.rental_models import Tenant
 from the_hangar_hub.models.application import HangarApplication, HangarOffer
 from the_hangar_hub.models.maintenance import MaintenanceRequest, MaintenanceComment, ScheduledMaintenance
+from the_hangar_hub.models.message_board import MessageBoardThread, MessageBoardEntry

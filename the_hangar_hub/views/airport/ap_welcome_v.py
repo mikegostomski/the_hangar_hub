@@ -13,7 +13,8 @@ from base_upload.services import retrieval_service
 from base_upload.services import upload_service
 from the_hangar_hub.models.airport import CustomizedContent, BlogEntry
 from django.shortcuts import render, redirect
-from the_hangar_hub.models.airport import Airport, Amenities, Amenity, MessageBoardThread, MessageBoardEntry, PostGroup
+from the_hangar_hub.models.airport import Airport, Amenities, Amenity
+from the_hangar_hub.models.message_board import MessageBoardThread, MessageBoardEntry, PostGroup
 from datetime import datetime, timezone
 
 log = Log()
@@ -558,9 +559,39 @@ def message_board_flag(request, airport_identifier):
             message_service.post_error("Unable to locate the specified post.")
             return HttpResponseForbidden()
 
+        # Get post group, which determines permissions
+        all_posts = post.thread.entries.all().order_by("date_created")
+        post_group = PostGroup(post, all_posts)
+        def ajax_response(p_message_group):
+            return render(
+                request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
+                {"message_group": p_message_group}
+            )
+
+        # Determine action to be taken (flag, review, delete, recycle)
         flag = request.POST.get("flag", "F")
-        if flag in ["A", "D"] and not airport_service.manages_this_airport():
-            message_service.post_info("Only airport management may perform the specified action.")
+        log.info(f"Post #{post_id} Flag: {flag}")
+
+        if flag == "A" and not post_group.can_review_post():
+            if post_group.has_been_reviewed:
+                message_service.post_info("This post was already reviewed")
+                return ajax_response(post_group)
+            message_service.post_error("You may not review this post.")
+            return HttpResponseForbidden()
+        if flag == "D" and not post_group.can_delete_post():
+            if post_group.is_deleted:
+                return ajax_response(post_group)
+            message_service.post_error("You may not delete this post.")
+            return HttpResponseForbidden()
+        if flag == "R" and not post_group.can_recycle_post():
+            if not post_group.is_deleted:
+                return ajax_response(post_group)
+            message_service.post_error("You may not un-delete this post.")
+            return HttpResponseForbidden()
+        if flag == "F" and not post_group.can_flag_post():
+            if post_group.is_flagged_for_review:
+                return ajax_response(post_group)
+            message_service.post_error("You may not flag this post.")
             return HttpResponseForbidden()
 
         if flag == "D":
@@ -572,15 +603,7 @@ def message_board_flag(request, airport_identifier):
                 reference_id=post.id,
             )
 
-            # Redraw the post and replies
-            all_posts = post.thread.entries.all().order_by("date_created")
-            message_group = PostGroup(post, all_posts)
-            return render(
-                request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
-                {"message_group": message_group}
-            )
-
-        if flag == "A":
+        elif flag == "A":
             post.deleted = False
             post.reviewed = True
             post.save()
@@ -590,48 +613,35 @@ def message_board_flag(request, airport_identifier):
                 comments="Reviewed and approved",
                 reference_id=post.id,
             )
-            # Redraw the post and replies
-            all_posts = post.thread.entries.all().order_by("date_created")
-            message_group = PostGroup(post, all_posts)
-            return render(
-                request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
-                {"message_group": message_group}
+
+        elif flag == "R":
+            post.deleted = False
+            post.save()
+            Auth.audit(
+                "U", "MESSAGE_BOARD",
+                reference_code="MessageBoardEntry",
+                comments="Recycled (un-deleted)",
+                reference_id=post.id,
             )
 
         # Otherwise, post is being flagged
-
-        if post.reviewed:
-            message_service.post_info("The specified post has already been reviewed by airport management.")
-            return HttpResponseForbidden()
-
-        if post.was_flagged():
+        else:
+            post.flagged = True
+            post.save()
             message_service.post_info("The specified post has been flagged for review.")
-            # Redraw the post and replies
-            all_posts = post.thread.entries.all().order_by("date_created")
-            message_group = PostGroup(post, all_posts)
-            return render(
-                request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
-                {"message_group": message_group}
+
+            Auth.audit(
+                "U", "MESSAGE_BOARD",
+                comments="Flagged for review",
+                reference_code="MessageBoardEntry",
+                reference_id=post.id,
+                previous_value=post.content
             )
 
-        post.flagged = True
-        post.save()
-        message_service.post_info("The specified post has been flagged for review.")
-
-        Auth.audit(
-            "U", "MESSAGE_BOARD",
-            comments="Flagged for review",
-            reference_code="MessageBoardEntry",
-            reference_id=post.id,
-            previous_value=post.content
-        )
         # Redraw the post and replies
         all_posts = post.thread.entries.all().order_by("date_created")
-        message_group = PostGroup(post, all_posts)
-        return render(
-            request, "the_hangar_hub/airport/customized/message_board/_mb_post.html",
-            {"message_group": message_group}
-        )
+        post_group = PostGroup(post, all_posts)
+        return ajax_response(post_group)
 
     except Exception as ee:
         Error.unexpected("Unable to update message board post", ee)

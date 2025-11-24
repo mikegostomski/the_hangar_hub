@@ -1,17 +1,31 @@
 {% load base_taglib %}
 
-{%with thread_deleted=thread.posts.deleted%}
-{%with thread_flagged=thread.posts.is_flagged%}
+{%with post_group=thread.posts%}
 
-<div class="list-group-item">
-    <div id="thread-{{thread.id}}" onclick="mb_expand($(this));" style="cursor:pointer;">
+{%with display_mode=post_group.display_mode%}
+{%with thread_deleted=post_group.is_deleted%}
+{%with thread_flagged=post_group.is_flagged_for_review%}
+
+{%if display_mode != "SKIP"%}
+
+<div class="list-group-item {%if display_mode == 'HIDDEN'%}hidden{%endif%}">
+    <div id="thread-{{thread.id}}" {%if display_mode != 'PLACEHOLDER'%}onclick="mb_expand($(this));" style="cursor:pointer;"{%endif%}>
 
         {## THREAD TOPIC ##}
         <div class="float-left">
-            {%if thread.posts.is_flagged%}
-                <span class="badge text-bg-danger">{%icon bi-flag%} This post was flagged for review</span>
+            {%if display_mode == 'PLACEHOLDER'%}
+                {%if post_group.is_flagged_for_review%}
+                    <span class="text-danger">This post has been flagged for review</span>
+                {%else%}
+                    <span class="text-danger">This post has been deleted</span>
+                {%endif%}
+
             {%else%}
-                {{ thread.topic }}
+                {%if post_group.is_flagged_for_review%}
+                    <span class="badge text-bg-danger">{%icon bi-flag%} This post was flagged for review</span>
+                {%else%}
+                    <span class="{%if thread_deleted%}deleted{%endif%}">{{ thread.topic }}</span>
+                {%endif%}
             {%endif%}
         </div>
 
@@ -21,16 +35,20 @@
         </div>
 
         {## REPLY COUNT BADGE ##}
-        <div class="badge text-bg-secondary float-right">{{thread.posts.total_replies_display}}</div>
+        {%if display_mode != 'PLACEHOLDER' %}
+            <br />
+            <div class="badge text-bg-secondary float-right">{{post_group.total_replies_display}}</div>
+        {%endif%}
 
         {## FLAGGED REPLY INDICATOR ##}
-        {%if is_airport_manager and thread.posts.contains_flag%}
+        {%if is_airport_manager and post_group.contains_flag%}
             {%icon bi-flag-fill title="Contains flagged posts" class="badge text-bg-danger float-right" style="margin:0 10px;"%}
         {%endif%}
         <br style="clear:both;" />
     </div>
 
     {## CONTAINER FOR EXPANDED POST ##}
+    {%if display_mode != 'PLACEHOLDER' %}
     <div class="content-800 popup hidden">
 
         {## CLOSE BUTTON ##}
@@ -38,7 +56,7 @@
 
         {## THREAD TOPIC ##}
         <div class="float-left" style="max-width:90%;">
-            {%if thread.posts.is_flagged%}
+            {%if post_group.is_flagged%}
                 Flagged Post
             {%else%}
                 <strong>{{ thread.topic }}</strong>
@@ -47,9 +65,14 @@
         <br style="clear:both;" />
 
         {## POST CONTENT (and replies) ##}
-        {%include "the_hangar_hub/airport/customized/message_board/_mb_post.html" with message_group=thread.posts%}
+        {%include "the_hangar_hub/airport/customized/message_board/_mb_post.html" with message_group=post_group%}
     </div>
+    {%endif%}
 </div>
 
+{%endif%} {## if not SKIP ##}
+
+{%endwith%}
+{%endwith%}
 {%endwith%}
 {%endwith%}

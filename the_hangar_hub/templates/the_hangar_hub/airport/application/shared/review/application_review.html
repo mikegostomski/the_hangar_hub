@@ -146,6 +146,9 @@ The Hangar Hub: Hangar Application -
                     <div class="float-left" style="padding-top:7px;">
                         {%if application.certification_text%}
                             {{application.certification_text|safe}}
+                        {%elif application.is_incomplete%}
+                            <strong>No Certification</strong><br />
+                            <em>This application was has not been submitted yet</em>
                         {%else%}
                             <strong>No Certification</strong><br />
                             <em>This application was submitted prior to requiring acceptance of certification language</em>
