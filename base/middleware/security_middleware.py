@@ -32,6 +32,12 @@ def xss_prevention(get_response):
         # Also log it in the audit table.
         auth.audit("C", "XSS", comments=f"Created XSS attempt record #{xss_instance.id}")
 
+        # If not authenticated, count attempts in the session
+        if not auth.is_logged_in():
+            xss_attempts = env.get_session_variable("xss_attempt_counter", 0)
+            xss_attempts += 1
+            env.set_session_variable("xss_attempt_counter", xss_attempts)
+
         if is_ajax:
             # Generate a "posted message" to display on the view
             message_service.post_error("Suspicious input detected. Unable to process request.")
@@ -93,7 +99,7 @@ def xss_prevention(get_response):
         # Otherwise, continue normally (and add XSS-Protection header)
         response = get_response(request)
         if type(response) is HttpResponse:
-            response["X-XSS-Protection"] = "1"
+            # response["X-XSS-Protection"] = "1"
 
             # Also add Cache-control: no-store and Pragma: no-cache headers (recommended by security team)
             response["Cache-Control"] = "no-store"

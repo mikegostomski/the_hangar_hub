@@ -23,6 +23,8 @@ asgiref>=3.6.0
 gunicorn>=20.0.4
 pyyaml>=6.0
 pandas
+django-csp
+django-csp-reports
 
 stripe>=12.0.0
 pillow

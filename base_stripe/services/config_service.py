@@ -22,7 +22,7 @@ def create_customer_portal_configs():
         set_stripe_api_key()
         configuration = stripe.billing_portal.Configuration.create(
             features={
-                "customer_update": {"allowed_updates": ["address", "email", "name", "phone" "tax_id"], "enabled": True},
+                "customer_update": {"allowed_updates": ["address", "email", "name", "phone", "tax_id"], "enabled": True},
                 "invoice_history": {"enabled": True},
                 "payment_method_update": {"enabled": True},
                 "subscription_cancel": {

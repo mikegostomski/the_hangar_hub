@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
+from csp.constants import SELF, UNSAFE_INLINE
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,8 +28,6 @@ IS_DEPLOYED = not os.path.isfile('the_hangar_hub/local_settings.py')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-di2pdeyps-5+z!x^w^2*8l*c3w#gj316qh5%-o@y#bd92q!lvs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -45,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'csp',
+    'cspreports',
 
     # app ...
     'the_hangar_hub',
@@ -63,6 +64,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'csp.middleware.CSPMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -73,6 +75,71 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'the_hangar_hub.middleware.airport_middleware.AirportMiddleware',
 ]
+
+
+# CSP SETTINGS .............................
+CONTENT_SECURITY_POLICY_REPORT_ONLY = {
+    "DIRECTIVES": {
+        # The base source for everything else is 'self'
+        "default-src": [SELF],
+
+        # SCRIPTS: Block inline scripts to force the violation test to report
+        "script-src": [
+            SELF,
+            UNSAFE_INLINE, # Try to eliminate these
+            "https://js.stripe.com",
+            "https://checkout.stripe.com",
+            "https://maps.googleapis.com",
+            "https://cdnjs.cloudflare.com",
+            "https://code.jquery.com",
+            "https://cdn.jsdelivr.net",
+            "https://cdn.quilljs.com",
+        ],
+
+        # STYLES: Your styles + Google Fonts
+        "style-src": [
+            SELF,
+            UNSAFE_INLINE, # Use UNSAFE_INLINE temporarily for styles if needed
+            "https://fonts.googleapis.com",
+            "https://cdn.jsdelivr.net",
+            "https://cdnjs.cloudflare.com",
+            "https://cdn.quilljs.com",
+        ],
+
+        # IMAGES: Your images + data URIs for embedded icons
+        "img-src": [
+            SELF,
+            "data:",
+            "https://*.stripe.com",
+            "https://*.googleusercontent.com"
+        ],
+
+        # FONTS: Google Fonts
+        "font-src": [
+            SELF,
+            "https://fonts.gstatic.com",
+            "https://cdnjs.cloudflare.com",
+        ],
+
+        # FORMS/CONNECTIONS: Stripe API endpoints
+        "connect-src": [
+            SELF,
+            "https://api.stripe.com",
+            "https://maps.googleapis.com",
+        ],
+
+        "upgrade-insecure-requests": True,
+        "report-uri": "/csp-report/",
+    },
+    # OPTIONAL: You can throttle the report rate here (e.g., 10.0 for 10% of reports)
+    # "REPORT_PERCENTAGE": 10.0,
+}
+# This setting makes the Django CSRF middleware skip validation for the POST request
+# sent by the browser to the report endpoint.
+CSRF_EXCLUDE_URLS = [
+    '/csp-report',
+]
+# END CSP SETTINGS .........................
 
 ROOT_URLCONF = 'the_hangar_hub.urls'
 

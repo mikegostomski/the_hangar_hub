@@ -23,6 +23,7 @@ from the_hangar_hub.views.maintenance import mx_mgmt_v, mx_tenant_v, mx_shared_v
 from the_hangar_hub.views.rent import rent_mgmt_v, rent_tenant_v, rent_subscription_v
 from django.conf import settings
 from django.conf.urls.static import static
+from cspreports.views import report_csp
 
 # To ensure consistent URL parameter names
 airport = "<slug:airport_identifier>"
@@ -190,6 +191,7 @@ rent_paths = [
 urlpatterns = [
     # Django and Plugin URLs
     re_path(f'^admin/', admin.site.urls),
+    re_path(r'^csp-report/?$', report_csp), #include('cspreports.urls')),
     re_path(f'^accounts/', include('allauth.urls')),
     re_path(f'^base/', include(('base.urls', 'base'), namespace='base')),
     re_path(f'^upload/', include(('base_upload.urls', 'base_upload'), namespace='upload')),
