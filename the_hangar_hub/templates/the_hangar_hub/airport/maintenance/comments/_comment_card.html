@@ -23,7 +23,7 @@
                         {{mx_comment.user.contact.display_name}}<br />
 
                     {%humanized_date mx_comment.date_created humanized_class="text"%}<br />
-                    {%if is_airport_manager%}
+                    {%if manages_this_airport%}
                         {%if mx_comment.visibility_code == "I"%}
                             <span class="badge text-bg-danger" style="cursor:pointer;" onclick="make_public({{mx_comment.id}}, $(this));">{%icon bi-eye-slash%} Internal</span>
                         {%else%}
@@ -38,7 +38,7 @@
                     {%if not mx_comment%}
                         <textarea name="comment" id="new_comment" class="form-control" rows="5"></textarea>
 
-                        {%if is_airport_manager%}
+                        {%if manages_this_airport%}
                             <fieldset>
                                 <legend class="visually-hidden">Comment Visibility</legend>
                                 <label>

@@ -1,4 +1,4 @@
-{%if is_airport_manager%}
+{%if manages_this_airport%}
     function delete_entry(el){
         let container = el.closest(".list-group-item");
         let entry_id = container.data("entry_id");

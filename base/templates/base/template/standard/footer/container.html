@@ -2,28 +2,27 @@
 
 <div class="app-footer">
     <div style="float: left;">{%icon bi-c-circle%} 2025</div>
-    <div style="float: left;">&nbsp;
-        {%if not is_development%}
-            <div id="g_id_onload"
-                data-client_id="{{google_client_id}}"
-                data-login_uri="{%absolute_url%}/accounts/google/login/?process=login"
-                data-auto_prompt="true"
-                data-itp_support="true">
-            </div>
-        {%endif%}
-
-  {# (Optional) Render Google’s button somewhere visible as a fallback UI #}
-  <div class="g_id_signin"
-       data-type="standard"
-       data-size="large"
-       data-theme="outline"
-       data-text="signin_with"
-       data-shape="rectangular"
-       data-logo_alignment="left">
-  </div>
-
-    </div>
+    <div style="float: left;"></div>
     <div style="float:right;">
-        <div class="float-right" id="footer-indicators-container"></div>
+        <div class="float-right" id="footer-indicators-container">
+            {%if is_development%}
+                {%if manages_this_airport%}
+                    <span class="badge text-bg-info float-right">Manager</span>
+                {%endif%}
+                {%if based_at_this_airport%}
+                    <span class="badge text-bg-info float-right">Tenant</span>
+                {%endif%}
+                {%if is_developer%}
+                    <span class="badge text-bg-info float-right">Developer</span>
+                {%endif%}
+            {%else%}
+                <div id="g_id_onload"
+                    data-client_id="{{google_client_id}}"
+                    data-login_uri="{%absolute_url%}/accounts/google/login/?process=login"
+                    data-auto_prompt="true"
+                    data-itp_support="true">
+                </div>
+            {%endif%}
+        </div>
     </div>
 </div>

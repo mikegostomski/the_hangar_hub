@@ -102,7 +102,6 @@ class MaintenanceComment(models.Model):
         answer = env.get_session_variable(key)
         if True or answer is None:
             answer = airport_service.is_airport_manager(user, airport)
-            log.debug(f"MANAGER: {answer}")
         return env.set_session_variable(key, answer)
 
     def can_view(self):

@@ -65,7 +65,7 @@
                 {%icon bi-reply text-primary lg title="Reply" class="float-right" onclick="mb_reply($(this));"%}
 
                 {## REVIEW (unflag or delete) ##}
-                {%if is_airport_manager or is_developer%}
+                {%if manages_this_airport or is_developer%}
                     <br />
                     {%if post_deleted%}
                         {%icon bi-recycle text-success class="float-right mt-3" title="Undelete Post" onclick="mb_review($(this));"%}
@@ -91,7 +91,7 @@
 {## REPLIES ##}
 {%if message_group.replies%}
 {%if display_mode == "VIEW"%}
-<div id="replies-{{message_group.post.id}}" class="indent {%if post_deleted%}deleted {%if is_airport_manager%}hidden{%endif%}{%endif%}" {%if not message_group.post.in_response_to%}style="border:0;"{%endif%}>
+<div id="replies-{{message_group.post.id}}" class="indent {%if post_deleted%}deleted {%if manages_this_airport%}hidden{%endif%}{%endif%}" {%if not message_group.post.in_response_to%}style="border:0;"{%endif%}>
     {%for reply_group in message_group.replies%}
         {%include "the_hangar_hub/airport/customized/message_board/_mb_post.html" with message_group=reply_group%}
     {%endfor%}

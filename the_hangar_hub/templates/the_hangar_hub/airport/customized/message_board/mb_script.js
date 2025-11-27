@@ -78,7 +78,7 @@ function _mb_flag(icon){
     });
 }
 
-{%if is_airport_manager%}
+{%if manages_this_airport%}
     function mb_review(icon){
         let btn = icon.closest(".btn");
         let container = btn.closest(".card");

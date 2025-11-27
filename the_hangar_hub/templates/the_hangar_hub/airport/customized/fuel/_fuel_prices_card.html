@@ -1,0 +1,99 @@
+{% load base_taglib %}
+
+<div class="fuel-prices card mb-3">
+    <div class="card-header">
+        <h2 class="h5 mb-0 float-left">Fuel Prices</h2>
+        {%if manages_this_airport%}
+            {%icon bi-pencil-square text-info class="float-left" style="margin-left:10px;" title="Edit Prices" onclick="edit_fuel_prices();"%}
+        {%endif%}
+        <div class="text-muted float-right">Per gallon</div>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 text-center">
+            {% if custom_content.avgas_price %}
+                <div class="col-6">
+                    <div class="border rounded p-3 h-100 ">
+                        <b class="badge fs-5" style="background-color:red;">100LL</b>
+                        {%if manages_this_airport%}
+                            <div class="fuel-edit hidden" style="padding-top:10px;">
+                                <label class="visually-hidden" for="avgas_price">100LL Price</label>
+                                <div class="input-group mb-3">
+                                    <input type="text"
+                                           id="avgas_price"
+                                           name="avgas_price"
+                                           placeholder="100LL Price"
+                                           class="form-control"
+                                           autocomplete="off"
+                                           value="{{ custom_content.avgas_price }}"
+                                    />
+                                    <button class="btn btn-outline-success" type="button" onclick="update_fuel_price($(this));">
+                                        {%icon bi-floppy title="Save"%}
+                                    </button>
+                                </div>
+                            </div>
+                        {%endif%}
+                        <div class="fuel-price fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.avgas_price }}</div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if custom_content.jeta_price %}
+                <div class="col-6">
+                    <div class="border rounded p-3 h-100">
+                        <b class="badge fs-5" style="background-color:black;">Jet A</b>
+                        {%if manages_this_airport%}
+                            <div class="fuel-edit hidden" style="padding-top:10px;">
+                                <label class="visually-hidden" for="jeta_price">Jet A Price</label>
+                                <div class="input-group mb-3">
+                                    <input type="text"
+                                           id="jeta_price"
+                                           name="jeta_price"
+                                           placeholder="Jet A Price"
+                                           class="form-control"
+                                           autocomplete="off"
+                                           value="{{ custom_content.jeta_price }}"
+                                    />
+                                    <button class="btn btn-outline-success" type="button" onclick="update_fuel_price($(this));">
+                                        {%icon bi-floppy title="Save"%}
+                                    </button>
+                                </div>
+                            </div>
+                        {%endif%}
+                        <div class="fuel-price fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.jeta_price }}</div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if custom_content.mogas_price %}
+                <div class="col-6">
+                    <div class="border rounded p-3 h-100">
+                        <b class="badge fs-5" style="background-color:#C2B280;color:black;">Mogas</b>
+                        {%if manages_this_airport%}
+                            <div class="fuel-edit hidden" style="padding-top:10px;">
+                                <label class="visually-hidden" for="mogas_price">MoGas Price</label>
+                                <div class="input-group mb-3">
+                                    <input type="text"
+                                           id="mogas_price"
+                                           name="mogas_price"
+                                           placeholder="MoGas Price"
+                                           class="form-control"
+                                           autocomplete="off"
+                                           value="{{ custom_content.mogas_price }}"
+                                           onkeyup="if(event.keyCode == 13){update_fuel_price($(this));}"
+                                    />
+                                    <button class="btn btn-outline-success" type="button" onclick="update_fuel_price($(this));">
+                                        {%icon bi-floppy title="Save"%}
+                                    </button>
+                                </div>
+                            </div>
+                        {%endif%}
+                        <div class="fuel-price fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.mogas_price }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{%if manages_this_airport%}
+<script type="text/javascript">
+    {%include "the_hangar_hub/airport/customized/fuel/fuel.js"%}
+</script>
+{%endif%}

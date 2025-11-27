@@ -83,13 +83,17 @@ def update_airport(request, airport_identifier):
     value = request.POST.get("value")
 
     try:
+        target = airport
         if not hasattr(airport, attribute):
-            message_service.post_error("Invalid airport attribute")
-            return HttpResponseForbidden()
+            if hasattr(airport.customized_content, attribute):
+                target = airport.customized_content
+            else:
+                message_service.post_error("Invalid airport attribute")
+                return HttpResponseForbidden()
 
-        prev_value = getattr(airport, attribute)
-        setattr(airport, attribute, value)
-        airport.save()
+        prev_value = getattr(target, attribute)
+        setattr(target, attribute, value)
+        target.save()
         message_service.post_success("Airport data updated")
 
         Auth.audit(

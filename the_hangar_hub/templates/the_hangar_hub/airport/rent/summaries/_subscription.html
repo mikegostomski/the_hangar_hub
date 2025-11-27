@@ -74,7 +74,7 @@
                 <em style="font-size:.9em;">Must have a credit card on-hand</em>
             </a>
 
-            {%if is_airport_manager%}
+            {%if manages_this_airport%}
             <div class="btn btn-secondary" style="width: 100%;" onclick="$(this).parent().find('.popup').removeClass('hidden');">
                 {%icon bi-credit-card%} Configure Auto-Pay<br />
                 <em style="font-size:.9em;">Tenant must complete within 24 hours</em>

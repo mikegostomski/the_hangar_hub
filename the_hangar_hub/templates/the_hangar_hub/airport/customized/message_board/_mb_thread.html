@@ -41,7 +41,7 @@
         {%endif%}
 
         {## FLAGGED REPLY INDICATOR ##}
-        {%if is_airport_manager and post_group.contains_flag%}
+        {%if manages_this_airport and post_group.contains_flag%}
             {%icon bi-flag-fill title="Contains flagged posts" class="badge text-bg-danger float-right" style="margin:0 10px;"%}
         {%endif%}
         <br style="clear:both;" />

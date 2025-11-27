@@ -41,19 +41,16 @@ def welcome(request, airport_identifier):
 
     # User Status
     # ===========
-    is_manager = airport_service.manages_this_airport()
-    rentals = tenant_s.get_rental_agreements(Auth.current_user())
-    is_tenant = bool(rentals)
-    on_waitlist = airport.get_waitlist().current_user_position()
-    active_applications = application_service.get_active_applications(airport=airport)
+    # rentals = tenant_s.get_rental_agreements(Auth.current_user())
+    # on_waitlist = airport.get_waitlist().current_user_position()
+    # active_applications = application_service.get_active_applications(airport=airport)
 
     # if is_manager and not has_hangars:
     #     return redirect("airport:manage", airport_identifier)
 
     airport = request.airport
     customized_content = airport.customized_content
-    blog_entries = airport.blog_entries.all()[:9]
-
+    blog_entries = airport.blog_entries.all()[:6]
 
     return render(
         request, "the_hangar_hub/airport/customized/welcome.html",

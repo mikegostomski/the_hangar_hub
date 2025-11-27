@@ -17,6 +17,9 @@ class AirportMiddleware:
         if request.path == "/stripe/webhook":
             return None
 
+        request.airport = None
+        request.manages_this_airport = request.based_at_this_airport = False
+
         # Add airport to request and activate timezone if found
         get_parameter = request.GET.get("airport_identifier")
         post_parameter = request.POST.get("airport_identifier")
@@ -70,6 +73,11 @@ class AirportMiddleware:
         if hasattr(request, "airport") and request.airport:
             # Activate the airport's timezone
             request.airport.activate_timezone()
+
+            # Store airport tenant/manager status in the request
+            if request.user.is_authenticated:
+                request.manages_this_airport = airport_service.manages_this_airport()
+                request.based_at_this_airport = airport_service.is_tenant()
 
             return view_func(request, *view_args, **view_kwargs)
 

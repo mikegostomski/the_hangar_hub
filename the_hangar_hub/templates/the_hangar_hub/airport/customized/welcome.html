@@ -20,116 +20,25 @@
   <div class="row g-4">
 
     <div class="col-12 col-lg-8">
-
         {%if blog_entries%}
-        <h2>News and Events</h2>
-        <div id="airport-blog">
-            {% for entry in blog_entries %}
-                {%with uploaded_image=entry.main_image%}
-
-                <div class="card float-left" data-entry_id="{{entry.id}}" onclick="read_more($(this));">
-                    {% if uploaded_image %}
-                        {%file_preview file=uploaded_image class="card-img-top" aria-hidden="true" link=False%}
-                    {% else %}
-                        <img src="{% static 'images/bs-cards/blog-placeholder-3.png' %}" aria-hidden="true" class="card-img-top" />
-                    {% endif %}
-                    <div class="card-body">
-                        <b class="card-title">{{entry.title}}</b>
-                        <div class="card-text">
-                            {{ entry.content|striptags }}
-                            <br />
-                        </div>
-                    </div>
-                    <div class="humanized float-left">
-                        {{entry.created_dh.humanized}}
-                    </div>
-                    <div class="read-more float-right">
-                        {%icon bi-three-dots title="Read More" style="display:inline-block;margin:10px 15px;"%}
-                    </div>
-                    <br style="clear:both;" />
-                </div>
-                {% endwith %}
-            {% endfor %}
-        </div>
-        <style>
-            #airport-blog .card{
-                max-width: 250px;
-                margin-right: 15px;
-                margin-bottom: 15px;
-            }
-            #airport-blog .card-body{
-                height: 120px;
-                font-size: .9em;
-                overflow: hidden;
-            }
-            .blog-popup{
-                background-color: white;
-            }
-            .blog-popup .card-title{
-                display:block;
-                margin: 25px 0;
-                font-size: 2em;
-            }
-            .card .humanized{
-                margin-top: 10px;
-                margin-left: 15px;
-                font-size: .8em;
-                font-style: italic;
-            }
-        </style>
-        <script type="text/javascript">
-            {%include "the_hangar_hub/airport/customized/management/blog/blog.js"%}
-        </script>
-        <br style="clear:both;" />
+            <h2>News and Events</h2>
+            <div id="airport-blog">
+                {%include "the_hangar_hub/airport/customized/blog/_blog_cards.html" with blog_entries=blog_entries%}
+            </div>
+            <br style="clear:both;" />
         {%endif%}
 
-
-
-        <h2>Message Board</h2>
-        {%include "the_hangar_hub/airport/customized/message_board/_message_board.html"%}
-
+        {%if manages_this_airport or based_at_this_airport%}
+            <h2>Message Board</h2>
+            {%include "the_hangar_hub/airport/customized/message_board/_message_board.html"%}
+        {%endif%}
     </div>
     <div class="col-12 col-md-4">
 
-
-
-      {# FUEL PRICES #}
+    {# FUEL PRICES #}
     {% if custom_content.avgas_price or custom_content.jeta_price or custom_content.mogas_price %}
-      <div class="card mb-3">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <h2 class="h5 mb-0">Fuel Prices</h2>
-          <small class="text-muted">Per gallon</small>
-        </div>
-        <div class="card-body">
-          <div class="row g-3 text-center">
-            {% if custom_content.avgas_price %}
-              <div class="col-6">
-                <div class="border rounded p-3 h-100 ">
-                  <b class="badge fs-5" style="background-color:red;">100LL</b>
-                  <div class="fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.avgas_price }}</div>
-                </div>
-              </div>
-            {% endif %}
-            {% if custom_content.jeta_price %}
-              <div class="col-6">
-                <div class="border rounded p-3 h-100">
-                  <b class="badge fs-5" style="background-color:black;">Jet A</b>
-                  <div class="fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.jeta_price }}</div>
-                </div>
-              </div>
-            {% endif %}
-            {% if custom_content.mogas_price %}
-              <div class="col-6">
-                <div class="border rounded p-3 h-100">
-                  <b class="badge fs-5" style="background-color:#C2B280;color:black;">Mogas</b>
-                  <div class="fs-4 fw-bold text-center" style="white-space:nowrap;">${{ custom_content.mogas_price }}</div>
-                </div>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
+        {%include "the_hangar_hub/airport/customized/fuel/_fuel_prices_card.html"%}
+    {% endif %}
 
 
       {# OFFICE HOURS #}
@@ -232,7 +141,7 @@
 
 
     </div>
-    {% endif %}
+
 
 
 
@@ -248,5 +157,4 @@
     </div>
   {% endif %}
 
-</div>
 {%endblock%}
